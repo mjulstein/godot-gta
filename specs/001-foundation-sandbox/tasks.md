@@ -119,7 +119,7 @@
 - [ ] T041 [P] Tune player movement, vehicle handling, and wanted thresholds in `data/tuning/`
 - [ ] T042 [P] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
 - [ ] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
-- [ ] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
+- [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
 - [ ] T045 Run full manual validation for US1, US2, and US3 and record results in `tests/manual/`
 
 ---

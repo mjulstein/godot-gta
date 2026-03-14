@@ -7,11 +7,13 @@
 The prototype now covers the first pass of User Story 2:
 
 - project boots in Godot 4.6+
+- world is generated from an ASCII-tiled base level with district and empty-ground tiles
 - player can move on foot, steal the parked vehicle, and drive
-- civilian pedestrians and a traffic placeholder move through the district
+- civilian pedestrians and a traffic placeholder move through the active district tile
 - witnessed crimes raise wanted level
 - police placeholders spawn and pursue on foot
 - wanted state decays after the player escapes pressure
+- camera uses fixed viewport stretch, driving look-ahead, speed-aware zoom, and pause palette overlay
 - debug overlay shows wanted level and police count
 
 ## Validate First
@@ -25,7 +27,9 @@ HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 Then manually verify:
 
 - `scenes/main/game.tscn` loads
+- fullscreen keeps the same framed view instead of revealing more world
 - the on-foot to vehicle loop works
+- the driving camera pans ahead and eases back from high-speed exits
 - stealing the vehicle near civilians raises wanted
 - police spawn and wanted can clear again
 
@@ -38,10 +42,11 @@ Manual validation reference:
 
 Stabilize and tune User Story 2 before starting missions:
 
-1. Tune civilian spacing, witness radius, and wanted decay timing
-2. Improve police pursuit behavior and spawn selection
-3. Decide whether wanted UI stays debug-first or gains lightweight HUD treatment
-4. Start User Story 3 mission scaffolding once the pursuit loop is repeatable
+1. Tune camera framing, zoom-delay, and driving look-ahead feel through manual play
+2. Tune civilian spacing, witness radius, and wanted decay timing
+3. Improve police pursuit behavior and spawn selection across multiple district tiles
+4. Decide whether wanted UI stays debug-first or gains lightweight HUD treatment
+5. Start User Story 3 mission scaffolding once the pursuit loop is repeatable
 
 Primary task source:
 
@@ -58,4 +63,5 @@ Primary task source:
 
 - Whether civilians should stay on simple rail movement or switch to waypoint logic
 - Whether police should remain on-foot in US2 or gain vehicle pursuit before US3
+- Whether the ASCII world layout should move into data files or stay scene-export driven
 - Whether wanted-state UI should stay debug-first or gain a player-facing HUD treatment in US2

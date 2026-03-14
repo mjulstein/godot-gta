@@ -10,14 +10,15 @@ Current implemented baseline:
 
 - Godot project shell
 - root game scene
-- compact district test map
+- ASCII-tiled base world with district and empty-ground tiles
 - player movement
 - drivable vehicle
-- follow camera
+- follow camera with fixed viewport stretch, driving look-ahead, and speed-aware zoom
 - debug overlay
+- pause palette overlay
 - first-pass civilian, wanted, and police response loop
 
-## Debug Palette
+## Role Key
 
 The debug build uses a fixed role palette to keep actor reads consistent:
 
@@ -67,3 +68,19 @@ HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 - `E`: enter or exit vehicle
 - `O`: toggle debug overlay
 - `P`: pause game and toggle palette key
+
+## World Layout
+
+The current world root is [base_level.tscn](./scenes/world/base_level.tscn), which builds the playable area from one-character ASCII tile bindings:
+
+- `D`: district slice
+- `0`: empty ground tile
+
+Current default layout:
+
+```text
+DDDDDD00
+DD0DDD00
+D000DDDD
+0000DD00
+```
