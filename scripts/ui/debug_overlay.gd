@@ -19,6 +19,7 @@ func _process(_delta: float) -> void:
 		"Speed: %.1f kph" % debug_state.speed_kph,
 		"Collision: %s" % debug_state.collision_state,
 		"Wanted: %d" % debug_state.wanted_level,
+		"Police: %d" % debug_state.police_count,
 		"Mission: %s" % debug_state.mission_state,
 		"",
 		"Controls:",

@@ -6,3 +6,4 @@
 script = ExtResource("1")
 max_wanted_level = 5
 decay_delay_seconds = 8.0
+max_police_units = 3

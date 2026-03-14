@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(34, 18)
+
+[node name="PoliceVehicle" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-18, -10, 16, -10, 18, 0, 16, 10, -18, 10)
+color = Color(0.188235, 0.34902, 0.666667, 1)
+
+[node name="LightBar" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-8, -4, 8, -4, 8, 4, -8, 4)
+color = Color(0.878431, 0.882353, 0.913725, 1)

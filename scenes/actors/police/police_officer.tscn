@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ai/police_ai.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="1"]
+radius = 10.0
+
+[node name="PoliceOfficer" type="CharacterBody2D"]
+script = ExtResource("1")
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(10, 0, 0, -10, -8, 0, 0, 10)
+color = Color(0.356863, 0.486275, 0.866667, 1)

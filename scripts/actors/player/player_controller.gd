@@ -2,10 +2,13 @@ extends CharacterBody2D
 
 const ActorState = preload("res://scripts/core/actor_state.gd")
 
+signal civilian_assaulted(target: Node2D)
+
 @export var tuning: Resource
 @export var collision_flash_time := 0.12
 var active_vehicle: Node = null
 var collision_flash_remaining := 0.0
+var impact_cooldowns: Dictionary = {}
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var interaction_sensor: Area2D = $InteractionSensor
@@ -13,6 +16,7 @@ var collision_flash_remaining := 0.0
 
 func _physics_process(delta: float) -> void:
 	collision_flash_remaining = maxf(0.0, collision_flash_remaining - delta)
+	_tick_impact_cooldowns(delta)
 	body_polygon.color = Color(1, 0.45, 0.35, 1) if collision_flash_remaining > 0.0 else Color(0.941176, 0.705882, 0.184314, 1)
 
 	if active_vehicle != null:
@@ -26,6 +30,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if get_slide_collision_count() > 0:
 		collision_flash_remaining = collision_flash_time
+		_emit_civilian_impacts()
 
 func is_in_vehicle() -> bool:
 	return active_vehicle != null
@@ -48,3 +53,27 @@ func get_state_name() -> String:
 
 func has_recent_collision() -> bool:
 	return collision_flash_remaining > 0.0
+
+func _emit_civilian_impacts() -> void:
+	for index in range(get_slide_collision_count()):
+		var collision := get_slide_collision(index)
+		var collider := collision.get_collider()
+		if collider == null or not collider.is_in_group("civilian_pedestrian"):
+			continue
+		if _is_impact_on_cooldown(collider):
+			continue
+		impact_cooldowns[collider.get_instance_id()] = 0.6
+		if collider.has_method("register_harm"):
+			collider.register_harm(self)
+		civilian_assaulted.emit(collider)
+
+func _tick_impact_cooldowns(delta: float) -> void:
+	for collider_id in impact_cooldowns.keys():
+		var remaining: float = impact_cooldowns[collider_id] - delta
+		if remaining <= 0.0:
+			impact_cooldowns.erase(collider_id)
+		else:
+			impact_cooldowns[collider_id] = remaining
+
+func _is_impact_on_cooldown(collider: Node) -> bool:
+	return impact_cooldowns.has(collider.get_instance_id())

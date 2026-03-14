@@ -1,7 +1,9 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/props/spawn_marker.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/world/props/traffic_barrier.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/actors/civilians/civilian_pedestrian.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/civilian/traffic_vehicle.tscn" id="4"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(280, 180)
@@ -114,3 +116,26 @@ rotation = 0.18
 [node name="BarrierWest" parent="." instance=ExtResource("2")]
 position = Vector2(-176, 150)
 rotation = -0.42
+
+[node name="CivilianNorth" parent="." instance=ExtResource("3")]
+position = Vector2(-42, -118)
+movement_axis = Vector2(1, 0)
+patrol_distance = 110.0
+
+[node name="CivilianEast" parent="." instance=ExtResource("3")]
+position = Vector2(118, 24)
+movement_axis = Vector2(0, 1)
+patrol_distance = 120.0
+
+[node name="TrafficLoop" parent="." instance=ExtResource("4")]
+position = Vector2(0, 58)
+movement_axis = Vector2(1, 0)
+patrol_distance = 280.0
+
+[node name="PoliceSpawnNorth" parent="." instance=ExtResource("1")]
+position = Vector2(0, -248)
+marker_kind = "police_spawn"
+
+[node name="PoliceSpawnSouth" parent="." instance=ExtResource("1")]
+position = Vector2(0, 248)
+marker_kind = "police_spawn"

@@ -3,6 +3,7 @@ extends Node
 var player_mode := "On Foot"
 var interaction_hint := "Press E near the car"
 var wanted_level := 0
+var police_count := 0
 var mission_state := "Free Roam"
 var speed_kph := 0.0
 var collision_state := "Clear"
@@ -18,3 +19,9 @@ func set_speed(value: float) -> void:
 
 func set_collision_state(value: String) -> void:
 	collision_state = value
+
+func set_wanted_level(value: int) -> void:
+	wanted_level = value
+
+func set_police_count(value: int) -> void:
+	police_count = value

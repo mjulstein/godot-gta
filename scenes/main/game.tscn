@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/game_root.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/world/district_slice.tscn" id="2"]
@@ -9,6 +9,10 @@
 [ext_resource type="PackedScene" path="res://scenes/vehicles/civilian/civilian_vehicle.tscn" id="7"]
 [ext_resource type="Script" path="res://scripts/systems/vehicle_interaction_system.gd" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/ui/interaction_prompt.tscn" id="9"]
+[ext_resource type="Script" path="res://scripts/systems/crime_system.gd" id="10"]
+[ext_resource type="Script" path="res://scripts/systems/wanted_system.gd" id="11"]
+[ext_resource type="PackedScene" path="res://scenes/actors/police/police_officer.tscn" id="12"]
+[ext_resource type="Resource" path="res://data/tuning/wanted_tuning.tres" id="13"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1")
@@ -25,6 +29,14 @@ script = ExtResource("3")
 
 [node name="VehicleInteractionSystem" type="Node" parent="."]
 script = ExtResource("8")
+
+[node name="CrimeSystem" type="Node" parent="."]
+script = ExtResource("10")
+
+[node name="WantedSystem" type="Node2D" parent="."]
+script = ExtResource("11")
+tuning = ExtResource("13")
+police_scene = ExtResource("12")
 
 [node name="FollowCamera" type="Camera2D" parent="."]
 position_smoothing_enabled = false

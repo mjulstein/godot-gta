@@ -76,16 +76,16 @@
 
 ### Implementation for User Story 2
 
-- [ ] T023 [P] [US2] Create civilian pedestrian and traffic placeholder scenes in `scenes/actors/civilians/` and `scenes/vehicles/civilian/`
-- [ ] T024 [US2] Implement simple civilian movement or traffic behavior in `scripts/ai/civilian_ai.gd`
-- [ ] T025 [US2] Add crime event definitions and dispatch logic in `scripts/systems/crime_system.gd`
-- [ ] T026 [US2] Emit crime events for vehicle theft, pedestrian assault, and harmful collision from `scripts/actors/player/player_controller.gd` and `scripts/vehicles/vehicle_controller.gd`
-- [ ] T027 [US2] Implement wanted-state tracking and decay in `scripts/systems/wanted_system.gd`
-- [ ] T028 [P] [US2] Create police unit placeholder scenes in `scenes/actors/police/` and `scenes/vehicles/police/`
-- [ ] T029 [US2] Implement police spawn and pursuit behavior in `scripts/ai/police_ai.gd`
-- [ ] T030 [US2] Wire civilian spawns, police spawns, and response triggers into `scenes/world/district_slice.tscn`
-- [ ] T031 [US2] Expose wanted state and police counts through `scripts/ui/debug_overlay.gd`
-- [ ] T032 [US2] Document repeatable pursuit validation steps in `tests/manual/us2_wanted_loop.md`
+- [x] T023 [P] [US2] Create civilian pedestrian and traffic placeholder scenes in `scenes/actors/civilians/` and `scenes/vehicles/civilian/`
+- [x] T024 [US2] Implement simple civilian movement or traffic behavior in `scripts/ai/civilian_ai.gd`
+- [x] T025 [US2] Add crime event definitions and dispatch logic in `scripts/systems/crime_system.gd`
+- [x] T026 [US2] Emit crime events for vehicle theft, pedestrian assault, and harmful collision from `scripts/actors/player/player_controller.gd` and `scripts/vehicles/vehicle_controller.gd`
+- [x] T027 [US2] Implement wanted-state tracking and decay in `scripts/systems/wanted_system.gd`
+- [x] T028 [P] [US2] Create police unit placeholder scenes in `scenes/actors/police/` and `scenes/vehicles/police/`
+- [x] T029 [US2] Implement police spawn and pursuit behavior in `scripts/ai/police_ai.gd`
+- [x] T030 [US2] Wire civilian spawns, police spawns, and response triggers into `scenes/world/district_slice.tscn`
+- [x] T031 [US2] Expose wanted state and police counts through `scripts/ui/debug_overlay.gd`
+- [x] T032 [US2] Document repeatable pursuit validation steps in `tests/manual/us2_wanted_loop.md`
 
 **Checkpoint**: User Stories 1 and 2 work together, and the city now reacts to player crime
 

@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ai/civilian_ai.gd" id="1"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(30, 16)
+
+[node name="TrafficVehicle" type="CharacterBody2D"]
+script = ExtResource("1")
+actor_type = "traffic"
+movement_axis = Vector2(1, 0)
+patrol_distance = 180.0
+move_speed = 70.0
+pause_duration = 0.0
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-16, -8, 14, -8, 16, 0, 14, 8, -16, 8)
+color = Color(0.34902, 0.619608, 0.909804, 1)

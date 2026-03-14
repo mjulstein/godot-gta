@@ -4,14 +4,15 @@
 
 ## Current Checkpoint
 
-The MVP foundation is in place and User Story 1 is complete enough to build on:
+The prototype now covers the first pass of User Story 2:
 
 - project boots in Godot 4.6+
-- player can move on foot
-- player can enter and exit a vehicle
-- vehicle can drive and collide with world geometry
-- camera follows the active actor
-- debug overlay and interaction prompt are wired
+- player can move on foot, steal the parked vehicle, and drive
+- civilian pedestrians and a traffic placeholder move through the district
+- witnessed crimes raise wanted level
+- police placeholders spawn and pursue on foot
+- wanted state decays after the player escapes pressure
+- debug overlay shows wanted level and police count
 
 ## Validate First
 
@@ -25,21 +26,22 @@ Then manually verify:
 
 - `scenes/main/game.tscn` loads
 - the on-foot to vehicle loop works
-- the interaction prompt appears without the debug overlay
+- stealing the vehicle near civilians raises wanted
+- police spawn and wanted can clear again
 
 Manual validation reference:
 
 - [tests/manual/us1_playable_core.md](../../tests/manual/us1_playable_core.md)
+- [tests/manual/us2_wanted_loop.md](../../tests/manual/us2_wanted_loop.md)
 
 ## Next Target
 
-Start User Story 2:
+Stabilize and tune User Story 2 before starting missions:
 
-1. Create civilian placeholder scenes
-2. Add minimal civilian or traffic behavior
-3. Introduce crime event emission
-4. Add wanted-state tracking
-5. Add police placeholders and basic pursuit behavior
+1. Tune civilian spacing, witness radius, and wanted decay timing
+2. Improve police pursuit behavior and spawn selection
+3. Decide whether wanted UI stays debug-first or gains lightweight HUD treatment
+4. Start User Story 3 mission scaffolding once the pursuit loop is repeatable
 
 Primary task source:
 
@@ -54,6 +56,6 @@ Primary task source:
 
 ## Open Decisions
 
-- Whether civilian traffic should move on rails first or use waypoint logic
-- Whether police should begin as on-foot pursuers, vehicle pursuers, or both
+- Whether civilians should stay on simple rail movement or switch to waypoint logic
+- Whether police should remain on-foot in US2 or gain vehicle pursuit before US3
 - Whether wanted-state UI should stay debug-first or gain a player-facing HUD treatment in US2
