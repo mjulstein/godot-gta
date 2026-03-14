@@ -1,6 +1,7 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/props/spawn_marker.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/world/props/traffic_barrier.tscn" id="2"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(280, 180)
@@ -102,3 +103,14 @@ marker_kind = "player_spawn"
 [node name="VehicleSpawn" parent="." instance=ExtResource("1")]
 position = Vector2(-120, 36)
 marker_kind = "vehicle_spawn"
+
+[node name="BarrierNorth" parent="." instance=ExtResource("2")]
+position = Vector2(48, -132)
+
+[node name="BarrierSouth" parent="." instance=ExtResource("2")]
+position = Vector2(210, 126)
+rotation = 0.18
+
+[node name="BarrierWest" parent="." instance=ExtResource("2")]
+position = Vector2(-176, 150)
+rotation = -0.42

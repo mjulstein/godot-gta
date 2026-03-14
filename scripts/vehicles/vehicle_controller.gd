@@ -51,3 +51,6 @@ func clear_driver() -> void:
 
 func get_exit_position() -> Vector2:
 	return global_position + Vector2.DOWN.rotated(rotation) * 28.0
+
+func has_recent_collision() -> bool:
+	return collision_flash_remaining > 0.0

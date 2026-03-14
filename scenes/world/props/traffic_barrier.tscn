@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(44, 18)
+
+[node name="TrafficBarrier" type="StaticBody2D"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1")
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-22, -9, 22, -9, 22, 9, -22, 9)
+color = Color(0.94902, 0.470588, 0.14902, 1)
+
+[node name="Stripe" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-22, -2, 22, -2, 22, 2, -22, 2)
+color = Color(0.988235, 0.92549, 0.580392, 1)

@@ -12,6 +12,7 @@
 
 # Godot generated/editor state
 .godot/
+*.import
 
 # Codex local runtime artifacts
 .codex/sessions/

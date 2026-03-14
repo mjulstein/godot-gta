@@ -19,6 +19,7 @@ func _ready() -> void:
 	interaction_system.exit_requested.connect(_on_exit_requested)
 
 	debug_overlay.set_debug_state(debug_state)
+	camera.set_world_bounds(Rect2(Vector2(-624, -344), Vector2(1248, 688)))
 	camera.set_target(player)
 
 func _process(_delta: float) -> void:
@@ -28,7 +29,8 @@ func _process(_delta: float) -> void:
 	debug_state.set_player_mode("Driving" if player.get_state_name() == ActorState.DRIVING else "On Foot")
 	debug_state.set_interaction_hint(interaction_system.get_interaction_hint())
 	debug_state.set_speed(vehicle.velocity.length() * 0.18 if player.is_in_vehicle() else player.velocity.length() * 0.18)
-	debug_state.set_collision_state("Impact" if vehicle.get_slide_collision_count() > 0 else "Clear")
+	var collision_active: bool = vehicle.has_recent_collision() if player.is_in_vehicle() else player.has_recent_collision()
+	debug_state.set_collision_state("Impact" if collision_active else "Clear")
 
 func _on_enter_requested(target_vehicle: Node2D) -> void:
 	if not target_vehicle.can_enter():
