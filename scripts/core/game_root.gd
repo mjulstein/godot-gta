@@ -14,8 +14,8 @@ const ActorState = preload("res://scripts/core/actor_state.gd")
 @onready var interaction_system: Node = $VehicleInteractionSystem
 
 func _ready() -> void:
-	player.global_position = district.get_node("PlayerSpawn").global_position
-	vehicle.global_position = district.get_node("VehicleSpawn").global_position
+	player.global_position = district.get_node("Spawns/PlayerSpawn").global_position
+	vehicle.global_position = district.get_node("Spawns/VehicleSpawn").global_position
 
 	interaction_system.configure(player, player.get_node("InteractionSensor"))
 	interaction_system.enter_requested.connect(_on_enter_requested)

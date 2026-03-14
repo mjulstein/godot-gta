@@ -15,9 +15,7 @@ func configure(target_player: Node2D, world_district: Node2D, state: Node) -> vo
 	district = world_district
 	debug_state = state
 	spawn_markers.clear()
-	for child in district.get_children():
-		if child is Marker2D and child.has_method("get") and child.get("marker_kind") == "police_spawn":
-			spawn_markers.append(child)
+	_collect_police_spawn_markers(district)
 
 func handle_crime(event: Dictionary) -> void:
 	var value: int = event.get("wanted_value", 0)
@@ -87,3 +85,9 @@ func _cleanup_idle_police() -> void:
 	for unit in get_tree().get_nodes_in_group("police_unit"):
 		if unit.can_despawn():
 			unit.queue_free()
+
+func _collect_police_spawn_markers(node: Node) -> void:
+	for child in node.get_children():
+		if child is Marker2D and child.has_method("get") and child.get("marker_kind") == "police_spawn":
+			spawn_markers.append(child)
+		_collect_police_spawn_markers(child)
