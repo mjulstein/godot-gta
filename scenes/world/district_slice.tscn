@@ -1,0 +1,65 @@
+[gd_scene load_steps=7 format=3]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(280, 180)
+
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(900, 32)
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(32, 900)
+
+[node name="District" type="Node2D"]
+
+[node name="Ground" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-640, -360, 640, -360, 640, 360, -640, 360)
+color = Color(0.180392, 0.27451, 0.196078, 1)
+
+[node name="RoadHorizontal" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-640, -96, 640, -96, 640, 96, -640, 96)
+color = Color(0.203922, 0.223529, 0.25098, 1)
+
+[node name="RoadVertical" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-96, -360, 96, -360, 96, 360, -96, 360)
+color = Color(0.203922, 0.223529, 0.25098, 1)
+
+[node name="BuildingVisual" type="Polygon2D" parent="."]
+position = Vector2(220, -180)
+polygon = PackedVector2Array(-140, -90, 140, -90, 140, 90, -140, 90)
+color = Color(0.372549, 0.356863, 0.333333, 1)
+
+[node name="Building" type="StaticBody2D" parent="."]
+position = Vector2(220, -180)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Building"]
+shape = SubResource("1")
+
+[node name="TopWall" type="StaticBody2D" parent="."]
+position = Vector2(0, -344)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TopWall"]
+shape = SubResource("2")
+
+[node name="BottomWall" type="StaticBody2D" parent="."]
+position = Vector2(0, 344)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BottomWall"]
+shape = SubResource("2")
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+position = Vector2(-624, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
+shape = SubResource("3")
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+position = Vector2(624, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
+shape = SubResource("3")
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(-260, -24)
+
+[node name="VehicleSpawn" type="Marker2D" parent="."]
+position = Vector2(-120, 36)
