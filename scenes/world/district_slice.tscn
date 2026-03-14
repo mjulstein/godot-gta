@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/props/spawn_marker.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/world/props/traffic_barrier.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/actors/civilians/civilian_pedestrian.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/vehicles/civilian/traffic_vehicle.tscn" id="4"]
+[ext_resource type="Script" path="res://scripts/world/district_slice.gd" id="5"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(248, 156)
@@ -12,6 +13,7 @@ size = Vector2(248, 156)
 size = Vector2(216, 124)
 
 [node name="District" type="Node2D"]
+script = ExtResource("5")
 
 [node name="Ground" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-640, -360, 640, -360, 640, 360, -640, 360)
@@ -68,6 +70,26 @@ color = Color(0.862745, 0.87451, 0.901961, 1)
 [node name="RoadIntersection" type="Polygon2D" parent="Ground"]
 polygon = PackedVector2Array(-96, -96, 96, -96, 96, 96, -96, 96)
 color = Color(0.203922, 0.223529, 0.25098, 1)
+
+[node name="ClosureNorth" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-140, -140, 140, -140, 140, -96, -140, -96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ClosureSouth" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-140, 96, 140, 96, 140, 140, -140, 140)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ClosureEast" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(96, -140, 140, -140, 140, 140, 96, 140)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ClosureWest" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-140, -140, -96, -140, -96, 140, -140, 140)
+color = Color(0.564706, 0.576471, 0.592157, 1)
 
 [node name="SidewalkNorthWest" type="Polygon2D" parent="Ground"]
 polygon = PackedVector2Array(-640, -140, -96, -140, -96, -96, -640, -96)

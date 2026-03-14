@@ -3,7 +3,7 @@ extends Node2D
 const ActorState = preload("res://scripts/core/actor_state.gd")
 
 @onready var debug_state: Node = $DebugState
-@onready var district: Node2D = $District
+@onready var world: Node2D = $World
 @onready var player = $Player
 @onready var vehicle = $CivilianVehicle
 @onready var crime_system: Node = $CrimeSystem
@@ -14,8 +14,12 @@ const ActorState = preload("res://scripts/core/actor_state.gd")
 @onready var interaction_system: Node = $VehicleInteractionSystem
 
 func _ready() -> void:
-	player.global_position = district.get_node("Spawns/PlayerSpawn").global_position
-	vehicle.global_position = district.get_node("Spawns/VehicleSpawn").global_position
+	var player_spawn := _find_spawn_marker("player_spawn")
+	var vehicle_spawn := _find_spawn_marker("vehicle_spawn")
+	if player_spawn != null:
+		player.global_position = player_spawn.global_position
+	if vehicle_spawn != null:
+		vehicle.global_position = vehicle_spawn.global_position
 
 	interaction_system.configure(player, player.get_node("InteractionSensor"))
 	interaction_system.enter_requested.connect(_on_enter_requested)
@@ -23,11 +27,11 @@ func _ready() -> void:
 	player.civilian_assaulted.connect(_on_player_civilian_assaulted)
 	vehicle.civilian_hit.connect(_on_vehicle_civilian_hit)
 	crime_system.crime_reported.connect(wanted_system.handle_crime)
-	wanted_system.configure(player, district, debug_state)
+	wanted_system.configure(player, world, debug_state)
 
 	debug_overlay.set_debug_state(debug_state)
 	interaction_prompt.set_debug_state(debug_state)
-	camera.set_world_bounds(Rect2(Vector2(-624, -344), Vector2(1248, 688)))
+	camera.set_world_bounds(_compute_world_bounds())
 	camera.set_target(player)
 
 func _process(_delta: float) -> void:
@@ -60,3 +64,31 @@ func _on_vehicle_civilian_hit(target: Node2D) -> void:
 	if not player.is_in_vehicle():
 		return
 	crime_system.report_harmful_collision(vehicle, target)
+
+func _find_spawn_marker(marker_kind: String) -> Marker2D:
+	return _find_spawn_marker_in_node(world, marker_kind)
+
+func _find_spawn_marker_in_node(node: Node, marker_kind: String) -> Marker2D:
+	for child in node.get_children():
+		if child is Marker2D and child.has_method("get") and child.get("marker_kind") == marker_kind:
+			return child
+		var nested := _find_spawn_marker_in_node(child, marker_kind)
+		if nested != null:
+			return nested
+	return null
+
+func _compute_world_bounds() -> Rect2:
+	var children := world.get_children()
+	if children.is_empty():
+		return Rect2(Vector2(-624, -344), Vector2(1248, 688))
+	var min_corner := Vector2(INF, INF)
+	var max_corner := Vector2(-INF, -INF)
+	for child in children:
+		if not (child is Node2D):
+			continue
+		var node := child as Node2D
+		min_corner.x = minf(min_corner.x, node.global_position.x - 640.0)
+		min_corner.y = minf(min_corner.y, node.global_position.y - 360.0)
+		max_corner.x = maxf(max_corner.x, node.global_position.x + 640.0)
+		max_corner.y = maxf(max_corner.y, node.global_position.y + 360.0)
+	return Rect2(min_corner, max_corner - min_corner)
