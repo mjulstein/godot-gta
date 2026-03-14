@@ -40,13 +40,13 @@ Manual validation reference:
 
 ## Next Target
 
-Stabilize and tune User Story 2 before starting missions:
+Stabilize and tune User Story 2 before promoting any new feature ideas into active scope:
 
 1. Tune camera framing, zoom-delay, and driving look-ahead feel through manual play
 2. Tune civilian spacing, witness radius, and wanted decay timing
 3. Improve police pursuit behavior and spawn selection across multiple district tiles
 4. Decide whether wanted UI stays debug-first or gains lightweight HUD treatment
-5. Start User Story 3 mission scaffolding once the pursuit loop is repeatable
+5. Move future mission concepts into `specs/ideas/` until they are ready for a dedicated feature spec
 
 Primary task source:
 
@@ -62,6 +62,6 @@ Primary task source:
 ## Open Decisions
 
 - Whether civilians should stay on simple rail movement or switch to waypoint logic
-- Whether police should remain on-foot in US2 or gain vehicle pursuit before US3
+- Whether police should remain on-foot in the current slice or gain vehicle pursuit in a later slice
 - Whether the ASCII world layout should move into data files or stay scene-export driven
-- Whether wanted-state UI should stay debug-first or gain a player-facing HUD treatment in US2
+- Whether wanted-state UI should stay debug-first or gain a player-facing HUD treatment in the current slice

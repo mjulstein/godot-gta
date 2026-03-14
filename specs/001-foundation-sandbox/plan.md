@@ -7,7 +7,7 @@
 
 ## Summary
 
-Build the first playable vertical slice of an original top-down crime sandbox in Godot 4.x. The slice will focus on one compact district with responsive on-foot movement, vehicle entry and driving, basic civilian street life, a wanted-level loop with police pursuit, and one short prototype mission. The implementation approach is to keep the world small, split gameplay into clearly bounded systems, and prefer data-driven tuning and debug tooling over broad content scope.
+Build the first playable vertical slice of an original top-down crime sandbox in Godot 4.x. The slice will focus on one compact district with responsive on-foot movement, vehicle entry and driving, basic civilian street life, and a wanted-level loop with police pursuit. The implementation approach is to keep the world small, split gameplay into clearly bounded systems, and prefer data-driven tuning and debug tooling over broad content scope.
 
 ## Technical Context
 
@@ -19,7 +19,7 @@ Build the first playable vertical slice of an original top-down crime sandbox in
 **Project Type**: Single Godot game project  
 **Performance Goals**: Smooth gameplay at 60 FPS in the prototype district with active traffic, pedestrians, and limited police pursuit  
 **Constraints**: Top-down readability must remain high, all content must be original, first slice must stay small enough to implement without procedural generation or streaming  
-**Scale/Scope**: One playable district, one player avatar, one drivable civilian vehicle type minimum, one police vehicle or police actor response loop minimum, one end-to-end mission
+**Scale/Scope**: One playable district, one player avatar, one drivable civilian vehicle type minimum, one police vehicle or police actor response loop minimum
 
 ## Constitution Check
 
@@ -27,9 +27,9 @@ Build the first playable vertical slice of an original top-down crime sandbox in
 
 - `Feel-First Top-Down Gameplay`: Pass. The slice centers on movement, driving, collisions, and pursuit readability from an overhead camera.
 - `Original World, Not Asset-Level Imitation`: Pass. The plan assumes original placeholder names, factions, UI text, and art direction only.
-- `Small Vertical Slices Over Broad Scope`: Pass. Scope is intentionally limited to one district and one mission loop.
-- `Data-Driven Systems Where It Matters`: Pass. Vehicle tuning, wanted escalation, spawn weights, and mission parameters will be resource-driven where practical.
-- `Playtestable, Debuggable, Maintainable`: Pass with explicit debug work included for actor state, wanted state, and mission state.
+- `Small Vertical Slices Over Broad Scope`: Pass. Scope is intentionally limited to one district and the core sandbox loop.
+- `Data-Driven Systems Where It Matters`: Pass. Vehicle tuning, wanted escalation, and spawn weights will be resource-driven where practical.
+- `Playtestable, Debuggable, Maintainable`: Pass with explicit debug work included for actor state, wanted state, and spawn diagnostics.
 
 No constitution violations are currently expected.
 
@@ -39,7 +39,7 @@ No constitution violations are currently expected.
 - Decide how vehicle handling and on-foot movement should share or separate control abstractions.
 - Decide the simplest police pursuit model that feels responsive without requiring a full traffic simulation.
 - Decide which gameplay values should be stored in `.tres` resources versus script constants in the initial implementation.
-- Define a low-overhead debug overlay for actor state, wanted state, mission state, and spawn diagnostics.
+- Define a low-overhead debug overlay for actor state, wanted state, and spawn diagnostics.
 
 Research output: [specs/001-foundation-sandbox/research.md](specs/001-foundation-sandbox/research.md)
 
@@ -48,7 +48,7 @@ Research output: [specs/001-foundation-sandbox/research.md](specs/001-foundation
 ### System Breakdown
 
 1. District Slice
-Create one compact city district with roads, sidewalks, collision, mission anchors, spawn points, and camera-safe sightlines.
+Create one compact city district with roads, sidewalks, collision, spawn points, and camera-safe sightlines.
 
 2. Player Controller
 Implement top-down on-foot movement, interaction prompts, actor state transitions, and health or defeat hooks needed by future systems.
@@ -65,11 +65,8 @@ Track criminal actions, witnesses, escalation, de-escalation, and police dispatc
 6. Police Response
 Spawn police units, navigate them toward the player, and support search or pursuit behavior that works in the prototype district.
 
-7. Mission Prototype
-Implement one short objective loop with briefing, activation, completion, failure, and reward resolution.
-
-8. Debug and Tuning Tools
-Expose current actor state, wanted level, mission state, and spawn information in a development-only overlay or inspector-friendly format.
+7. Debug and Tuning Tools
+Expose current actor state, wanted level, and spawn information in a development-only overlay or inspector-friendly format.
 
 ### Deliverables
 
@@ -111,7 +108,6 @@ scenes/
 ├── vehicles/
 │   ├── civilian/
 │   └── police/
-├── missions/
 └── ui/
 
 scripts/
@@ -124,7 +120,6 @@ scripts/
 
 data/
 ├── tuning/
-├── missions/
 └── districts/
 
 assets/
@@ -155,18 +150,18 @@ tests/
 - Add wanted-level escalation and police spawning.
 - Verify the player can trigger and clear a wanted state through repeatable manual tests.
 
-### Milestone 3: Mission Loop and Tooling
+### Milestone 3: Stability, Tuning, and Validation
 
-- Add one prototype mission with clear activation and failure conditions.
-- Ensure mission-critical objects persist or fail gracefully.
-- Add debug overlay and tuning resources.
-- Run end-to-end slice tests for free-roam, pursuit, and mission completion.
+- Tune camera, wanted, and police behavior.
+- Improve district readability and collision cleanup.
+- Add debug overlay refinements and tuning resources.
+- Run end-to-end slice tests for free-roam and pursuit.
 
 ## Risk Management
 
 - `Vehicle feel risk`: A weak handling model can make the entire prototype feel wrong. Mitigation: tune one vehicle deeply before adding variety.
 - `AI complexity risk`: Civilian and police behaviors can grow too complex too early. Mitigation: use state machines with short behavior lists and district-specific assumptions.
-- `Scope risk`: Open-world features can expand quickly. Mitigation: reject additional districts, factions, or weapon breadth until the first mission loop is fun.
+- `Scope risk`: Open-world features can expand quickly. Mitigation: reject additional districts, factions, missions, or weapon breadth until the first sandbox loop is stable.
 - `Readability risk`: Top-down action can become visually muddy. Mitigation: test camera distance, actor silhouettes, and collision feedback before adding visual detail.
 
 ## Complexity Tracking

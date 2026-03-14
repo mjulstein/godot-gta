@@ -32,15 +32,8 @@ Boot a Godot project that can demonstrate the first crime-sandbox slice describe
 5. Add pause-time palette/debug support for actor role readability.
 6. Verify the player can trigger pursuit and later clear it.
 
-## Third Playable Checkpoint
-
-1. Add one short mission.
-2. Show mission objective state.
-3. Handle success and failure cleanly.
-4. Verify the mission works both with and without an active wanted state if supported by the design.
-
 ## Debug Expectations
 
-- Toggle a development overlay showing player mode, wanted level, police state count, and mission state.
+- Toggle a development overlay showing player mode, wanted level, and police state count.
 - Support a pause overlay that shows the current role palette.
 - Keep tuning data editable without rewriting scene logic.

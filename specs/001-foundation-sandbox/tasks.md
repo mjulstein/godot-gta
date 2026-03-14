@@ -36,10 +36,10 @@
 - [x] T006 Create shared actor state definitions in `scripts/core/actor_state.gd`
 - [x] T007 [P] Create reusable camera follow logic in `scripts/core/follow_camera.gd`
 - [x] T008 [P] Create interaction detection utilities in `scripts/core/interaction_sensor.gd`
-- [x] T009 Create tuning resources for player, vehicle, wanted, and mission values under `data/tuning/`
+- [x] T009 Create tuning resources for player, vehicle, and wanted values under `data/tuning/`
 - [x] T010 [P] Create the prototype district scene shell at `scenes/world/district_slice.tscn`
-- [x] T011 [P] Create spawn-point and mission-anchor marker scenes or scripts under `scenes/world/props/` and `scripts/core/`
-- [x] T012 Implement debug state plumbing for player mode, wanted level, and mission state in `scripts/core/debug_state.gd`
+- [x] T011 [P] Create spawn-point marker scenes or scripts under `scenes/world/props/` and `scripts/core/`
+- [x] T012 Implement debug state plumbing for player mode and wanted level in `scripts/core/debug_state.gd`
 
 **Checkpoint**: Project shell, shared systems, tuning resources, and debug foundations are ready
 
@@ -91,28 +91,7 @@
 
 ---
 
-## Phase 5: User Story 3 - Complete a short criminal objective loop (Priority: P3)
-
-**Goal**: Add one short mission that proves the sandbox supports objective-based progression
-
-**Independent Test**: Accept the mission, complete or fail it through normal play, and return to free-roam with the correct outcome state
-
-### Implementation for User Story 3
-
-- [ ] T033 [P] [US3] Create mission data resources under `data/missions/`
-- [ ] T034 [P] [US3] Create mission marker or objective scenes under `scenes/missions/`
-- [ ] T035 [US3] Implement mission state handling in `scripts/systems/mission_system.gd`
-- [ ] T036 [US3] Implement one prototype mission flow, such as steal-and-deliver, in `data/missions/` and `scripts/systems/mission_system.gd`
-- [ ] T037 [US3] Connect mission activation points and destinations in `scenes/world/district_slice.tscn`
-- [ ] T038 [US3] Add mission UI or debug state display in `scenes/ui/` and `scripts/ui/debug_overlay.gd`
-- [ ] T039 [US3] Handle failure cases for actor defeat, vehicle destruction, abandonment, or timeout in `scripts/systems/mission_system.gd`
-- [ ] T040 [US3] Document end-to-end mission validation in `tests/manual/us3_mission_loop.md`
-
-**Checkpoint**: All three user stories are independently playable and form a coherent vertical slice
-
----
-
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 5: Polish & Cross-Cutting Concerns
 
 **Purpose**: Improve feel, readability, and handoff quality across the entire slice
 
@@ -120,7 +99,7 @@
 - [ ] T042 [P] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
 - [ ] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
 - [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
-- [ ] T045 Run full manual validation for US1, US2, and US3 and record results in `tests/manual/`
+- [ ] T045 Run full manual validation for US1 and US2 and record results in `tests/manual/`
 
 ---
 
@@ -132,22 +111,18 @@
 - **Foundational (Phase 2)**: Depends on Setup and blocks all story work
 - **User Story 1 (Phase 3)**: Starts after Foundational and defines the MVP
 - **User Story 2 (Phase 4)**: Starts after Foundational, but integrates best once US1 is playable
-- **User Story 3 (Phase 5)**: Starts after Foundational and depends on US1 being stable; benefits from US2 systems if mission pressure uses wanted logic
-- **Polish (Phase 6)**: Starts after desired user stories are implemented
+- **Polish (Phase 5)**: Starts after desired user stories are implemented
 
 ### User Story Dependencies
 
 - **US1**: No dependency on other stories after foundational work
 - **US2**: Depends on shared actor and vehicle systems; should build on US1 scenes and control flow
-- **US3**: Depends on the playable world from US1 and may optionally incorporate consequence systems from US2
-
 ### Parallel Opportunities
 
 - T003, T004, and T005 can run in parallel after project initialization
 - T007, T008, T010, and T011 can run in parallel in the foundational phase
 - T013, T014, and T016 can run in parallel for US1
 - T023 and T028 can run in parallel for US2
-- T033 and T034 can run in parallel for US3
 - Polish tuning and documentation tasks can be split once the slice is playable
 
 ## Implementation Strategy
@@ -163,10 +138,10 @@
 
 1. Deliver US1 as the first playable prototype
 2. Layer in US2 to add systemic consequence and replayability
-3. Add US3 to prove the sandbox can support mission-driven progression
+3. Stabilize and tune the sandbox loop before promoting additional feature ideas into active scope
 
 ## Notes
 
 - Prefer original placeholder art and names at every stage
 - Keep debug visibility high while systems are still forming
-- Resist adding extra districts, weapons, or factions before US1 through US3 are validated
+- Resist adding extra districts, weapons, factions, or mission systems before US1 and US2 are validated

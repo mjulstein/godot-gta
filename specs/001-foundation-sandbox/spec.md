@@ -40,26 +40,11 @@ As a player, I can commit simple crimes such as assaulting pedestrians, stealing
 
 ---
 
-### User Story 3 - Complete a short criminal objective loop (Priority: P3)
-
-As a player, I can accept and complete a short objective in the district, such as delivering a stolen vehicle or collecting a package under pressure, so that the prototype proves the sandbox can support mission structure.
-
-**Why this priority**: Once movement and law enforcement exist, a short objective loop validates that the game can become a full progression-based experience rather than only a toy sandbox.
-
-**Independent Test**: Start a new run, activate the prototype objective, follow its markers or instructions, complete it successfully or fail it, and return to free-roam.
-
-**Acceptance Scenarios**:
-
-1. **Given** the player is in free-roam, **When** the player activates the prototype objective, **Then** the objective displays clear goals and completion conditions.
-2. **Given** the player satisfies the objective conditions, **When** the final requirement is met, **Then** the game marks the objective complete, grants the configured reward, and returns the player to sandbox play.
-
 ### Edge Cases
 
 - What happens when the player tries to enter a vehicle that is moving, occupied, destroyed, or blocked by level geometry?
 - What happens when the active vehicle is flipped, trapped, submerged, or too damaged to continue?
-- How does the system handle the player dying, being busted, or abandoning a mission during an active wanted state?
 - How does police spawning behave when nearby roads are blocked or no valid spawn points are available near the player?
-- How does mission state recover if the player leaves the district bounds or the target vehicle is destroyed before delivery?
 
 ## Requirements *(mandatory)*
 
@@ -74,11 +59,9 @@ As a player, I can accept and complete a short objective in the district, such a
 - **FR-007**: The game MUST detect at least the following crime events: vehicle theft, pedestrian assault, and harmful collisions involving civilians.
 - **FR-008**: The game MUST track a wanted state that can increase from crime events and decrease when pursuit conditions are no longer met.
 - **FR-009**: Police units MUST be able to spawn, navigate toward the player, and apply pressure appropriate to the current wanted state.
-- **FR-010**: The game MUST provide a prototype mission system supporting one complete objective flow with briefing, active state, success state, and failure state.
-- **FR-011**: Mission-critical actors and objects MUST persist reliably for the duration of an active objective or fail gracefully with a clear reason.
-- **FR-012**: The game MUST expose debugging aids for at least actor state, wanted state, and mission state during development builds.
-- **FR-013**: The project MUST use original placeholder or final content for art, naming, UI text, audio, and narrative elements rather than copied GTA assets.
-- **FR-014**: Core gameplay tuning values for movement, driving, police escalation, and mission parameters SHOULD be editable without rewriting core system logic.
+- **FR-010**: The game MUST expose debugging aids for at least actor state and wanted state during development builds.
+- **FR-011**: The project MUST use original placeholder or final content for art, naming, UI text, audio, and narrative elements rather than copied GTA assets.
+- **FR-012**: Core gameplay tuning values for movement, driving, and police escalation SHOULD be editable without rewriting core system logic.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -86,9 +69,8 @@ As a player, I can accept and complete a short objective in the district, such a
 - **Vehicle**: A drivable world actor with seat availability, handling values, damage state, occupancy state, and ownership or faction context.
 - **Civilian Actor**: A pedestrian or non-police vehicle participant used to populate the city and act as witnesses, traffic, or incidental hazards.
 - **Police Unit**: A law-enforcement actor with patrol, search, and pursuit state, spawn rules, escalation level, and target tracking behavior.
-- **Crime Event**: A recorded gameplay event that may affect wanted level, witness response, mission state, and police dispatch behavior.
-- **Mission Instance**: The active objective record including briefing text, target entities, timers, success or failure conditions, and reward output.
-- **District Slice**: The playable city area including roads, intersections, spawn points, mission anchors, and navigation constraints.
+- **Crime Event**: A recorded gameplay event that may affect wanted level, witness response, and police dispatch behavior.
+- **District Slice**: The playable city area including roads, intersections, spawn points, and navigation constraints.
 
 ## Success Criteria *(mandatory)*
 
@@ -97,5 +79,4 @@ As a player, I can accept and complete a short objective in the district, such a
 - **SC-001**: A new player can begin a run, move on foot, enter a vehicle, and drive within 60 seconds of launching the playable scene.
 - **SC-002**: In manual playtests, the police response triggers correctly for the defined crime set in at least 9 out of 10 attempts.
 - **SC-003**: In manual playtests, the wanted state can be both escalated and cleared without restarting the scene in at least 9 out of 10 attempts.
-- **SC-004**: The prototype mission can be completed from start to finish in under 5 minutes by a tester familiar with the controls.
-- **SC-005**: At least 80% of internal playtest notes for the first vertical slice rate movement, driving, and camera readability as clear enough to continue building on.
+- **SC-004**: At least 80% of internal playtest notes for the first vertical slice rate movement, driving, camera readability, and pursuit clarity as clear enough to continue building on.

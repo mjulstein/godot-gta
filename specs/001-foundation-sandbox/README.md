@@ -4,6 +4,8 @@
 
 This directory contains the active feature documents for the foundation sandbox slice.
 
+Mission or progression ideas that are not ready for committed scope should live in [specs/ideas](../ideas/README.md) until they are ready to be promoted into a numbered feature spec.
+
 Artifacts:
 
 - [spec.md](./spec.md)

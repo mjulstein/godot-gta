@@ -11,7 +11,6 @@
 - `health_state`
 - `interaction_target`
 - `wanted_level`
-- `active_mission_id`
 
 ## Vehicle
 
@@ -55,21 +54,10 @@
 - `witness_count`
 - `wanted_value`
 
-## Mission Instance
-
-- `mission_id`
-- `mission_type`
-- `state`: available, active, success, failed
-- `objective_targets`
-- `timer_state`
-- `reward_definition`
-- `failure_reason`
-
 ## District Slice
 
 - `district_id`
 - `spawn_points`
-- `mission_anchors`
 - `road_graph`
 - `police_spawn_zones`
 - `civilian_spawn_zones`
@@ -78,5 +66,4 @@
 
 - One `Player Actor` may control one `Vehicle` at a time.
 - `Crime Event` objects modify player wanted state and may trigger `Police Unit` responses.
-- One active `Mission Instance` may depend on a specific `Vehicle`, actor, or destination marker.
-- The `District Slice` owns the placement data needed by civilians, police, and missions.
+- The `District Slice` owns the placement data needed by civilians and police.

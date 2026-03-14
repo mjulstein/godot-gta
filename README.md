@@ -17,6 +17,7 @@ Current implemented baseline:
 - debug overlay
 - pause palette overlay
 - first-pass civilian, wanted, and police response loop
+- idea backlog for future features before they become active specs
 
 ## Role Key
 
@@ -37,6 +38,7 @@ The in-game palette key is a separate overlay with shaped icons instead of plain
 - [Feature spec](./specs/001-foundation-sandbox/spec.md)
 - [Implementation plan](./specs/001-foundation-sandbox/plan.md)
 - [Tasks](./specs/001-foundation-sandbox/tasks.md)
+- [Idea backlog](./specs/ideas/README.md)
 
 ## Documentation Map
 
