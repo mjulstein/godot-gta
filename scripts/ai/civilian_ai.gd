@@ -16,11 +16,16 @@ var harmed_flash_remaining := 0.0
 var world_path_points := PackedVector2Array()
 var path_target_index := 1
 var path_direction := 1
+var default_collision_layer := 0
+var default_collision_mask := 0
 
 @onready var body_polygon: Polygon2D = $Body
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
 	anchor_position = global_position
+	default_collision_layer = collision_layer
+	default_collision_mask = collision_mask
 	movement_axis = movement_axis.normalized() if movement_axis != Vector2.ZERO else Vector2.RIGHT
 	add_to_group("civilian")
 	add_to_group("civilian_witness")
@@ -71,6 +76,10 @@ func set_world_path(points: PackedVector2Array) -> void:
 func set_path_active(is_active: bool) -> void:
 	visible = is_active
 	set_physics_process(is_active)
+	collision_layer = default_collision_layer if is_active else 0
+	collision_mask = default_collision_mask if is_active else 0
+	if collision_shape != null:
+		collision_shape.disabled = not is_active
 	if not is_active:
 		velocity = Vector2.ZERO
 
@@ -92,8 +101,26 @@ func _follow_world_path() -> void:
 		to_target = target_position - global_position
 
 	velocity = to_target.normalized() * move_speed if to_target.length() > 0.0 else Vector2.ZERO
+	if actor_type == "traffic" and velocity != Vector2.ZERO and _has_pedestrian_ahead(velocity.normalized()):
+		velocity = Vector2.ZERO
 	if velocity != Vector2.ZERO:
 		rotation = velocity.angle()
+
+func _has_pedestrian_ahead(direction_vector: Vector2) -> bool:
+	for candidate in get_tree().get_nodes_in_group("civilian_pedestrian"):
+		if candidate == self or not (candidate is Node2D):
+			continue
+		var pedestrian := candidate as Node2D
+		var offset: Vector2 = pedestrian.global_position - global_position
+		if offset.length() > 36.0:
+			continue
+		var forward_distance := direction_vector.dot(offset)
+		if forward_distance <= 0.0:
+			continue
+		var lateral_distance := absf(direction_vector.orthogonal().dot(offset))
+		if lateral_distance <= 18.0:
+			return true
+	return false
 
 func _get_body_color() -> Color:
 	if harmed_flash_remaining > 0.0:

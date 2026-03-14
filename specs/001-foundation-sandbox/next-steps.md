@@ -7,9 +7,9 @@
 The prototype now covers the first pass of User Story 2:
 
 - project boots in Godot 4.6+
-- world is generated from an ASCII-tiled base level with district and empty-ground tiles
+- world is generated from a layered ASCII-tiled base level with road, building, and activity maps
 - player can move on foot, steal the parked vehicle, and drive
-- civilian pedestrians and a traffic placeholder move through the active district tile
+- civilian pedestrians and traffic placeholders are spawned from activity overlays
 - witnessed crimes raise wanted level
 - police placeholders spawn and pursue on foot
 - wanted state decays after the player escapes pressure
@@ -47,6 +47,38 @@ Stabilize and tune User Story 2 before promoting any new feature ideas into acti
 3. Improve police pursuit behavior and spawn selection across multiple district tiles
 4. Decide whether wanted UI stays debug-first or gains lightweight HUD treatment
 5. Move future mission concepts into `specs/ideas/` until they are ready for a dedicated feature spec
+
+## Actor TODO
+
+Work one actor at a time until its baseline behavior is reliable before expanding scope again.
+
+### Traffic Cars
+
+- Keep all movement on lane paths with no grass drift
+- Keep rendering stable across tile transitions
+- Yield to pedestrians at crossings
+- Handle corners, tees, dead ends, and parking-lot entry or exit cleanly
+- Stop clipping or snagging on overlay collisions
+
+### Pedestrians
+
+- Stay on sidewalks and crosswalks only
+- Choose sensible turns at corners and intersections
+- Cross roads only on valid crossing paths
+- Avoid stepping into traffic lanes outside crossings
+
+### Police
+
+- Verify spawned police always move after creation
+- Verify police are not blocked by hidden or stale collisions
+- Improve pursuit routing across multi-tile streets
+- Confirm pressure logic matches visible chase state
+
+### Player Vehicle
+
+- Re-test road collisions after overlay and tile-profile changes
+- Re-check enter or exit flow near sidewalks, lots, and dead ends
+- Confirm no invisible blockers remain on drivable routes
 
 Primary task source:
 

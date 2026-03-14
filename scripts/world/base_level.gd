@@ -67,7 +67,8 @@ func _rebuild_tiles() -> void:
 	var building_map := _parse_density_rows(building_rows)
 	var activity_map := _parse_density_rows(activity_rows)
 	var district_tiles: Array[Node2D] = []
-	var district_layers: Array[Node] = []
+	var building_layers: Array[Node] = []
+	var activity_layers: Array[Node] = []
 	for row_index in range(rows.size()):
 		var row: String = rows[row_index]
 		for column_index in range(row.length()):
@@ -86,13 +87,27 @@ func _rebuild_tiles() -> void:
 				district_tiles.append(tile)
 				var building_density := _density_at(building_map, row_index, column_index)
 				var activity_density := _density_at(activity_map, row_index, column_index)
-				var overlays := _build_overlays(rows, row_index, column_index, building_density, activity_density)
-				district_layers.append_array(overlays)
+				if building_density > 0:
+					var building_overlay := _build_overlay(building_overlay_scene, "Buildings", rows, row_index, column_index)
+					if building_overlay != null:
+						building_overlay.set("building_density", building_density)
+						building_layers.append(building_overlay)
+				if activity_density > 0:
+					var activity_overlay := _build_overlay(activity_overlay_scene, "Activity", rows, row_index, column_index)
+					if activity_overlay != null:
+						activity_overlay.set("activity_density", activity_density)
+						activity_layers.append(activity_overlay)
 
 	for tile in district_tiles:
 		if tile.has_method("refresh_tile_profile"):
 			tile.refresh_tile_profile()
-	for layer in district_layers:
+
+	for layer in activity_layers:
+		add_child(layer)
+		if layer.has_method("refresh_overlay"):
+			layer.refresh_overlay()
+	for layer in building_layers:
+		add_child(layer)
 		if layer.has_method("refresh_overlay"):
 			layer.refresh_overlay()
 
@@ -158,22 +173,11 @@ func _apply_district_properties(tile: Node, rows: PackedStringArray, row_index: 
 	tile.set("west_span_tiles", _count_tiles(rows, row_index, column_index, 0, -1))
 	tile.set("east_span_tiles", _count_tiles(rows, row_index, column_index, 0, 1))
 
-func _build_overlays(rows: PackedStringArray, row_index: int, column_index: int, building_density: int, activity_density: int) -> Array[Node]:
-	var overlays: Array[Node] = []
-	if building_overlay_scene != null and building_density > 0:
-		var building_overlay := building_overlay_scene.instantiate()
-		building_overlay.position = Vector2(column_index * tile_size.x, row_index * tile_size.y)
-		building_overlay.name = "Tile_%d_%d_Buildings" % [column_index, row_index]
-		add_child(building_overlay)
-		_apply_district_properties(building_overlay, rows, row_index, column_index)
-		building_overlay.set("building_density", building_density)
-		overlays.append(building_overlay)
-	if activity_overlay_scene != null and activity_density > 0:
-		var activity_overlay := activity_overlay_scene.instantiate()
-		activity_overlay.position = Vector2(column_index * tile_size.x, row_index * tile_size.y)
-		activity_overlay.name = "Tile_%d_%d_Activity" % [column_index, row_index]
-		add_child(activity_overlay)
-		_apply_district_properties(activity_overlay, rows, row_index, column_index)
-		activity_overlay.set("activity_density", activity_density)
-		overlays.append(activity_overlay)
-	return overlays
+func _build_overlay(scene: PackedScene, suffix: String, rows: PackedStringArray, row_index: int, column_index: int) -> Node:
+	if scene == null:
+		return null
+	var overlay := scene.instantiate()
+	overlay.position = Vector2(column_index * tile_size.x, row_index * tile_size.y)
+	overlay.name = "Tile_%d_%d_%s" % [column_index, row_index, suffix]
+	_apply_district_properties(overlay, rows, row_index, column_index)
+	return overlay
