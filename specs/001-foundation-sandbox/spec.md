@@ -1,3 +1,5 @@
+[root](../../README.md) / [specs](../README.md) / [001-foundation-sandbox](./README.md) / spec.md
+
 # Feature Specification: Foundation Sandbox
 
 **Feature Branch**: `001-foundation-sandbox`  

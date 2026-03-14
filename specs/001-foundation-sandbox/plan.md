@@ -1,3 +1,5 @@
+[root](../../README.md) / [specs](../README.md) / [001-foundation-sandbox](./README.md) / plan.md
+
 # Implementation Plan: Foundation Sandbox
 
 **Branch**: `001-foundation-sandbox` | **Date**: 2026-03-14 | **Spec**: [specs/001-foundation-sandbox/spec.md](specs/001-foundation-sandbox/spec.md)

@@ -1,3 +1,5 @@
+[root](./README.md) / AGENTS.md
+
 # AGENTS.md
 
 ## Project Context

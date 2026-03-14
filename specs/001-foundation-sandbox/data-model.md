@@ -1,3 +1,5 @@
+[root](../../README.md) / [specs](../README.md) / [001-foundation-sandbox](./README.md) / data-model.md
+
 # Data Model: Foundation Sandbox
 
 ## Player Actor

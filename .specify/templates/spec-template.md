@@ -1,3 +1,5 @@
+[root](../../README.md) / [.specify](../README.md) / [templates](./README.md) / spec-template.md
+
 # Feature Specification: [FEATURE NAME]
 
 **Feature Branch**: `[###-feature-name]`  

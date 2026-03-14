@@ -1,3 +1,5 @@
+[root](../../README.md) / [specs](../README.md) / [001-foundation-sandbox](./README.md) / research.md
+
 # Research Notes: Foundation Sandbox
 
 ## Goal

@@ -1,3 +1,5 @@
+[root](../../README.md) / [.specify](../README.md) / [memory](./README.md) / constitution.md
+
 # Godot GTA Constitution
 
 ## Core Principles

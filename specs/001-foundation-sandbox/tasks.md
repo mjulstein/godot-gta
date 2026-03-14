@@ -1,3 +1,5 @@
+[root](../../README.md) / [specs](../README.md) / [001-foundation-sandbox](./README.md) / tasks.md
+
 # Tasks: Foundation Sandbox
 
 **Input**: Design documents from `/specs/001-foundation-sandbox/`
