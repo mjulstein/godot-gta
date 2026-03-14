@@ -30,6 +30,14 @@ If implementation diverges from these files, update the spec artifacts first or 
 - Before committing, scan changed files for usernames in paths, tokens, API keys, passwords, and other host-specific data.
 - Do not use a personal email address in Git author or committer metadata for this repository.
 
+## Read Order
+
+- Start with `AGENTS.md`.
+- Then read the active feature handoff at `specs/001-foundation-sandbox/next-steps.md`.
+- Then read `specs/001-foundation-sandbox/tasks.md`.
+- Read `spec.md` and `plan.md` only if the task requires deeper product or design context.
+- Read module `README.md` files only for the part of the codebase you are changing.
+
 ## Directory Guidance
 
 - `scenes/`: scene composition and reusable scene assets
