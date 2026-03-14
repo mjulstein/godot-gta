@@ -36,7 +36,8 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	var active_actor: Node2D = vehicle if player.is_in_vehicle() else player
-	camera.set_target(active_actor)
+	if camera.target != active_actor:
+		camera.set_target(active_actor)
 
 	debug_state.set_player_mode("Driving" if player.get_state_name() == ActorState.DRIVING else "On Foot")
 	debug_state.set_interaction_hint(interaction_system.get_interaction_hint())
