@@ -19,11 +19,11 @@
 
 **Purpose**: Initialize the Godot project and create the agreed repo structure
 
-- [ ] T001 Create the baseline Godot project files at `project.godot` and `icon.svg`
-- [ ] T002 Create the directory structure from the plan under `scenes/`, `scripts/`, `data/`, `assets/`, and `tests/`
-- [ ] T003 [P] Configure project input actions in `project.godot` for movement, interact, vehicle entry-exit, driving, pause, and debug overlay toggle
-- [ ] T004 [P] Create the root scene `scenes/main/game.tscn` and bootstrap script `scripts/core/game_root.gd`
-- [ ] T005 [P] Create a basic debug overlay scene at `scenes/ui/debug_overlay.tscn` and controller script `scripts/ui/debug_overlay.gd`
+- [x] T001 Create the baseline Godot project files at `project.godot` and `icon.svg`
+- [x] T002 Create the directory structure from the plan under `scenes/`, `scripts/`, `data/`, `assets/`, and `tests/`
+- [x] T003 [P] Configure project input actions in `project.godot` for movement, interact, vehicle entry-exit, driving, pause, and debug overlay toggle
+- [x] T004 [P] Create the root scene `scenes/main/game.tscn` and bootstrap script `scripts/core/game_root.gd`
+- [x] T005 [P] Create a basic debug overlay scene at `scenes/ui/debug_overlay.tscn` and controller script `scripts/ui/debug_overlay.gd`
 
 ---
 
@@ -33,13 +33,13 @@
 
 **⚠️ CRITICAL**: No user story work should begin until this phase is complete
 
-- [ ] T006 Create shared actor state definitions in `scripts/core/actor_state.gd`
-- [ ] T007 [P] Create reusable camera follow logic in `scripts/core/follow_camera.gd`
-- [ ] T008 [P] Create interaction detection utilities in `scripts/core/interaction_sensor.gd`
-- [ ] T009 Create tuning resources for player, vehicle, wanted, and mission values under `data/tuning/`
-- [ ] T010 [P] Create the prototype district scene shell at `scenes/world/district_slice.tscn`
-- [ ] T011 [P] Create spawn-point and mission-anchor marker scenes or scripts under `scenes/world/props/` and `scripts/core/`
-- [ ] T012 Implement debug state plumbing for player mode, wanted level, and mission state in `scripts/core/debug_state.gd`
+- [x] T006 Create shared actor state definitions in `scripts/core/actor_state.gd`
+- [x] T007 [P] Create reusable camera follow logic in `scripts/core/follow_camera.gd`
+- [x] T008 [P] Create interaction detection utilities in `scripts/core/interaction_sensor.gd`
+- [x] T009 Create tuning resources for player, vehicle, wanted, and mission values under `data/tuning/`
+- [x] T010 [P] Create the prototype district scene shell at `scenes/world/district_slice.tscn`
+- [x] T011 [P] Create spawn-point and mission-anchor marker scenes or scripts under `scenes/world/props/` and `scripts/core/`
+- [x] T012 Implement debug state plumbing for player mode, wanted level, and mission state in `scripts/core/debug_state.gd`
 
 **Checkpoint**: Project shell, shared systems, tuning resources, and debug foundations are ready
 
@@ -53,16 +53,16 @@
 
 ### Implementation for User Story 1
 
-- [ ] T013 [P] [US1] Build the first pass of roads, sidewalks, and blocking geometry in `scenes/world/district_slice.tscn`
-- [ ] T014 [P] [US1] Create the player scene at `scenes/actors/player/player.tscn`
-- [ ] T015 [US1] Implement top-down player movement and interaction logic in `scripts/actors/player/player_controller.gd`
-- [ ] T016 [P] [US1] Create the base vehicle scene at `scenes/vehicles/civilian/civilian_vehicle.tscn`
-- [ ] T017 [US1] Implement vehicle handling, occupancy, and damage basics in `scripts/vehicles/vehicle_controller.gd`
-- [ ] T018 [US1] Implement player enter-exit vehicle flow in `scripts/systems/vehicle_interaction_system.gd`
-- [ ] T019 [US1] Connect camera ownership switching between player and active vehicle in `scripts/core/follow_camera.gd`
-- [ ] T020 [US1] Add collision feedback hooks for props, walls, and vehicles in `scripts/vehicles/vehicle_controller.gd` and `scripts/actors/player/player_controller.gd`
-- [ ] T021 [US1] Wire the district, player, vehicle, camera, and debug overlay together in `scenes/main/game.tscn`
-- [ ] T022 [US1] Document the manual MVP validation flow in `tests/manual/us1_playable_core.md`
+- [x] T013 [P] [US1] Build the first pass of roads, sidewalks, and blocking geometry in `scenes/world/district_slice.tscn`
+- [x] T014 [P] [US1] Create the player scene at `scenes/actors/player/player.tscn`
+- [x] T015 [US1] Implement top-down player movement and interaction logic in `scripts/actors/player/player_controller.gd`
+- [x] T016 [P] [US1] Create the base vehicle scene at `scenes/vehicles/civilian/civilian_vehicle.tscn`
+- [x] T017 [US1] Implement vehicle handling, occupancy, and damage basics in `scripts/vehicles/vehicle_controller.gd`
+- [x] T018 [US1] Implement player enter-exit vehicle flow in `scripts/systems/vehicle_interaction_system.gd`
+- [x] T019 [US1] Connect camera ownership switching between player and active vehicle in `scripts/core/follow_camera.gd`
+- [x] T020 [US1] Add collision feedback hooks for props, walls, and vehicles in `scripts/vehicles/vehicle_controller.gd` and `scripts/actors/player/player_controller.gd`
+- [x] T021 [US1] Wire the district, player, vehicle, camera, and debug overlay together in `scenes/main/game.tscn`
+- [x] T022 [US1] Document the manual MVP validation flow in `tests/manual/us1_playable_core.md`
 
 **Checkpoint**: User Story 1 is playable and validates the basic GTA-style sandbox loop
 
