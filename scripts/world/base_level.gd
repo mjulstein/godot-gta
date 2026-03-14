@@ -53,8 +53,8 @@ func _rebuild_tiles() -> void:
 				continue
 
 			var tile := tile_scene.instantiate()
-			add_child(tile)
 			tile.position = Vector2(column_index * tile_size.x, row_index * tile_size.y)
+			add_child(tile)
 			tile.name = "Tile_%d_%d_%s" % [column_index, row_index, tile_code]
 
 			if tile_code == TILE_DISTRICT and tile.has_method("set"):
