@@ -79,17 +79,23 @@ func _find_spawn_marker_in_node(node: Node, marker_kind: String) -> Marker2D:
 	return null
 
 func _compute_world_bounds() -> Rect2:
+	var tile_size := Vector2(1280, 1280)
+	if world != null and world.has_method("get"):
+		var configured_size = world.get("tile_size")
+		if configured_size is Vector2:
+			tile_size = configured_size
 	var children := world.get_children()
 	if children.is_empty():
-		return Rect2(Vector2(-624, -344), Vector2(1248, 688))
+		return Rect2(-tile_size * 0.5, tile_size)
 	var min_corner := Vector2(INF, INF)
 	var max_corner := Vector2(-INF, -INF)
+	var half_tile := tile_size * 0.5
 	for child in children:
 		if not (child is Node2D):
 			continue
 		var node := child as Node2D
-		min_corner.x = minf(min_corner.x, node.global_position.x - 640.0)
-		min_corner.y = minf(min_corner.y, node.global_position.y - 360.0)
-		max_corner.x = maxf(max_corner.x, node.global_position.x + 640.0)
-		max_corner.y = maxf(max_corner.y, node.global_position.y + 360.0)
+		min_corner.x = minf(min_corner.x, node.global_position.x - half_tile.x)
+		min_corner.y = minf(min_corner.y, node.global_position.y - half_tile.y)
+		max_corner.x = maxf(max_corner.x, node.global_position.x + half_tile.x)
+		max_corner.y = maxf(max_corner.y, node.global_position.y + half_tile.y)
 	return Rect2(min_corner, max_corner - min_corner)

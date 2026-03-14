@@ -1,58 +1,65 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene format=3 uid="uid://blwnhmlmrwksd"]
 
-[ext_resource type="Script" path="res://scripts/core/game_root.gd" id="1"]
+[ext_resource type="Script" uid="uid://h6xp1xjdedct" path="res://scripts/core/game_root.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/world/base_level.tscn" id="2"]
-[ext_resource type="Script" path="res://scripts/core/debug_state.gd" id="3"]
-[ext_resource type="Script" path="res://scripts/core/follow_camera.gd" id="4"]
+[ext_resource type="Script" uid="uid://bjuwhc8nn03xx" path="res://scripts/core/debug_state.gd" id="3"]
+[ext_resource type="Script" uid="uid://cm3iokr28cej0" path="res://scripts/core/follow_camera.gd" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="5"]
 [ext_resource type="PackedScene" path="res://scenes/actors/player/player.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/vehicles/civilian/civilian_vehicle.tscn" id="7"]
-[ext_resource type="Script" path="res://scripts/systems/vehicle_interaction_system.gd" id="8"]
+[ext_resource type="Script" uid="uid://c1ljtue5po4re" path="res://scripts/systems/vehicle_interaction_system.gd" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/ui/interaction_prompt.tscn" id="9"]
-[ext_resource type="Script" path="res://scripts/systems/crime_system.gd" id="10"]
-[ext_resource type="Script" path="res://scripts/systems/wanted_system.gd" id="11"]
+[ext_resource type="Script" uid="uid://dohlv5px7yjv7" path="res://scripts/systems/crime_system.gd" id="10"]
+[ext_resource type="Script" uid="uid://c5l4lxjfm37br" path="res://scripts/systems/wanted_system.gd" id="11"]
 [ext_resource type="PackedScene" path="res://scenes/actors/police/police_officer.tscn" id="12"]
 [ext_resource type="Resource" path="res://data/tuning/wanted_tuning.tres" id="13"]
 [ext_resource type="PackedScene" path="res://scenes/ui/palette_overlay.tscn" id="14"]
-[ext_resource type="Script" path="res://scripts/ui/pause_controller.gd" id="15"]
+[ext_resource type="Script" uid="uid://rr6k7nvt35xj" path="res://scripts/ui/pause_controller.gd" id="15"]
 
-[node name="Game" type="Node2D"]
+[node name="Game" type="Node2D" unique_id=1520552413]
 script = ExtResource("1")
 
-[node name="World" parent="." instance=ExtResource("2")]
+[node name="World" parent="." unique_id=1831802107 instance=ExtResource("2")]
+tile_rows = "DDDDD00D
+DD0DDD0D
+D0DD0DDD
+DDDD0D00"
+building_rows = "66666601
+66066603
+60066666
+00006600"
 
-[node name="Player" parent="." instance=ExtResource("6")]
+[node name="Player" parent="." unique_id=1335328156 instance=ExtResource("6")]
 
-[node name="CivilianVehicle" parent="." instance=ExtResource("7")]
+[node name="CivilianVehicle" parent="." unique_id=599338923 instance=ExtResource("7")]
 rotation = -0.12
 
-[node name="DebugState" type="Node" parent="."]
+[node name="DebugState" type="Node" parent="." unique_id=1716799634]
 script = ExtResource("3")
 
-[node name="VehicleInteractionSystem" type="Node" parent="."]
+[node name="VehicleInteractionSystem" type="Node" parent="." unique_id=692986925]
 script = ExtResource("8")
 
-[node name="CrimeSystem" type="Node" parent="."]
+[node name="CrimeSystem" type="Node" parent="." unique_id=1894281714]
 script = ExtResource("10")
 
-[node name="WantedSystem" type="Node2D" parent="."]
+[node name="WantedSystem" type="Node2D" parent="." unique_id=12272423]
 script = ExtResource("11")
 tuning = ExtResource("13")
 police_scene = ExtResource("12")
 
-[node name="FollowCamera" type="Camera2D" parent="."]
-position_smoothing_enabled = false
+[node name="FollowCamera" type="Camera2D" parent="." unique_id=1418141166]
 zoom = Vector2(1.1, 1.1)
 script = ExtResource("4")
 
-[node name="Ui" type="CanvasLayer" parent="."]
+[node name="Ui" type="CanvasLayer" parent="." unique_id=989893489]
 
-[node name="DebugOverlay" parent="Ui" instance=ExtResource("5")]
+[node name="DebugOverlay" parent="Ui" unique_id=1373741442 instance=ExtResource("5")]
 
-[node name="InteractionPrompt" parent="Ui" instance=ExtResource("9")]
+[node name="InteractionPrompt" parent="Ui" unique_id=322975632 instance=ExtResource("9")]
 
-[node name="PaletteOverlay" parent="Ui" instance=ExtResource("14")]
+[node name="PaletteOverlay" parent="Ui" unique_id=1240934791 instance=ExtResource("14")]
 
-[node name="PauseController" type="Node" parent="Ui"]
+[node name="PauseController" type="Node" parent="Ui" unique_id=1265303728]
 script = ExtResource("15")
 overlay_path = NodePath("../PaletteOverlay")

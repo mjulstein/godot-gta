@@ -13,6 +13,9 @@ var anchor_position := Vector2.ZERO
 var direction := 1.0
 var pause_remaining := 0.0
 var harmed_flash_remaining := 0.0
+var world_path_points := PackedVector2Array()
+var path_target_index := 1
+var path_direction := 1
 
 @onready var body_polygon: Polygon2D = $Body
 
@@ -37,6 +40,11 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	if world_path_points.size() >= 2:
+		_follow_world_path()
+		move_and_slide()
+		return
+
 	var target_position := anchor_position + movement_axis * patrol_distance * direction
 	var to_target := target_position - global_position
 	if to_target.length() <= 6.0:
@@ -49,10 +57,43 @@ func _physics_process(delta: float) -> void:
 			rotation = velocity.angle()
 	move_and_slide()
 
+func set_world_path(points: PackedVector2Array) -> void:
+	world_path_points = points
+	if world_path_points.size() < 2:
+		path_target_index = 0
+		return
+
+	var start_distance := global_position.distance_to(world_path_points[0])
+	var end_distance := global_position.distance_to(world_path_points[world_path_points.size() - 1])
+	path_direction = 1 if start_distance <= end_distance else -1
+	path_target_index = world_path_points.size() - 1 if path_direction > 0 else 0
+
+func set_path_active(is_active: bool) -> void:
+	visible = is_active
+	set_physics_process(is_active)
+	if not is_active:
+		velocity = Vector2.ZERO
+
 func register_harm(source: Node2D) -> void:
 	harmed_flash_remaining = harmed_flash_time
 	pause_remaining = maxf(pause_remaining, 0.4)
 	harmed.emit(source)
+
+func _follow_world_path() -> void:
+	var target_position := world_path_points[path_target_index]
+	var to_target := target_position - global_position
+	if to_target.length() <= 6.0:
+		if path_target_index == world_path_points.size() - 1:
+			path_direction = -1
+		elif path_target_index == 0:
+			path_direction = 1
+		path_target_index = clampi(path_target_index + path_direction, 0, world_path_points.size() - 1)
+		target_position = world_path_points[path_target_index]
+		to_target = target_position - global_position
+
+	velocity = to_target.normalized() * move_speed if to_target.length() > 0.0 else Vector2.ZERO
+	if velocity != Vector2.ZERO:
+		rotation = velocity.angle()
 
 func _get_body_color() -> Color:
 	if harmed_flash_remaining > 0.0:

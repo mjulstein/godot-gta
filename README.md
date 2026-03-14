@@ -10,7 +10,7 @@ Current implemented baseline:
 
 - Godot project shell
 - root game scene
-- ASCII-tiled base world with district and empty-ground tiles
+- layered ASCII-tiled base world with road, building, and activity maps
 - player movement
 - drivable vehicle
 - follow camera with fixed viewport stretch, driving look-ahead, and speed-aware zoom
@@ -73,12 +73,17 @@ HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 
 ## World Layout
 
-The current world root is [base_level.tscn](./scenes/world/base_level.tscn), which builds the playable area from one-character ASCII tile bindings:
+The current world root is [base_level.tscn](./scenes/world/base_level.tscn), which builds the playable area from layered ASCII maps:
 
-- `D`: district slice
-- `0`: empty ground tile
+- `tile_rows`
+  - `D`: district road tile
+  - `0`: empty ground tile
+- `building_rows`
+  - `0` to `9`: building density by tile
+- `activity_rows`
+  - `0` to `9`: civilian and traffic density by tile
 
-Current default layout:
+Current default road layout:
 
 ```text
 DDDDDD00
@@ -86,3 +91,10 @@ DD0DDD00
 D000DDDD
 0000DD00
 ```
+
+Road tile profiles:
+
+- `4` connections: intersection
+- `3` connections: tee
+- `2` opposite connections: continuous straight road
+- `1` connection: dead-end road into a parking lot

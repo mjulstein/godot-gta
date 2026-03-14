@@ -17,7 +17,7 @@ Boot a Godot project that can demonstrate the first crime-sandbox slice describe
 ## First Playable Checkpoint
 
 1. Create `district_slice.tscn` with roads, sidewalks, collision, and parameterized road exits.
-2. Create `base_level.tscn` to assemble district tiles from one-character ASCII bindings.
+2. Create `base_level.tscn` to assemble district tiles from layered ASCII maps for roads, building density, and activity density.
 3. Add a player scene with top-down movement.
 4. Add one drivable parked vehicle.
 5. Add a camera that follows the current controlled actor and preserves the same framing across window sizes.

@@ -16,7 +16,7 @@ size = Vector2(216, 124)
 script = ExtResource("5")
 
 [node name="Ground" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(-640, -360, 640, -360, 640, 360, -640, 360)
+polygon = PackedVector2Array(-640, -640, 640, -640, 640, 640, -640, 640)
 color = Color(0.180392, 0.27451, 0.196078, 1)
 
 [node name="RoadWest" type="Polygon2D" parent="Ground"]
@@ -44,11 +44,11 @@ polygon = PackedVector2Array(96, -96, 140, -96, 140, 96, 96, 96)
 color = Color(0.862745, 0.87451, 0.901961, 1)
 
 [node name="RoadNorth" type="Polygon2D" parent="Ground"]
-polygon = PackedVector2Array(-96, -360, 96, -360, 96, -96, -96, -96)
+polygon = PackedVector2Array(-96, -640, 96, -640, 96, -96, -96, -96)
 color = Color(0.203922, 0.223529, 0.25098, 1)
 
 [node name="CenterStripe" type="Polygon2D" parent="Ground/RoadNorth"]
-polygon = PackedVector2Array(-5, -360, 5, -360, 5, -96, -5, -96)
+polygon = PackedVector2Array(-5, -640, 5, -640, 5, -96, -5, -96)
 color = Color(0.858824, 0.780392, 0.282353, 1)
 
 [node name="CrosswalkSouth" type="Polygon2D" parent="Ground/RoadNorth"]
@@ -56,11 +56,11 @@ polygon = PackedVector2Array(-96, -140, 96, -140, 96, -96, -96, -96)
 color = Color(0.862745, 0.87451, 0.901961, 1)
 
 [node name="RoadSouth" type="Polygon2D" parent="Ground"]
-polygon = PackedVector2Array(-96, 96, 96, 96, 96, 360, -96, 360)
+polygon = PackedVector2Array(-96, 96, 96, 96, 96, 640, -96, 640)
 color = Color(0.203922, 0.223529, 0.25098, 1)
 
 [node name="CenterStripe" type="Polygon2D" parent="Ground/RoadSouth"]
-polygon = PackedVector2Array(-5, 96, 5, 96, 5, 360, -5, 360)
+polygon = PackedVector2Array(-5, 96, 5, 96, 5, 640, -5, 640)
 color = Color(0.858824, 0.780392, 0.282353, 1)
 
 [node name="CrosswalkNorth" type="Polygon2D" parent="Ground/RoadSouth"]
@@ -70,6 +70,136 @@ color = Color(0.862745, 0.87451, 0.901961, 1)
 [node name="RoadIntersection" type="Polygon2D" parent="Ground"]
 polygon = PackedVector2Array(-96, -96, 96, -96, 96, 96, -96, 96)
 color = Color(0.203922, 0.223529, 0.25098, 1)
+
+[node name="StraightStripeVertical" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-5, -640, 5, -640, 5, 640, -5, 640)
+color = Color(0.858824, 0.780392, 0.282353, 1)
+
+[node name="StraightStripeHorizontal" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-640, -5, 640, -5, 640, 5, -640, 5)
+color = Color(0.858824, 0.780392, 0.282353, 1)
+
+[node name="ParkingLotNorth" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-180, -96, 180, -96, 180, 220, -180, 220)
+color = Color(0.203922, 0.223529, 0.25098, 1)
+
+[node name="ParkingLotSouth" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-180, -220, 180, -220, 180, 96, -180, 96)
+color = Color(0.203922, 0.223529, 0.25098, 1)
+
+[node name="ParkingLotEast" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-220, -180, 96, -180, 96, 180, -220, 180)
+color = Color(0.203922, 0.223529, 0.25098, 1)
+
+[node name="ParkingLotWest" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-96, -180, 220, -180, 220, 180, -96, 180)
+color = Color(0.203922, 0.223529, 0.25098, 1)
+
+[node name="ParkingLotSidewalkNorthLeft" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-224, -96, -180, -96, -180, 220, -224, 220)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkNorthRight" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(180, -96, 224, -96, 224, 220, 180, 220)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkNorthBottom" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-224, 220, 224, 220, 224, 264, -224, 264)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkNorthEntryLeft" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-224, -140, -96, -140, -96, -96, -224, -96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkNorthEntryRight" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(96, -140, 224, -140, 224, -96, 96, -96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkSouthLeft" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-224, -220, -180, -220, -180, 96, -224, 96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkSouthRight" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(180, -220, 224, -220, 224, 96, 180, 96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkSouthTop" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-224, -264, 224, -264, 224, -220, -224, -220)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkSouthEntryLeft" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-224, 96, -96, 96, -96, 140, -224, 140)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkSouthEntryRight" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(96, 96, 224, 96, 224, 140, 96, 140)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkEastTop" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-220, -224, 96, -224, 96, -180, -220, -180)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkEastBottom" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-220, 180, 96, 180, 96, 224, -220, 224)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkEastLeft" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-264, -224, -220, -224, -220, 224, -264, 224)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkEastEntryTop" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-140, -224, -96, -224, -96, -96, -140, -96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkEastEntryBottom" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-140, 96, -96, 96, -96, 224, -140, 224)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkWestTop" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-96, -224, 220, -224, 220, -180, -96, -180)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkWestBottom" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-96, 180, 220, 180, 220, 224, -96, 224)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkWestRight" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(220, -224, 264, -224, 264, 224, 220, 224)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkWestEntryTop" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(96, -224, 140, -224, 140, -96, 96, -96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="ParkingLotSidewalkWestEntryBottom" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(96, 96, 140, 96, 140, 224, 96, 224)
+color = Color(0.564706, 0.576471, 0.592157, 1)
 
 [node name="ClosureNorth" type="Polygon2D" parent="Ground"]
 visible = false
@@ -91,6 +221,26 @@ visible = false
 polygon = PackedVector2Array(-140, -140, -96, -140, -96, 140, -140, 140)
 color = Color(0.564706, 0.576471, 0.592157, 1)
 
+[node name="StraightSidewalkWest" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-640, -96, -96, -96, -96, 96, -640, 96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="StraightSidewalkEast" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(96, -96, 640, -96, 640, 96, 96, 96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="StraightSidewalkNorth" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-96, -640, 96, -640, 96, -96, -96, -96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="StraightSidewalkSouth" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-96, 96, 96, 96, 96, 640, -96, 640)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
 [node name="SidewalkNorthWest" type="Polygon2D" parent="Ground"]
 polygon = PackedVector2Array(-640, -140, -96, -140, -96, -96, -640, -96)
 color = Color(0.564706, 0.576471, 0.592157, 1)
@@ -108,19 +258,19 @@ polygon = PackedVector2Array(96, 96, 640, 96, 640, 140, 96, 140)
 color = Color(0.564706, 0.576471, 0.592157, 1)
 
 [node name="SidewalkWestNorth" type="Polygon2D" parent="Ground"]
-polygon = PackedVector2Array(-140, -360, -96, -360, -96, -96, -140, -96)
+polygon = PackedVector2Array(-140, -640, -96, -640, -96, -96, -140, -96)
 color = Color(0.564706, 0.576471, 0.592157, 1)
 
 [node name="SidewalkWestSouth" type="Polygon2D" parent="Ground"]
-polygon = PackedVector2Array(-140, 96, -96, 96, -96, 360, -140, 360)
+polygon = PackedVector2Array(-140, 96, -96, 96, -96, 640, -140, 640)
 color = Color(0.564706, 0.576471, 0.592157, 1)
 
 [node name="SidewalkEastNorth" type="Polygon2D" parent="Ground"]
-polygon = PackedVector2Array(96, -360, 140, -360, 140, -96, 96, -96)
+polygon = PackedVector2Array(96, -640, 140, -640, 140, -96, 96, -96)
 color = Color(0.564706, 0.576471, 0.592157, 1)
 
 [node name="SidewalkEastSouth" type="Polygon2D" parent="Ground"]
-polygon = PackedVector2Array(96, 96, 140, 96, 140, 360, 96, 360)
+polygon = PackedVector2Array(96, 96, 140, 96, 140, 640, 96, 640)
 color = Color(0.564706, 0.576471, 0.592157, 1)
 
 [node name="Buildings" type="Node2D" parent="."]
