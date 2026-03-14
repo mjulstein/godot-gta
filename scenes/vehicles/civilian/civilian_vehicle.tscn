@@ -1,12 +1,19 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_controller.gd" id="1"]
+[ext_resource type="Resource" path="res://data/tuning/vehicle_tuning.tres" id="2"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(34, 18)
 
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(46, 26)
+
 [node name="CivilianVehicle" type="CharacterBody2D"]
 script = ExtResource("1")
+tuning = ExtResource("2")
+collision_layer = 4
+collision_mask = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("1")
@@ -18,3 +25,10 @@ color = Color(0.94902, 0.701961, 0.160784, 1)
 [node name="Cabin" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-8, -8, 8, -8, 10, 0, 8, 8, -8, 8)
 color = Color(0.14902, 0.188235, 0.247059, 1)
+
+[node name="EnterZone" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="EnterZone"]
+shape = SubResource("2")

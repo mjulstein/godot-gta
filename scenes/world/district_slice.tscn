@@ -1,4 +1,6 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/props/spawn_marker.tscn" id="1"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(280, 180)
@@ -23,15 +25,50 @@ color = Color(0.203922, 0.223529, 0.25098, 1)
 polygon = PackedVector2Array(-96, -360, 96, -360, 96, 360, -96, 360)
 color = Color(0.203922, 0.223529, 0.25098, 1)
 
+[node name="SidewalkNorth" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-640, -140, 640, -140, 640, -96, -640, -96)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="SidewalkSouth" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-640, 96, 640, 96, 640, 140, -640, 140)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="SidewalkWest" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-140, -360, -96, -360, -96, 360, -140, 360)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="SidewalkEast" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(96, -360, 140, -360, 140, 360, 96, 360)
+color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="CenterStripeA" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-640, -5, 640, -5, 640, 5, -640, 5)
+color = Color(0.858824, 0.780392, 0.282353, 1)
+
+[node name="CenterStripeB" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-5, -360, 5, -360, 5, 360, -5, 360)
+color = Color(0.858824, 0.780392, 0.282353, 1)
+
 [node name="BuildingVisual" type="Polygon2D" parent="."]
 position = Vector2(220, -180)
 polygon = PackedVector2Array(-140, -90, 140, -90, 140, 90, -140, 90)
 color = Color(0.372549, 0.356863, 0.333333, 1)
 
+[node name="BuildingVisualWest" type="Polygon2D" parent="."]
+position = Vector2(-270, 215)
+polygon = PackedVector2Array(-120, -70, 120, -70, 120, 70, -120, 70)
+color = Color(0.337255, 0.392157, 0.333333, 1)
+
 [node name="Building" type="StaticBody2D" parent="."]
 position = Vector2(220, -180)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Building"]
+shape = SubResource("1")
+
+[node name="BuildingWest" type="StaticBody2D" parent="."]
+position = Vector2(-270, 215)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BuildingWest"]
 shape = SubResource("1")
 
 [node name="TopWall" type="StaticBody2D" parent="."]
@@ -58,8 +95,10 @@ position = Vector2(624, 0)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
 shape = SubResource("3")
 
-[node name="PlayerSpawn" type="Marker2D" parent="."]
+[node name="PlayerSpawn" parent="." instance=ExtResource("1")]
 position = Vector2(-260, -24)
+marker_kind = "player_spawn"
 
-[node name="VehicleSpawn" type="Marker2D" parent="."]
+[node name="VehicleSpawn" parent="." instance=ExtResource("1")]
 position = Vector2(-120, 36)
+marker_kind = "vehicle_spawn"

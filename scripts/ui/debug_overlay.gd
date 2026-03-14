@@ -17,6 +17,7 @@ func _process(_delta: float) -> void:
 		"Mode: %s" % debug_state.player_mode,
 		"Hint: %s" % debug_state.interaction_hint,
 		"Speed: %.1f kph" % debug_state.speed_kph,
+		"Collision: %s" % debug_state.collision_state,
 		"Wanted: %d" % debug_state.wanted_level,
 		"Mission: %s" % debug_state.mission_state,
 		"",
