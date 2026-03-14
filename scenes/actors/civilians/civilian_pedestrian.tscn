@@ -15,5 +15,5 @@ collision_mask = 1
 shape = SubResource("1")
 
 [node name="Body" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(10, 0, 0, -10, -8, 0, 0, 10)
+polygon = PackedVector2Array(14, 0, -8, -8, -6, 0, -8, 8)
 color = Color(0.266667, 0.768627, 0.666667, 1)

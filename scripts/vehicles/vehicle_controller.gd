@@ -15,7 +15,7 @@ var impact_cooldowns: Dictionary = {}
 func _physics_process(delta: float) -> void:
 	collision_flash_remaining = maxf(0.0, collision_flash_remaining - delta)
 	_tick_impact_cooldowns(delta)
-	body_polygon.color = Color(1, 0.45, 0.35, 1) if collision_flash_remaining > 0.0 else Color(0.94902, 0.701961, 0.160784, 1)
+	body_polygon.color = Color(1, 0.2, 0.2, 1) if collision_flash_remaining > 0.0 else Color(1, 0.54902, 0.14902, 1)
 
 	var acceleration: float = 380.0 if tuning == null else tuning.acceleration
 	var brake_power: float = 440.0 if tuning == null else tuning.brake_power

@@ -56,7 +56,7 @@ func register_harm(source: Node2D) -> void:
 
 func _get_body_color() -> Color:
 	if harmed_flash_remaining > 0.0:
-		return Color(1, 0.42, 0.38, 1)
+		return Color(1, 0.2, 0.2, 1)
 	if actor_type == "pedestrian":
-		return Color(0.266667, 0.768627, 0.666667, 1)
-	return Color(0.34902, 0.619608, 0.909804, 1)
+		return Color(0.152941, 0.921569, 0.282353, 1)
+	return Color(0.105882, 0.760784, 1, 1)

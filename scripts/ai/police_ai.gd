@@ -36,7 +36,7 @@ func _physics_process(delta: float) -> void:
 		search_remaining = maxf(0.0, search_remaining - delta)
 		if search_remaining == 0.0:
 			velocity = Vector2.ZERO
-			body_polygon.color = Color(0.533333, 0.662745, 0.913725, 1)
+			body_polygon.color = Color(0.435294, 0.584314, 1, 1)
 			move_and_slide()
 			return
 
@@ -45,7 +45,7 @@ func _physics_process(delta: float) -> void:
 	velocity = Vector2.ZERO if to_target.length() < 8.0 else to_target.normalized() * move_speed
 	if velocity != Vector2.ZERO:
 		rotation = velocity.angle()
-	body_polygon.color = Color(0.356863, 0.486275, 0.866667, 1) if state == "chase" else Color(0.533333, 0.662745, 0.913725, 1)
+	body_polygon.color = Color(0.129412, 0.298039, 1, 1) if state == "chase" else Color(0.435294, 0.584314, 1, 1)
 	move_and_slide()
 
 func is_applying_pressure() -> bool:

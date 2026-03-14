@@ -26,4 +26,5 @@ func _process(_delta: float) -> void:
 		"WASD move / drive",
 		"E enter or exit vehicle",
 		"O toggle debug overlay",
+		"P pause + palette key",
 	])

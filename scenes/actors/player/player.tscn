@@ -19,7 +19,7 @@ shape = SubResource("1")
 
 [node name="Body" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(14, 0, -8, -8, -6, 0, -8, 8)
-color = Color(0.941176, 0.705882, 0.184314, 1)
+color = Color(0.976471, 0.956863, 0.278431, 1)
 
 [node name="InteractionSensor" type="Area2D" parent="."]
 monitoring = true

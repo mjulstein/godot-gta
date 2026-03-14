@@ -20,11 +20,11 @@ shape = SubResource("1")
 
 [node name="Body" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-18, -10, 16, -10, 18, 0, 16, 10, -18, 10)
-color = Color(0.94902, 0.701961, 0.160784, 1)
+color = Color(1, 0.54902, 0.14902, 1)
 
 [node name="Cabin" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-8, -8, 8, -8, 10, 0, 8, 8, -8, 8)
-color = Color(0.14902, 0.188235, 0.247059, 1)
+color = Color(0.101961, 0.109804, 0.145098, 1)
 
 [node name="EnterZone" type="Area2D" parent="."]
 collision_layer = 4

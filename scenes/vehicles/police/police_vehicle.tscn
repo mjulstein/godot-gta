@@ -12,8 +12,8 @@ shape = SubResource("1")
 
 [node name="Body" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-18, -10, 16, -10, 18, 0, 16, 10, -18, 10)
-color = Color(0.188235, 0.34902, 0.666667, 1)
+color = Color(0.0705882, 0.207843, 0.788235, 1)
 
 [node name="LightBar" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-8, -4, 8, -4, 8, 4, -8, 4)
-color = Color(0.878431, 0.882353, 0.913725, 1)
+color = Color(0.988235, 0.976471, 0.976471, 1)
