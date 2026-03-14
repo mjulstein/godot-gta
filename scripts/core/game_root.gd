@@ -8,6 +8,7 @@ const ActorState = preload("res://scripts/core/actor_state.gd")
 @onready var vehicle = $CivilianVehicle
 @onready var camera: Camera2D = $FollowCamera
 @onready var debug_overlay: Control = $Ui/DebugOverlay
+@onready var interaction_prompt = $Ui/InteractionPrompt
 @onready var interaction_system: Node = $VehicleInteractionSystem
 
 func _ready() -> void:
@@ -19,6 +20,7 @@ func _ready() -> void:
 	interaction_system.exit_requested.connect(_on_exit_requested)
 
 	debug_overlay.set_debug_state(debug_state)
+	interaction_prompt.set_debug_state(debug_state)
 	camera.set_world_bounds(Rect2(Vector2(-624, -344), Vector2(1248, 688)))
 	camera.set_target(player)
 

@@ -23,6 +23,13 @@ If implementation diverges from these files, update the spec artifacts first or 
 - Avoid mixing world composition with gameplay logic when a separate script can own the behavior.
 - Do not introduce copied GTA assets, names, UI, or story content.
 
+## Privacy And Repo Hygiene
+
+- Never commit absolute local filesystem paths, machine-specific config, local editor state, or secrets.
+- Prefer relative paths in documentation, scripts, and examples.
+- Before committing, scan changed files for usernames in paths, tokens, API keys, passwords, and other host-specific data.
+- Do not use a personal email address in Git author or committer metadata for this repository.
+
 ## Directory Guidance
 
 - `scenes/`: scene composition and reusable scene assets
