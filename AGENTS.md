@@ -20,6 +20,7 @@ If implementation diverges from these files, update the spec artifacts first or 
 - Commit before switching between spec work and code work.
 - Keep file and directory structure modular by domain.
 - Prefer short scripts with one responsibility over large scene scripts.
+- Prefer `git mv` over plain `mv` when relocating tracked files so history stays easier to follow.
 - Avoid mixing world composition with gameplay logic when a separate script can own the behavior.
 - Do not introduce copied GTA assets, names, UI, or story content.
 

@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://scripts/ai/traffic_ai.gd" id="1"]
-[ext_resource type="Resource" path="res://data/tuning/traffic_tuning.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd" id="1"]
+[ext_resource type="Resource" path="res://data/tuning/civilian_vehicle_tuning.tres" id="2"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(30, 16)

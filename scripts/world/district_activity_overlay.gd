@@ -2,7 +2,7 @@
 extends Node2D
 
 const CivilianScene = preload("res://scenes/actors/civilians/civilian_pedestrian.tscn")
-const TrafficScene = preload("res://scenes/vehicles/civilian/traffic_vehicle.tscn")
+const TrafficScene = preload("res://scenes/vehicles/civilian/civilian_vehicle_actor.tscn")
 
 @export_range(0, 9, 1) var activity_density := 0:
 	set(value):
@@ -34,40 +34,8 @@ const TrafficScene = preload("res://scenes/vehicles/civilian/traffic_vehicle.tsc
 		tile_world_size = value
 		_rebuild_if_ready()
 
-@export_range(0, 32, 1) var north_span_tiles := 0:
-	set(value):
-		north_span_tiles = value
-		_rebuild_if_ready()
-
-@export_range(0, 32, 1) var south_span_tiles := 0:
-	set(value):
-		south_span_tiles = value
-		_rebuild_if_ready()
-
-@export_range(0, 32, 1) var east_span_tiles := 0:
-	set(value):
-		east_span_tiles = value
-		_rebuild_if_ready()
-
-@export_range(0, 32, 1) var west_span_tiles := 0:
-	set(value):
-		west_span_tiles = value
-		_rebuild_if_ready()
-
-const ROAD_HALF_WIDTH := 96.0
 const SIDEWALK_OFFSET := 118.0
 const CROSSWALK_OFFSET := 140.0
-const INNER_LANE_OFFSET := 28.0
-const OUTER_LANE_OFFSET := 68.0
-const SPAWN_MARGIN := 192.0
-const CROSSWALK_CLEAR_OFFSET := 120.0
-const INTERSECTION_ENTRY_OFFSET := 76.0
-const LEFT_TURN_ENTRY_OFFSET := 32.0
-const LEFT_TURN_START_OFFSET := 44.0
-const U_TURN_SWEEP_OFFSET := 24.0
-const ROUTE_SAMPLE_STEP := 24.0
-const TURN_ARC_STEPS := 6
-const ROUTE_EDGE_INSET := 24.0
 const PROFILE_STRAIGHT_HORIZONTAL := "straight_horizontal"
 const PROFILE_STRAIGHT_VERTICAL := "straight_vertical"
 const PROFILE_DEAD_END_NORTH := "dead_end_north"
@@ -108,6 +76,8 @@ func _add_pedestrian(path: PackedVector2Array) -> void:
 	var actor = CivilianScene.instantiate()
 	actor.position = to_local(path[0])
 	add_child(actor)
+	if Engine.is_editor_hint():
+		return
 	if actor.has_method("set_world_path"):
 		actor.call("set_world_path", path)
 	if actor.has_method("set_path_active"):
@@ -116,6 +86,8 @@ func _add_pedestrian(path: PackedVector2Array) -> void:
 func _add_traffic(route_data: Dictionary) -> void:
 	var actor = TrafficScene.instantiate()
 	add_child(actor)
+	if Engine.is_editor_hint():
+		return
 	if actor.has_method("initialize_runtime_spawn"):
 		actor.call(
 			"initialize_runtime_spawn",
@@ -201,7 +173,6 @@ func _select_traffic_routes(candidates: Array[Dictionary]) -> Array[Dictionary]:
 
 	if selected.size() < spawn_count:
 		var blocked_ids := _selected_ids(selected)
-
 		var second_choice := _pick_candidate(straight_candidates, preferred_heading, blocked_ids)
 		if second_choice.is_empty():
 			second_choice = _pick_candidate(turning_candidates, "", blocked_ids)
@@ -216,84 +187,6 @@ func _select_traffic_routes(candidates: Array[Dictionary]) -> Array[Dictionary]:
 			break
 		selected.append(fallback)
 	return selected
-
-func _build_route(heading: String, lane: String, action: String) -> PackedVector2Array:
-	match action:
-		"straight":
-			return _build_straight_route(heading, lane)
-		"left":
-			return _build_turn_route(heading, lane, _get_left_heading(heading), "left", "left")
-		"right":
-			return _build_turn_route(heading, lane, _get_right_heading(heading), "right", "right")
-		"uturn":
-			return _build_u_turn_route(heading)
-		"merge_left_uturn":
-			return _build_merge_left_u_turn_route(heading)
-		_:
-			return PackedVector2Array()
-
-func _build_straight_route(heading: String, lane: String) -> PackedVector2Array:
-	return _sample_route([
-		_get_spawn_point(heading, lane),
-		_get_crosswalk_clear_point(heading, lane),
-		_get_crosswalk_clear_point(heading, lane, true),
-		_get_despawn_point(heading, lane),
-	])
-
-func _build_turn_route(heading: String, lane: String, exit_heading: String, exit_lane: String, turn_direction: String) -> PackedVector2Array:
-	var entry_point := _get_intersection_entry_point(heading, lane, false, _turn_entry_offset(turn_direction))
-	var exit_entry_point := _get_intersection_entry_point(exit_heading, exit_lane, true)
-	var exit_clear_point := _get_crosswalk_clear_point(exit_heading, exit_lane, true)
-	var points: Array[Vector2] = [
-		_get_spawn_point(heading, lane),
-		_get_crosswalk_clear_point(heading, lane),
-	]
-	if turn_direction == "left":
-		var turn_start := _get_intersection_entry_point(heading, lane, true, LEFT_TURN_START_OFFSET)
-		if points[points.size() - 1].distance_to(turn_start) > 8.0:
-			points.append(turn_start)
-		points.append_array(_build_turn_arc_points(heading, lane, exit_heading, exit_lane, turn_direction, turn_start, exit_entry_point))
-	else:
-		if points[points.size() - 1].distance_to(entry_point) > 8.0:
-			points.append(entry_point)
-		points.append_array(_build_turn_arc_points(heading, lane, exit_heading, exit_lane, turn_direction, entry_point, exit_clear_point))
-	points.append_array([
-		exit_clear_point,
-		_get_despawn_point(exit_heading, exit_lane),
-	])
-	return _sample_route(points)
-
-func _build_u_turn_route(heading: String) -> PackedVector2Array:
-	var exit_heading := _get_opposite_heading(heading)
-	var exit_lane := "right"
-	var points: Array[Vector2] = [
-		_get_spawn_point(heading, "left"),
-		_get_crosswalk_clear_point(heading, "left"),
-		_get_intersection_entry_point(heading, "left", false),
-	]
-	points.append_array(_build_u_turn_arc_points(heading, exit_heading, exit_lane))
-	points.append_array([
-		_get_crosswalk_clear_point(exit_heading, exit_lane, true),
-		_get_despawn_point(exit_heading, exit_lane),
-	])
-	return _sample_route(points)
-
-func _build_merge_left_u_turn_route(heading: String) -> PackedVector2Array:
-	var left_merge_point := _get_merge_point(heading, "right", "left")
-	var points: Array[Vector2] = [
-		_get_spawn_point(heading, "right"),
-		_get_crosswalk_clear_point(heading, "right"),
-		left_merge_point,
-		_get_intersection_entry_point(heading, "left", false),
-	]
-	var exit_heading := _get_opposite_heading(heading)
-	var exit_lane := "right"
-	points.append_array(_build_u_turn_arc_points(heading, exit_heading, exit_lane))
-	points.append_array([
-		_get_crosswalk_clear_point(exit_heading, exit_lane, true),
-		_get_despawn_point(exit_heading, exit_lane),
-	])
-	return _sample_route(points)
 
 func _can_enter_heading(heading: String) -> bool:
 	return _is_side_open(_get_entry_side_for_heading(heading))
@@ -319,108 +212,8 @@ func _allowed_actions(heading: String, lane: String) -> PackedStringArray:
 		actions.append("right")
 	return actions
 
-func _get_spawn_point(heading: String, lane: String) -> Vector2:
-	return _point_for_heading(heading, lane, _entry_travel_extent_for_heading(heading))
-
-func _get_despawn_point(heading: String, lane: String) -> Vector2:
-	return _point_for_heading(heading, lane, _exit_travel_extent_for_heading(heading), true)
-
-func _get_crosswalk_clear_point(heading: String, lane: String, use_exit_side := false) -> Vector2:
-	return _point_for_heading(heading, lane, CROSSWALK_CLEAR_OFFSET, use_exit_side)
-
-func _get_intersection_entry_point(heading: String, lane: String, use_exit_side: bool, axis_offset := INTERSECTION_ENTRY_OFFSET) -> Vector2:
-	return _point_for_heading(heading, lane, axis_offset, use_exit_side)
-
-func _get_merge_point(heading: String, from_lane: String, to_lane: String) -> Vector2:
-	var merge_axis := (CROSSWALK_CLEAR_OFFSET + INTERSECTION_ENTRY_OFFSET) * 0.5
-	var signed_axis := merge_axis * _axis_sign_for_heading(heading, false)
-	var from_coordinate := _lane_coordinate_for_heading(heading, from_lane)
-	var to_coordinate := _lane_coordinate_for_heading(heading, to_lane)
-	var lane_coordinate := lerpf(from_coordinate, to_coordinate, 0.7)
-	if _is_horizontal_heading(heading):
-		return Vector2(signed_axis, lane_coordinate)
-	return Vector2(lane_coordinate, signed_axis)
-
-func _build_turn_arc_points(entry_heading: String, entry_lane: String, exit_heading: String, exit_lane: String, turn_direction: String, arc_start: Vector2, arc_end: Vector2) -> Array[Vector2]:
-	var points: Array[Vector2] = []
-	var pivot := Vector2(
-		_lane_coordinate_for_heading(exit_heading, exit_lane),
-		_lane_coordinate_for_heading(entry_heading, entry_lane)
-	)
-	points.append_array(_sample_corner(arc_start, pivot, arc_end))
-	return points
-
-func _turn_entry_offset(turn_direction: String) -> float:
-	return LEFT_TURN_ENTRY_OFFSET if turn_direction == "left" else INTERSECTION_ENTRY_OFFSET
-
-func _build_u_turn_arc_points(entry_heading: String, exit_heading: String, exit_lane: String) -> Array[Vector2]:
-	var points: Array[Vector2] = []
-	var entry_point := _get_intersection_entry_point(entry_heading, "left", false)
-	var exit_point := _get_intersection_entry_point(exit_heading, exit_lane, true)
-	var midpoint := (_entry_direction(entry_heading) + _entry_direction(exit_heading)).normalized()
-	var apex := midpoint * U_TURN_SWEEP_OFFSET
-	points.append_array(_sample_corner(entry_point, apex, exit_point))
-	return points
-
-func _point_for_heading(heading: String, lane: String, axis_offset: float, use_exit_side := false) -> Vector2:
-	var signed_axis := axis_offset * _axis_sign_for_heading(heading, use_exit_side)
-	var lane_coordinate := _lane_coordinate_for_heading(heading, lane)
-	if _is_horizontal_heading(heading):
-		return Vector2(signed_axis, lane_coordinate)
-	return Vector2(lane_coordinate, signed_axis)
-
-func _entry_travel_extent_for_heading(heading: String) -> float:
-	var span_tiles := _span_tiles_for_heading(heading, false)
-	var tile_extent := tile_world_size.x if _is_horizontal_heading(heading) else tile_world_size.y
-	return maxf(ROAD_HALF_WIDTH, ROAD_HALF_WIDTH + span_tiles * tile_extent - ROUTE_EDGE_INSET)
-
-func _exit_travel_extent_for_heading(heading: String) -> float:
-	var span_tiles := mini(1, _span_tiles_for_heading(heading, true))
-	var tile_extent := tile_world_size.x if _is_horizontal_heading(heading) else tile_world_size.y
-	return ROAD_HALF_WIDTH + span_tiles * tile_extent - ROUTE_EDGE_INSET
-
-func _span_tiles_for_heading(heading: String, use_exit_side: bool) -> int:
-	match heading:
-		"east":
-			return east_span_tiles if use_exit_side else west_span_tiles
-		"west":
-			return west_span_tiles if use_exit_side else east_span_tiles
-		"south":
-			return south_span_tiles if use_exit_side else north_span_tiles
-		_:
-			return north_span_tiles if use_exit_side else south_span_tiles
-
-func _axis_sign_for_heading(heading: String, use_exit_side: bool) -> float:
-	match heading:
-		"east":
-			return 1.0 if use_exit_side else -1.0
-		"west":
-			return -1.0 if use_exit_side else 1.0
-		"south":
-			return 1.0 if use_exit_side else -1.0
-		_:
-			return -1.0 if use_exit_side else 1.0
-
-func _lane_coordinate_for_heading(heading: String, lane: String) -> float:
-	return _lane_offset_for_heading(heading, lane)
-
-func _is_horizontal_heading(heading: String) -> bool:
-	return heading == "east" or heading == "west"
-
 func _open_side_count() -> int:
 	return int(open_north) + int(open_south) + int(open_east) + int(open_west)
-
-func _lane_offset_for_heading(heading: String, lane: String) -> float:
-	var left_lane := lane == "left"
-	match heading:
-		"east":
-			return INNER_LANE_OFFSET if left_lane else OUTER_LANE_OFFSET
-		"west":
-			return -INNER_LANE_OFFSET if left_lane else -OUTER_LANE_OFFSET
-		"south":
-			return -INNER_LANE_OFFSET if left_lane else -OUTER_LANE_OFFSET
-		_:
-			return INNER_LANE_OFFSET if left_lane else OUTER_LANE_OFFSET
 
 func _get_entry_side_for_heading(heading: String) -> String:
 	match heading:
@@ -465,17 +258,6 @@ func _get_right_heading(heading: String) -> String:
 			return "west"
 		_:
 			return "east"
-
-func _get_opposite_heading(heading: String) -> String:
-	match heading:
-		"east":
-			return "west"
-		"west":
-			return "east"
-		"south":
-			return "north"
-		_:
-			return "south"
 
 func _is_side_open(side: String) -> bool:
 	match side:
@@ -526,52 +308,6 @@ func _selected_ids(selected: Array[Dictionary]) -> PackedStringArray:
 
 func _route_id(candidate: Dictionary) -> String:
 	return "%s:%s:%s" % [candidate["heading"], candidate["lane"], candidate["action"]]
-
-func _sample_route(local_points: Array[Vector2]) -> PackedVector2Array:
-	var sampled := PackedVector2Array()
-	if local_points.is_empty():
-		return sampled
-
-	sampled.append(global_position + local_points[0])
-	for index in range(1, local_points.size()):
-		var segment := _sample_line(local_points[index - 1], local_points[index], ROUTE_SAMPLE_STEP)
-		for point in segment:
-			sampled.append(global_position + point)
-	return sampled
-
-func _sample_line(start: Vector2, end: Vector2, step: float) -> Array[Vector2]:
-	var points: Array[Vector2] = []
-	var delta := end - start
-	var distance := delta.length()
-	if distance <= 0.001:
-		return points
-	var count := maxi(1, int(ceil(distance / step)))
-	for index in range(1, count + 1):
-		var t := float(index) / float(count)
-		points.append(start.lerp(end, t))
-	return points
-
-func _sample_corner(start: Vector2, pivot: Vector2, end: Vector2) -> Array[Vector2]:
-	var points: Array[Vector2] = []
-	var curve_length := start.distance_to(pivot) + pivot.distance_to(end)
-	var step_count := maxi(TURN_ARC_STEPS, int(ceil(curve_length / ROUTE_SAMPLE_STEP)))
-	for index in range(1, step_count + 1):
-		var t := float(index) / float(step_count)
-		var a := start.lerp(pivot, t)
-		var b := pivot.lerp(end, t)
-		points.append(a.lerp(b, t))
-	return points
-
-func _entry_direction(heading: String) -> Vector2:
-	match heading:
-		"east":
-			return Vector2.RIGHT
-		"west":
-			return Vector2.LEFT
-		"south":
-			return Vector2.DOWN
-		_:
-			return Vector2.UP
 
 func _to_world_path(local_points: Array[Vector2]) -> PackedVector2Array:
 	var path := PackedVector2Array()

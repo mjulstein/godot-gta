@@ -77,7 +77,7 @@
 ### Implementation for User Story 2
 
 - [x] T023 [P] [US2] Create civilian pedestrian and traffic placeholder scenes in `scenes/actors/civilians/` and `scenes/vehicles/civilian/`
-- [x] T024 [US2] Implement simple civilian movement or traffic behavior in `scripts/ai/civilian_ai.gd`
+- [x] T024 [US2] Implement simple civilian movement or traffic behavior in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [x] T025 [US2] Add crime event definitions and dispatch logic in `scripts/systems/crime_system.gd`
 - [x] T026 [US2] Emit crime events for vehicle theft, pedestrian assault, and harmful collision from `scripts/actors/player/player_controller.gd` and `scripts/vehicles/vehicle_controller.gd`
 - [x] T027 [US2] Implement wanted-state tracking and decay in `scripts/systems/wanted_system.gd`
@@ -100,10 +100,10 @@
 - [ ] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
 - [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
 - [ ] T045 Run full manual validation for US1 and US2 and record results in `tests/manual/`
-- [ ] T046 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/traffic_ai.gd`
-- [ ] T047 Tune civilian traffic speed targets so cars cruise faster than the player on long straights and brake for turns in `scripts/ai/traffic_ai.gd` and `data/tuning/`
-- [ ] T048 Improve civilian traffic stopping distance so cars hold at least half a car length before pedestrians, vehicles, and other forward obstacles in `scripts/ai/traffic_ai.gd`
-- [ ] T049 Add civilian traffic obstruction recovery so blocked cars can change lane, turn, or make a left-lane u-turn instead of stalling into collisions in `scripts/world/district_activity_overlay.gd` and `scripts/ai/traffic_ai.gd`
+- [ ] T046 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [ ] T047 Tune civilian traffic speed targets so cars cruise faster than the player on long straights and brake for turns in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `data/tuning/`
+- [ ] T048 Improve civilian traffic stopping distance so cars hold at least half a car length before pedestrians, vehicles, and other forward obstacles in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [ ] T049 Add civilian traffic obstruction recovery so blocked cars can change lane, turn, or make a left-lane u-turn instead of stalling into collisions in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 
 ---
 

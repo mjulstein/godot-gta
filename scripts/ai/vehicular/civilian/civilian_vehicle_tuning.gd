@@ -1,4 +1,4 @@
-class_name TrafficTuning
+class_name CivilianVehicleTuning
 extends Resource
 
 @export_range(40.0, 400.0, 1.0) var cruise_speed := 240.0

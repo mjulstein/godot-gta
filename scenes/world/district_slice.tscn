@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/props/spawn_marker.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/world/props/traffic_barrier.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/actors/civilians/civilian_pedestrian.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://scenes/vehicles/civilian/traffic_vehicle.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/civilian/civilian_vehicle_actor.tscn" id="4"]
 [ext_resource type="Script" path="res://scripts/world/district_slice.gd" id="5"]
 
 [sub_resource type="RectangleShape2D" id="1"]

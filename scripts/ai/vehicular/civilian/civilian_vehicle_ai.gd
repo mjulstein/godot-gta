@@ -1,10 +1,10 @@
 extends CharacterBody2D
 
-const TrafficTuning = preload("res://scripts/ai/traffic_tuning.gd")
+const CivilianVehicleTuning = preload("res://scripts/ai/vehicular/civilian/civilian_vehicle_tuning.gd")
 
 signal harmed(source: Node2D)
 
-@export var tuning: TrafficTuning
+@export var tuning: CivilianVehicleTuning
 @export var is_important := false
 @export_range(24.0, 320.0, 1.0) var move_speed := 120.0
 @export_range(24.0, 120.0, 1.0) var vehicle_look_ahead := 54.0
@@ -102,21 +102,10 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_rotation_from_motion(previous_position)
 
-func set_world_path(points: PackedVector2Array) -> void:
-	world_path_points = points
-	path_target_index = 1 if world_path_points.size() >= 2 else 0
-	recent_tiles.clear()
-	if world_path_points.size() >= 1:
-		global_position = world_path_points[0]
-
-func set_route_context(new_heading: String, new_lane: String, new_action: String = "") -> void:
-	heading = new_heading if not new_heading.is_empty() else heading
-	lane = new_lane
-	if not new_action.is_empty():
-		active_action = new_action
-
 func initialize_runtime_spawn(initial_heading: String, initial_lane: String, initial_action: String = "straight") -> void:
-	set_route_context(initial_heading, initial_lane, initial_action)
+	heading = initial_heading if not initial_heading.is_empty() else heading
+	lane = initial_lane
+	active_action = initial_action if not initial_action.is_empty() else active_action
 	var spawn_tile: Node2D = null
 	var spawn_data := _pick_spawn(initial_heading, initial_lane)
 	if spawn_data.is_empty():
@@ -203,6 +192,7 @@ func _follow_world_path() -> void:
 			return
 	else:
 		blockage_time = 0.0
+
 func _update_rotation_from_motion(previous_position: Vector2) -> void:
 	var displacement := global_position - previous_position
 	if displacement.length() < MIN_ROTATION_DISTANCE:
@@ -503,45 +493,6 @@ func _nearest_forward_distance(group_name: String, direction_vector: Vector2, ma
 		if nearest_distance < 0.0 or forward_distance < nearest_distance:
 			nearest_distance = forward_distance
 	return nearest_distance
-
-func _has_pedestrian_ahead(direction_vector: Vector2) -> bool:
-	for candidate in get_tree().get_nodes_in_group("civilian_pedestrian"):
-		if candidate == self or not (candidate is Node2D):
-			continue
-		var pedestrian := candidate as Node2D
-		if not pedestrian.visible:
-			continue
-		var offset: Vector2 = pedestrian.global_position - global_position
-		if offset.length() > pedestrian_look_ahead:
-			continue
-		var forward_distance := direction_vector.dot(offset)
-		if forward_distance <= 0.0:
-			continue
-		var lateral_distance := absf(direction_vector.orthogonal().dot(offset))
-		if lateral_distance <= 18.0:
-			return true
-	return false
-
-func _has_vehicle_ahead(direction_vector: Vector2) -> bool:
-	for candidate in get_tree().get_nodes_in_group("traffic_vehicle"):
-		if candidate == self or not (candidate is Node2D):
-			continue
-		var vehicle := candidate as Node2D
-		if not vehicle.visible:
-			continue
-		var offset: Vector2 = vehicle.global_position - global_position
-		if offset.length() > vehicle_look_ahead:
-			continue
-		var forward_distance := direction_vector.dot(offset)
-		if forward_distance <= 0.0:
-			continue
-		var lateral_distance := absf(direction_vector.orthogonal().dot(offset))
-		if lateral_distance > 20.0:
-			continue
-		var vehicle_forward := Vector2.RIGHT.rotated(vehicle.rotation)
-		if direction_vector.dot(vehicle_forward) >= 0.35:
-			return true
-	return false
 
 func _get_body_color() -> Color:
 	return Color(1, 0.2, 0.2, 1) if harmed_flash_remaining > 0.0 else Color(0.105882, 0.760784, 1, 1)
