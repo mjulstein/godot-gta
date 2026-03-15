@@ -7,6 +7,7 @@ signal civilian_hit(target: Node2D)
 
 @export var tuning: CivilianVehicleTuning
 @export var is_important := false
+@export_range(500.0, 4000.0, 1.0) var mass_kg := 2000.0
 @export_range(24.0, 320.0, 1.0) var move_speed := 120.0
 @export_range(24.0, 120.0, 1.0) var vehicle_look_ahead := 54.0
 @export_range(24.0, 160.0, 1.0) var police_look_ahead := 120.0
@@ -50,6 +51,11 @@ var current_speed := 0.0
 var theft_reported := false
 var impact_cooldowns: Dictionary = {}
 var occupant_present := true
+var driver: Node = null
+var longitudinal_speed := 0.0
+var last_player_ahead_distance := -1.0
+var collision_flash_remaining := 0.0
+var abandoned_after_theft := false
 
 const ROAD_HALF_WIDTH := 96.0
 const INNER_LANE_OFFSET := 28.0
@@ -77,6 +83,7 @@ func _ready() -> void:
 	default_collision_mask = collision_mask
 	rng.randomize()
 	current_speed = _target_speed_for_action(active_action)
+	longitudinal_speed = Vector2.RIGHT.rotated(rotation).dot(velocity)
 	add_to_group("civilian")
 	add_to_group("civilian_vehicle")
 	add_to_group("civilian_witness")
@@ -84,12 +91,24 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	harmed_flash_remaining = maxf(0.0, harmed_flash_remaining - delta)
+	collision_flash_remaining = maxf(0.0, collision_flash_remaining - delta)
 	pause_remaining = maxf(0.0, pause_remaining - delta)
 	recycle_check_remaining = maxf(0.0, recycle_check_remaining - delta)
 	recovery_cooldown_remaining = maxf(0.0, recovery_cooldown_remaining - delta)
 	reroute_focus_remaining = maxf(0.0, reroute_focus_remaining - delta)
 	_tick_impact_cooldowns(delta)
 	body_polygon.color = _get_body_color()
+
+	if driver != null:
+		_drive_player_controlled(delta)
+		return
+
+	if abandoned_after_theft:
+		current_speed = 0.0
+		longitudinal_speed = 0.0
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 
 	if recycle_check_remaining == 0.0:
 		recycle_check_remaining = recycle_check_interval
@@ -107,6 +126,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_rotation_from_motion(previous_position)
 	if get_slide_collision_count() > 0:
+		collision_flash_remaining = harmed_flash_time
 		_emit_civilian_impacts()
 
 func initialize_runtime_spawn(initial_heading: String, initial_lane: String, initial_action: String = "straight") -> void:
@@ -152,7 +172,7 @@ func register_harm(source: Node2D) -> void:
 	harmed.emit(source)
 
 func can_enter() -> bool:
-	return occupant_present
+	return driver == null
 
 func has_civilian_occupant() -> bool:
 	return occupant_present
@@ -160,8 +180,32 @@ func has_civilian_occupant() -> bool:
 func consume_civilian_occupant() -> void:
 	occupant_present = false
 
+func set_driver(value: Node) -> void:
+	driver = value
+	occupant_present = false
+	if value != null and value.is_in_group("player_actor"):
+		abandoned_after_theft = true
+
+func clear_driver() -> void:
+	driver = null
+	longitudinal_speed = 0.0
+	current_speed = 0.0
+	velocity = Vector2.ZERO
+
+func resume_civilian_control() -> void:
+	abandoned_after_theft = false
+	driver = null
+	pause_remaining = 0.25
+
+func has_recent_collision() -> bool:
+	return collision_flash_remaining > 0.0 or harmed_flash_remaining > 0.0
+
 func get_exit_position() -> Vector2:
 	return global_position + Vector2.DOWN.rotated(rotation) * 28.0
+
+func get_driver_entry_position() -> Vector2:
+	var driver_side := -Vector2.RIGHT.rotated(rotation).orthogonal()
+	return global_position + driver_side * 20.0
 
 func mark_theft_reported() -> void:
 	theft_reported = true
@@ -169,8 +213,17 @@ func mark_theft_reported() -> void:
 func was_theft_reported() -> bool:
 	return theft_reported
 
+func has_driver() -> bool:
+	return driver != null
+
+func is_player_controlled() -> bool:
+	return driver != null and driver.is_in_group("player_actor")
+
 func get_impact_velocity() -> Vector2:
 	return velocity
+
+func get_mass_kg() -> float:
+	return mass_kg
 
 func get_motion_debug_lines() -> PackedStringArray:
 	var target_speed := _target_speed_for_action(active_action)
@@ -179,6 +232,8 @@ func get_motion_debug_lines() -> PackedStringArray:
 		blocker = "barrier %.0f" % last_barrier_ahead_distance
 	elif last_dynamic_obstacle_ahead_distance >= 0.0:
 		blocker = "dynamic %.0f" % last_dynamic_obstacle_ahead_distance
+	elif last_player_ahead_distance >= 0.0:
+		blocker = "player %.0f" % last_player_ahead_distance
 	elif last_pedestrian_ahead_distance >= 0.0:
 		blocker = "ped %.0f" % last_pedestrian_ahead_distance
 	elif last_vehicle_ahead_distance >= 0.0:
@@ -188,6 +243,7 @@ func get_motion_debug_lines() -> PackedStringArray:
 		"Action %s%s" % [active_action, " reroute" if is_rerouting() else ""],
 		"Speed %.1f / %.1f kph" % [current_speed * 0.18, target_speed * 0.18],
 		"Blocker: %s" % blocker,
+		"Driver: %s" % ("player" if driver != null else "ai"),
 	])
 
 func set_camera_tracked(is_tracked: bool) -> void:
@@ -432,6 +488,9 @@ func _should_stop_for_obstacle(direction_vector: Vector2) -> bool:
 	last_dynamic_obstacle_ahead_distance = _nearest_forward_distance("traffic_dynamic_obstacle", direction_vector, obstacle_look_ahead, 24.0)
 	if last_dynamic_obstacle_ahead_distance >= 0.0 and last_dynamic_obstacle_ahead_distance <= dynamic_obstacle_stop_buffer:
 		return true
+	last_player_ahead_distance = _nearest_on_foot_player_distance(direction_vector)
+	if last_player_ahead_distance >= 0.0 and last_player_ahead_distance <= pedestrian_stop_buffer:
+		return true
 	last_police_ahead_distance = _nearest_forward_distance("police_unit", direction_vector, police_look_ahead, 24.0)
 	if last_police_ahead_distance >= 0.0 and last_police_ahead_distance <= police_stop_buffer:
 		return true
@@ -493,6 +552,7 @@ func _nearest_non_traffic_blocking_distance() -> float:
 		last_barrier_ahead_distance,
 		last_police_ahead_distance,
 		last_dynamic_obstacle_ahead_distance,
+		last_player_ahead_distance,
 	]:
 		if distance < 0.0:
 			continue
@@ -542,7 +602,7 @@ func _nearest_forward_distance(group_name: String, direction_vector: Vector2, ma
 	return nearest_distance
 
 func _get_body_color() -> Color:
-	return Color(1, 0.2, 0.2, 1) if harmed_flash_remaining > 0.0 else Color(0.105882, 0.760784, 1, 1)
+	return Color(1, 0.2, 0.2, 1) if harmed_flash_remaining > 0.0 or collision_flash_remaining > 0.0 else Color(0.105882, 0.760784, 1, 1)
 
 func _emit_civilian_impacts() -> void:
 	for index in range(get_slide_collision_count()):
@@ -564,6 +624,79 @@ func _tick_impact_cooldowns(delta: float) -> void:
 
 func _is_impact_on_cooldown(collider: Node) -> bool:
 	return impact_cooldowns.has(collider.get_instance_id())
+
+func _nearest_on_foot_player_distance(direction_vector: Vector2) -> float:
+	for candidate in get_tree().get_nodes_in_group("player_actor"):
+		if not (candidate is Node2D):
+			continue
+		var player_actor := candidate as Node2D
+		if not player_actor.visible:
+			continue
+		var offset: Vector2 = player_actor.global_position - global_position
+		if offset.length() > pedestrian_look_ahead:
+			continue
+		var forward_distance := direction_vector.dot(offset)
+		if forward_distance <= 0.0:
+			continue
+		var lateral_distance := absf(direction_vector.orthogonal().dot(offset))
+		if lateral_distance > 18.0:
+			continue
+		return forward_distance
+	return -1.0
+
+func _drive_player_controlled(delta: float) -> void:
+	var acceleration := 380.0
+	var reverse_acceleration := 280.0
+	var brake_power := 440.0
+	var max_speed := 320.0
+	var reverse_speed := 140.0
+	var steering_speed := 2.8
+	var friction := 220.0
+	var min_steer_speed := 18.0
+	var player_vehicle := get_tree().get_first_node_in_group("player_vehicle")
+	if player_vehicle != null and player_vehicle.has_method("get"):
+		var player_tuning = player_vehicle.get("tuning")
+		if player_tuning != null:
+			acceleration = player_tuning.acceleration
+			reverse_acceleration = player_tuning.reverse_acceleration
+			brake_power = player_tuning.brake_power
+			max_speed = player_tuning.max_speed
+			reverse_speed = player_tuning.reverse_speed
+			steering_speed = player_tuning.steering_speed
+			friction = player_tuning.friction
+			min_steer_speed = player_tuning.min_steer_speed
+
+	var forward_input := Input.get_action_strength("accelerate")
+	var reverse_input := Input.get_action_strength("brake")
+	var steer_input := Input.get_action_strength("steer_right") - Input.get_action_strength("steer_left")
+	var forward := Vector2.RIGHT.rotated(rotation)
+	longitudinal_speed = forward.dot(velocity)
+
+	if forward_input > 0.0:
+		if longitudinal_speed < 0.0:
+			longitudinal_speed = move_toward(longitudinal_speed, 0.0, brake_power * forward_input * delta)
+		else:
+			longitudinal_speed = move_toward(longitudinal_speed, max_speed * forward_input, acceleration * delta)
+	elif reverse_input > 0.0:
+		if longitudinal_speed > 0.0:
+			longitudinal_speed = move_toward(longitudinal_speed, 0.0, brake_power * reverse_input * delta)
+		else:
+			longitudinal_speed = move_toward(longitudinal_speed, -reverse_speed * reverse_input, reverse_acceleration * delta)
+	else:
+		longitudinal_speed = move_toward(longitudinal_speed, 0.0, friction * delta)
+
+	var steering_speed_scale := clampf(absf(longitudinal_speed) / maxf(max_speed, 1.0), 0.0, 1.0)
+	if absf(longitudinal_speed) >= min_steer_speed:
+		var steering_direction := 1.0 if longitudinal_speed >= 0.0 else -1.0
+		rotation += steer_input * steering_speed * steering_direction * maxf(0.35, steering_speed_scale) * delta
+
+	velocity = Vector2.RIGHT.rotated(rotation) * longitudinal_speed
+	current_speed = absf(longitudinal_speed)
+	_displace_pedestrians_ahead(velocity.normalized() if velocity != Vector2.ZERO else Vector2.ZERO)
+	move_and_slide()
+	if get_slide_collision_count() > 0:
+		collision_flash_remaining = harmed_flash_time
+		_emit_civilian_impacts()
 
 func _displace_pedestrians_ahead(direction_vector: Vector2) -> void:
 	if current_speed < 18.0 or direction_vector == Vector2.ZERO:

@@ -13,7 +13,8 @@ size = Vector2(46, 26)
 script = ExtResource("1")
 tuning = ExtResource("2")
 collision_layer = 4
-collision_mask = 3
+collision_mask = 5
+groups = ["player_vehicle"]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("1")

@@ -4,6 +4,7 @@ signal civilian_hit(target: Node2D)
 
 @export var tuning: Resource
 @export var collision_flash_time := 0.12
+@export_range(500.0, 4000.0, 1.0) var mass_kg := 2000.0
 
 var driver: Node = null
 var collision_flash_remaining := 0.0
@@ -82,11 +83,24 @@ func clear_driver() -> void:
 func get_exit_position() -> Vector2:
 	return global_position + Vector2.DOWN.rotated(rotation) * 28.0
 
+func get_driver_entry_position() -> Vector2:
+	var driver_side := -Vector2.RIGHT.rotated(rotation).orthogonal()
+	return global_position + driver_side * 22.0
+
 func has_recent_collision() -> bool:
 	return collision_flash_remaining > 0.0
 
+func has_driver() -> bool:
+	return driver != null
+
+func is_player_controlled() -> bool:
+	return driver != null and driver.is_in_group("player_actor")
+
 func get_impact_velocity() -> Vector2:
 	return velocity
+
+func get_mass_kg() -> float:
+	return mass_kg
 
 func get_motion_debug_lines() -> PackedStringArray:
 	var forward_input := Input.get_action_strength("accelerate")

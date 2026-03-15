@@ -29,6 +29,7 @@ func _ready() -> void:
 	interaction_system.configure(player, player.get_node("InteractionSensor"))
 	interaction_system.enter_requested.connect(_on_enter_requested)
 	interaction_system.exit_requested.connect(_on_exit_requested)
+	player.vehicle_entry_completed.connect(_on_enter_requested)
 	player.civilian_assaulted.connect(_on_player_civilian_assaulted)
 	_connect_vehicle_signals(vehicle)
 	crime_system.crime_reported.connect(wanted_system.handle_crime)
@@ -206,23 +207,20 @@ func _prepare_vehicle_takeover(target_vehicle: Node2D) -> Node2D:
 	var forward := Vector2.RIGHT.rotated(target_vehicle.rotation)
 	var side := Vector2.DOWN.rotated(target_vehicle.rotation)
 	if target_vehicle.has_method("has_civilian_occupant") and target_vehicle.has_civilian_occupant():
-		_spawn_displaced_occupant(displaced_position, forward, side)
+		_spawn_displaced_occupant(displaced_position, forward, side, target_vehicle)
 		target_vehicle.consume_civilian_occupant()
-	vehicle.global_position = target_vehicle.global_position
-	vehicle.rotation = target_vehicle.rotation
-	var source_body := target_vehicle as CharacterBody2D
-	vehicle.velocity = source_body.velocity if source_body != null else Vector2.ZERO
 	active_vehicle_source_label = "Civilian Traffic"
-	target_vehicle.queue_free()
-	return vehicle
+	return target_vehicle
 
-func _spawn_displaced_occupant(spawn_position: Vector2, facing_direction: Vector2, escape_direction: Vector2) -> void:
+func _spawn_displaced_occupant(spawn_position: Vector2, facing_direction: Vector2, escape_direction: Vector2, target_vehicle: Node2D) -> void:
 	var occupant := CivilianPedestrianScene.instantiate()
 	world.add_child(occupant)
 	if occupant.has_method("place_displaced_occupant"):
 		occupant.place_displaced_occupant(spawn_position, facing_direction, escape_direction)
 	else:
 		occupant.global_position = spawn_position
+	if occupant.has_method("configure_reclaim_attempt"):
+		occupant.configure_reclaim_attempt(target_vehicle, randf() < 0.5)
 
 func _get_active_player_vehicle() -> Node2D:
 	if not player.is_in_vehicle():

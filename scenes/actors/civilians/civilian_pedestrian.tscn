@@ -8,8 +8,8 @@ radius = 10.0
 [node name="CivilianPedestrian" type="CharacterBody2D"]
 script = ExtResource("1")
 actor_type = "pedestrian"
-collision_layer = 1
-collision_mask = 1
+collision_layer = 2
+collision_mask = 7
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("1")

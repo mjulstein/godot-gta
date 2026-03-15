@@ -11,6 +11,7 @@ signal harmed(source: Node2D)
 @export_range(0.0, 600.0, 1.0) var impact_drag := 320.0
 @export_range(0.0, 1.0, 0.05) var impact_recovery_time := 0.4
 @export_range(0.0, 1.0, 0.05) var impact_collision_disable_time := 0.25
+@export_range(20.0, 200.0, 1.0) var mass_kg := 80.0
 
 var anchor_position := Vector2.ZERO
 var direction := 1.0
@@ -24,6 +25,13 @@ var path_target_index := 1
 var path_direction := 1
 var default_collision_layer := 0
 var default_collision_mask := 0
+var reclaim_vehicle: Node2D
+var reclaim_delay_remaining := 0.0
+var reclaim_attempt_active := false
+
+const RECLAIM_SPEED := 74.0
+const RECLAIM_REACHED_DISTANCE := 10.0
+const RECLAIM_VEHICLE_STOP_SPEED := 28.0
 
 @onready var body_polygon: Polygon2D = $Body
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -45,6 +53,7 @@ func _physics_process(delta: float) -> void:
 	harmed_flash_remaining = maxf(0.0, harmed_flash_remaining - delta)
 	impact_recovery_remaining = maxf(0.0, impact_recovery_remaining - delta)
 	impact_collision_disable_remaining = maxf(0.0, impact_collision_disable_remaining - delta)
+	reclaim_delay_remaining = maxf(0.0, reclaim_delay_remaining - delta)
 	body_polygon.color = _get_body_color()
 	_update_impact_collision_state()
 
@@ -53,6 +62,10 @@ func _physics_process(delta: float) -> void:
 		impact_velocity = impact_velocity.move_toward(Vector2.ZERO, impact_drag * delta)
 		if velocity != Vector2.ZERO:
 			rotation = velocity.angle()
+		move_and_slide()
+		return
+
+	if _update_reclaim_attempt():
 		move_and_slide()
 		return
 
@@ -117,6 +130,14 @@ func place_displaced_occupant(spawn_position: Vector2, facing_direction: Vector2
 	]))
 	pause_remaining = 0.2
 
+func configure_reclaim_attempt(target_vehicle: Node2D, should_attempt: bool) -> void:
+	reclaim_vehicle = target_vehicle
+	reclaim_attempt_active = should_attempt
+	reclaim_delay_remaining = 0.75
+
+func get_mass_kg() -> float:
+	return mass_kg
+
 func _follow_world_path() -> void:
 	var target_position := world_path_points[path_target_index]
 	var to_target := target_position - global_position
@@ -157,7 +178,10 @@ func _apply_impact_response(source: Node2D) -> void:
 	var source_velocity = source.call("get_impact_velocity")
 	if not (source_velocity is Vector2):
 		return
-	var knockback: Vector2 = source_velocity
+	var source_mass := 2000.0
+	if source.has_method("get_mass_kg"):
+		source_mass = source.get_mass_kg()
+	var knockback: Vector2 = source_velocity * (source_mass / maxf(source_mass + mass_kg, 1.0))
 	if knockback.length() < 40.0:
 		return
 	impact_velocity = knockback.limit_length(260.0)
@@ -170,6 +194,50 @@ func _update_impact_collision_state() -> void:
 	collision_mask = default_collision_mask if collisions_enabled else 0
 	if collision_shape != null:
 		collision_shape.disabled = not collisions_enabled
+
+func _update_reclaim_attempt() -> bool:
+	if not reclaim_attempt_active:
+		return false
+	if reclaim_delay_remaining > 0.0:
+		velocity = Vector2.ZERO
+		return true
+	if reclaim_vehicle == null or not is_instance_valid(reclaim_vehicle):
+		reclaim_attempt_active = false
+		return false
+	var entry_position: Vector2 = reclaim_vehicle.get_driver_entry_position() if reclaim_vehicle.has_method("get_driver_entry_position") else reclaim_vehicle.global_position
+	var to_entry: Vector2 = entry_position - global_position
+	if to_entry.length() <= RECLAIM_REACHED_DISTANCE:
+		velocity = Vector2.ZERO
+		_attempt_vehicle_reclaim()
+		return true
+	velocity = to_entry.normalized() * RECLAIM_SPEED
+	rotation = velocity.angle()
+	return true
+
+func _attempt_vehicle_reclaim() -> void:
+	reclaim_attempt_active = false
+	if reclaim_vehicle == null or not is_instance_valid(reclaim_vehicle):
+		return
+	if not reclaim_vehicle.has_method("has_driver") or not reclaim_vehicle.has_driver():
+		return
+	if not reclaim_vehicle.has_method("is_player_controlled") or not reclaim_vehicle.is_player_controlled():
+		return
+	var vehicle_speed := 0.0
+	if reclaim_vehicle.has_method("get_impact_velocity"):
+		vehicle_speed = reclaim_vehicle.get_impact_velocity().length()
+	if vehicle_speed > RECLAIM_VEHICLE_STOP_SPEED:
+		return
+	var player_actor := get_tree().get_first_node_in_group("player_actor")
+	if player_actor == null or not player_actor.is_in_vehicle():
+		return
+	if player_actor.active_vehicle != reclaim_vehicle:
+		return
+	if reclaim_vehicle.has_method("resume_civilian_control"):
+		reclaim_vehicle.resume_civilian_control()
+	else:
+		reclaim_vehicle.clear_driver()
+	player_actor.exit_vehicle(reclaim_vehicle.get_exit_position())
+	queue_free()
 
 func _get_body_color() -> Color:
 	if harmed_flash_remaining > 0.0:

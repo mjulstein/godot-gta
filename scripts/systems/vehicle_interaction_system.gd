@@ -20,13 +20,18 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var candidate := get_nearest_vehicle()
 	if candidate != null:
-		enter_requested.emit(candidate)
+		if player.has_method("begin_vehicle_entry"):
+			player.begin_vehicle_entry(candidate)
+		else:
+			enter_requested.emit(candidate)
 
 func get_interaction_hint() -> String:
 	if player == null:
 		return ""
 	if player.is_in_vehicle():
 		return "Press E to exit vehicle"
+	if player.has_method("is_entering_vehicle") and player.is_entering_vehicle():
+		return "Moving to driver seat"
 	if get_nearest_vehicle() != null:
 		return "Press E to enter vehicle"
 	return "Walk to the yellow car"
