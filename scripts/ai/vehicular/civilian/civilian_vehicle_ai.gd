@@ -293,6 +293,12 @@ func _follow_world_path() -> void:
 				current_speed = move_toward(current_speed, _turn_speed(), _brake_rate() * get_physics_process_delta_time())
 				velocity = to_hold.normalized() * current_speed
 				return
+		if _should_immediately_switch_for_vehicle():
+			velocity = Vector2.ZERO
+			if _attempt_vehicle_lane_switch():
+				blockage_time = 0.0
+				recovery_cooldown_remaining = recovery_cooldown
+				return
 		if _should_immediately_switch_for_barrier():
 			velocity = Vector2.ZERO
 			if _attempt_barrier_lane_switch():
@@ -520,8 +526,8 @@ func _should_stop_for_obstacle(direction_vector: Vector2) -> bool:
 	return false
 
 func _vehicle_follow_distance() -> float:
-	var low_speed_spacing := TRAFFIC_CAR_LENGTH * 0.5
-	var high_speed_spacing := TRAFFIC_CAR_LENGTH * 3.0
+	var low_speed_spacing := TRAFFIC_CAR_LENGTH * 1.1
+	var high_speed_spacing := TRAFFIC_CAR_LENGTH * 4.0
 	var cruise_speed := maxf(_cruise_speed(), 1.0)
 	var speed_ratio := clampf(current_speed / cruise_speed, 0.0, 1.0)
 	return lerpf(low_speed_spacing, high_speed_spacing, speed_ratio)
@@ -543,6 +549,14 @@ func _can_attempt_blockage_recovery() -> bool:
 
 func _should_immediately_switch_for_barrier() -> bool:
 	if last_barrier_ahead_distance < 0.0 or last_barrier_ahead_distance > barrier_stop_buffer:
+		return false
+	var tile := _find_district_tile(global_position)
+	return tile != null and _is_before_intersection_hold_point(tile) and _can_switch_lane(tile)
+
+func _should_immediately_switch_for_vehicle() -> bool:
+	if last_vehicle_ahead_distance < 0.0:
+		return false
+	if last_vehicle_ahead_distance > _vehicle_emergency_distance():
 		return false
 	var tile := _find_district_tile(global_position)
 	return tile != null and _is_before_intersection_hold_point(tile) and _can_switch_lane(tile)
@@ -582,6 +596,16 @@ func _current_intersection_hold_point() -> Vector2:
 	return _world_point(tile, heading, lane, CROSSWALK_CLEAR_OFFSET, false)
 
 func _attempt_barrier_lane_switch() -> bool:
+	var tile := _find_district_tile(global_position)
+	if tile == null or not _is_before_intersection_hold_point(tile) or not _can_switch_lane(tile):
+		return false
+	var forced_action := "switch_left" if lane == "right" else "switch_right"
+	if not _build_runtime_segment(forced_action):
+		return false
+	reroute_focus_remaining = reroute_focus_time
+	return true
+
+func _attempt_vehicle_lane_switch() -> bool:
 	var tile := _find_district_tile(global_position)
 	if tile == null or not _is_before_intersection_hold_point(tile) or not _can_switch_lane(tile):
 		return false
@@ -646,6 +670,10 @@ func _pedestrian_stop_distance() -> float:
 
 func _pedestrian_hold_distance() -> float:
 	return maxf(_pedestrian_stop_distance(), TRAFFIC_CAR_LENGTH + pedestrian_stop_buffer)
+
+func _vehicle_emergency_distance() -> float:
+	var stop_distance := (current_speed * current_speed) / maxf(_brake_rate() * 2.0, 1.0)
+	return maxf(_vehicle_follow_distance(), stop_distance + TRAFFIC_CAR_LENGTH + vehicle_stop_buffer)
 
 func _drive_player_controlled(delta: float) -> void:
 	var acceleration := 380.0
