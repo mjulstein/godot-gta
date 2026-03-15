@@ -43,7 +43,6 @@ var recovery_cooldown_remaining := 0.0
 var reroute_focus_remaining := 0.0
 var last_vehicle_ahead_distance := -1.0
 var last_police_ahead_distance := -1.0
-var last_pedestrian_ahead_distance := -1.0
 var last_dynamic_obstacle_ahead_distance := -1.0
 var last_barrier_ahead_distance := -1.0
 var recent_tiles: Array[Vector2] = []
@@ -56,6 +55,7 @@ var longitudinal_speed := 0.0
 var last_player_ahead_distance := -1.0
 var collision_flash_remaining := 0.0
 var abandoned_after_theft := false
+var incident_stop_active := false
 
 const ROAD_HALF_WIDTH := 96.0
 const INNER_LANE_OFFSET := 28.0
@@ -104,6 +104,12 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if abandoned_after_theft:
+		current_speed = 0.0
+		longitudinal_speed = 0.0
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+	if incident_stop_active:
 		current_speed = 0.0
 		longitudinal_speed = 0.0
 		velocity = Vector2.ZERO
@@ -193,6 +199,7 @@ func clear_driver() -> void:
 	velocity = Vector2.ZERO
 
 func resume_civilian_control() -> void:
+	incident_stop_active = false
 	abandoned_after_theft = false
 	driver = null
 	pause_remaining = 0.25
@@ -209,6 +216,14 @@ func get_driver_entry_position() -> Vector2:
 
 func mark_theft_reported() -> void:
 	theft_reported = true
+
+func begin_incident_stop() -> void:
+	if driver != null:
+		return
+	incident_stop_active = true
+	current_speed = 0.0
+	longitudinal_speed = 0.0
+	velocity = Vector2.ZERO
 
 func was_theft_reported() -> bool:
 	return theft_reported
@@ -233,9 +248,7 @@ func get_motion_debug_lines() -> PackedStringArray:
 	elif last_dynamic_obstacle_ahead_distance >= 0.0:
 		blocker = "dynamic %.0f" % last_dynamic_obstacle_ahead_distance
 	elif last_player_ahead_distance >= 0.0:
-		blocker = "player %.0f" % last_player_ahead_distance
-	elif last_pedestrian_ahead_distance >= 0.0:
-		blocker = "ped %.0f" % last_pedestrian_ahead_distance
+		blocker = "ped %.0f" % last_player_ahead_distance
 	elif last_vehicle_ahead_distance >= 0.0:
 		blocker = "car %.0f" % last_vehicle_ahead_distance
 	return PackedStringArray([
@@ -270,8 +283,9 @@ func _follow_world_path() -> void:
 	velocity = direction_vector * current_speed
 	var is_blocked := false
 	if direction_vector != Vector2.ZERO:
-		_displace_pedestrians_ahead(direction_vector)
 		is_blocked = _should_stop_for_obstacle(direction_vector)
+		if not is_blocked:
+			_displace_pedestrians_ahead(direction_vector)
 		if _should_hold_for_intersection_obstacle(direction_vector):
 			var hold_point := _current_intersection_hold_point()
 			var to_hold := hold_point - global_position
@@ -286,8 +300,8 @@ func _follow_world_path() -> void:
 				recovery_cooldown_remaining = recovery_cooldown
 				return
 	if is_blocked:
-		velocity = Vector2.ZERO
 		current_speed = move_toward(current_speed, 0.0, _brake_rate() * get_physics_process_delta_time())
+		velocity = direction_vector * current_speed
 		blockage_time += get_physics_process_delta_time()
 		if blockage_time >= blockage_threshold and recovery_cooldown_remaining == 0.0 and _can_attempt_blockage_recovery() and _attempt_blockage_recovery():
 			blockage_time = 0.0
@@ -482,20 +496,21 @@ func has_persistent_blockage() -> bool:
 	return blockage_time >= blockage_threshold
 
 func _should_stop_for_obstacle(direction_vector: Vector2) -> bool:
+	var pedestrian_stop_distance := _pedestrian_stop_distance()
+	var pedestrian_scan_distance := maxf(pedestrian_look_ahead, pedestrian_stop_distance + TRAFFIC_CAR_LENGTH)
 	last_barrier_ahead_distance = _nearest_forward_distance("traffic_barrier", direction_vector, obstacle_look_ahead, 28.0)
 	if last_barrier_ahead_distance >= 0.0 and last_barrier_ahead_distance <= barrier_stop_buffer:
 		return true
 	last_dynamic_obstacle_ahead_distance = _nearest_forward_distance("traffic_dynamic_obstacle", direction_vector, obstacle_look_ahead, 24.0)
 	if last_dynamic_obstacle_ahead_distance >= 0.0 and last_dynamic_obstacle_ahead_distance <= dynamic_obstacle_stop_buffer:
 		return true
-	last_player_ahead_distance = _nearest_on_foot_player_distance(direction_vector)
-	if last_player_ahead_distance >= 0.0 and last_player_ahead_distance <= pedestrian_stop_buffer:
+	last_player_ahead_distance = _nearest_forward_distance("pedestrian_actor", direction_vector, pedestrian_scan_distance, 26.0)
+	if last_player_ahead_distance >= 0.0 and last_player_ahead_distance <= _pedestrian_hold_distance():
+		return true
+	if last_player_ahead_distance >= 0.0 and last_player_ahead_distance <= pedestrian_stop_distance:
 		return true
 	last_police_ahead_distance = _nearest_forward_distance("police_unit", direction_vector, police_look_ahead, 24.0)
 	if last_police_ahead_distance >= 0.0 and last_police_ahead_distance <= police_stop_buffer:
-		return true
-	last_pedestrian_ahead_distance = _nearest_forward_distance("civilian_pedestrian", direction_vector, pedestrian_look_ahead, 18.0)
-	if last_pedestrian_ahead_distance >= 0.0 and last_pedestrian_ahead_distance <= pedestrian_stop_buffer:
 		return true
 	var vehicle_follow_distance := _vehicle_follow_distance()
 	var vehicle_follow_look_ahead := maxf(vehicle_look_ahead, vehicle_follow_distance + TRAFFIC_CAR_LENGTH)
@@ -520,7 +535,7 @@ func _can_attempt_blockage_recovery() -> bool:
 		return true
 	# Only the lead vehicle in a queue should reroute. Cars blocked by another car
 	# should keep their spacing instead of all fanning out through the junction.
-	if last_pedestrian_ahead_distance >= 0.0 and last_pedestrian_ahead_distance <= pedestrian_stop_buffer:
+	if last_player_ahead_distance >= 0.0:
 		return false
 	if last_vehicle_ahead_distance >= 0.0 and last_vehicle_ahead_distance <= vehicle_look_ahead:
 		return false
@@ -608,7 +623,7 @@ func _emit_civilian_impacts() -> void:
 	for index in range(get_slide_collision_count()):
 		var collision := get_slide_collision(index)
 		var collider := collision.get_collider()
-		if collider == null or not collider.is_in_group("civilian_pedestrian"):
+		if collider == null or not _can_register_pedestrian_impact(collider):
 			continue
 		if _is_impact_on_cooldown(collider):
 			continue
@@ -625,24 +640,12 @@ func _tick_impact_cooldowns(delta: float) -> void:
 func _is_impact_on_cooldown(collider: Node) -> bool:
 	return impact_cooldowns.has(collider.get_instance_id())
 
-func _nearest_on_foot_player_distance(direction_vector: Vector2) -> float:
-	for candidate in get_tree().get_nodes_in_group("player_actor"):
-		if not (candidate is Node2D):
-			continue
-		var player_actor := candidate as Node2D
-		if not player_actor.visible:
-			continue
-		var offset: Vector2 = player_actor.global_position - global_position
-		if offset.length() > pedestrian_look_ahead:
-			continue
-		var forward_distance := direction_vector.dot(offset)
-		if forward_distance <= 0.0:
-			continue
-		var lateral_distance := absf(direction_vector.orthogonal().dot(offset))
-		if lateral_distance > 18.0:
-			continue
-		return forward_distance
-	return -1.0
+func _pedestrian_stop_distance() -> float:
+	var speed_buffer := current_speed * 0.4
+	return maxf(pedestrian_stop_buffer, TRAFFIC_CAR_LENGTH + speed_buffer)
+
+func _pedestrian_hold_distance() -> float:
+	return maxf(_pedestrian_stop_distance(), TRAFFIC_CAR_LENGTH + pedestrian_stop_buffer)
 
 func _drive_player_controlled(delta: float) -> void:
 	var acceleration := 380.0
@@ -702,10 +705,7 @@ func _displace_pedestrians_ahead(direction_vector: Vector2) -> void:
 	if current_speed < 18.0 or direction_vector == Vector2.ZERO:
 		return
 	var look_ahead := 16.0 + current_speed * 0.08
-	for candidate in get_tree().get_nodes_in_group("civilian_pedestrian"):
-		if not (candidate is Node2D):
-			continue
-		var pedestrian := candidate as Node2D
+	for pedestrian in _impact_candidates():
 		var offset := pedestrian.global_position - global_position
 		var forward_distance := direction_vector.dot(offset)
 		if forward_distance < 0.0 or forward_distance > look_ahead:
@@ -722,6 +722,31 @@ func _register_pedestrian_impact(collider: Node) -> void:
 	if collider.has_method("register_harm"):
 		collider.register_harm(self)
 	civilian_hit.emit(collider)
+
+func release_driver_for_incident() -> bool:
+	if not occupant_present or driver != null:
+		return false
+	incident_stop_active = false
+	occupant_present = false
+	abandoned_after_theft = true
+	current_speed = 0.0
+	longitudinal_speed = 0.0
+	velocity = Vector2.ZERO
+	return true
+
+func _impact_candidates() -> Array[Node2D]:
+	var results: Array[Node2D] = []
+	for candidate in get_tree().get_nodes_in_group("pedestrian_actor"):
+		if not (candidate is Node2D):
+			continue
+		var node := candidate as Node2D
+		if not node.visible:
+			continue
+		results.append(node)
+	return results
+
+func _can_register_pedestrian_impact(collider: Node) -> bool:
+	return collider.is_in_group("pedestrian_actor")
 
 func _build_runtime_segment(forced_action: String = "") -> bool:
 	var tile := _find_district_tile(global_position)

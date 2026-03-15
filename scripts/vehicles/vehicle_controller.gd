@@ -126,7 +126,7 @@ func _emit_civilian_impacts() -> void:
 	for index in range(get_slide_collision_count()):
 		var collision := get_slide_collision(index)
 		var collider := collision.get_collider()
-		if collider == null or not collider.is_in_group("civilian_pedestrian"):
+		if collider == null or not collider.is_in_group("pedestrian_actor"):
 			continue
 		if _is_impact_on_cooldown(collider):
 			continue
@@ -149,7 +149,7 @@ func _displace_pedestrians_ahead() -> void:
 	var forward := Vector2.RIGHT.rotated(rotation) * signf(longitudinal_speed)
 	var look_ahead := 18.0 + absf(longitudinal_speed) * 0.08
 	var half_width := 16.0
-	for candidate in get_tree().get_nodes_in_group("civilian_pedestrian"):
+	for candidate in get_tree().get_nodes_in_group("pedestrian_actor"):
 		if not (candidate is Node2D):
 			continue
 		var pedestrian := candidate as Node2D

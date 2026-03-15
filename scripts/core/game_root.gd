@@ -17,6 +17,8 @@ const CivilianPedestrianScene = preload("res://scenes/actors/civilians/civilian_
 
 var traffic_camera_target: Node2D
 var active_vehicle_source_label := "Parked Vehicle"
+var pending_incident_vehicle: Node2D
+var incident_driver_spawned := false
 
 func _ready() -> void:
 	var player_spawn := _find_spawn_marker("player_spawn")
@@ -59,6 +61,7 @@ func _process(_delta: float) -> void:
 	debug_state.set_motion_debug_lines(_get_motion_debug_lines())
 	if debug_state.impact_state != "None" and (active_vehicle == null or not collision_active):
 		debug_state.set_impact_state("None")
+	_process_pending_incident()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("debug_camera"):
@@ -86,11 +89,16 @@ func _on_player_civilian_assaulted(target: Node2D) -> void:
 	crime_system.report_pedestrian_assault(player, target)
 
 func _on_vehicle_civilian_hit(source: Node2D, target: Node2D) -> void:
-	if not player.is_in_vehicle() or source != _get_active_player_vehicle():
+	if player.is_in_vehicle() and source == _get_active_player_vehicle():
+		var source_speed: float = source.get_impact_velocity().length() if source.has_method("get_impact_velocity") else 0.0
+		debug_state.set_impact_state("Pedestrian hit at %.1f kph" % (source_speed * 0.18))
+		crime_system.report_harmful_collision(source, target)
 		return
-	var source_speed: float = source.get_impact_velocity().length() if source.has_method("get_impact_velocity") else 0.0
-	debug_state.set_impact_state("Pedestrian hit at %.1f kph" % (source_speed * 0.18))
-	crime_system.report_harmful_collision(source, target)
+	if target == player and not player.is_in_vehicle():
+		if source.has_method("begin_incident_stop"):
+			source.begin_incident_stop()
+		pending_incident_vehicle = source
+		incident_driver_spawned = false
 
 func _find_spawn_marker(marker_kind: String) -> Marker2D:
 	return _find_spawn_marker_in_node(world, marker_kind)
@@ -221,6 +229,46 @@ func _spawn_displaced_occupant(spawn_position: Vector2, facing_direction: Vector
 		occupant.global_position = spawn_position
 	if occupant.has_method("configure_reclaim_attempt"):
 		occupant.configure_reclaim_attempt(target_vehicle, randf() < 0.5)
+
+func _maybe_spawn_incident_driver(source_vehicle: Node2D, target_actor: Node2D) -> void:
+	if source_vehicle == null or not is_instance_valid(source_vehicle):
+		return
+	if not source_vehicle.has_method("release_driver_for_incident") or not source_vehicle.release_driver_for_incident():
+		return
+	var spawn_position: Vector2 = source_vehicle.get_driver_entry_position() if source_vehicle.has_method("get_driver_entry_position") else source_vehicle.get_exit_position()
+	var side_offset := spawn_position - source_vehicle.global_position
+	if side_offset != Vector2.ZERO:
+		spawn_position += side_offset.normalized() * 14.0
+	var facing_direction := Vector2.RIGHT.rotated(source_vehicle.rotation)
+	var driver_actor := CivilianPedestrianScene.instantiate()
+	world.add_child(driver_actor)
+	if driver_actor.has_method("place_incident_driver"):
+		driver_actor.place_incident_driver(spawn_position, facing_direction)
+	elif driver_actor.has_method("place_displaced_occupant"):
+		driver_actor.place_displaced_occupant(spawn_position, facing_direction, Vector2.ZERO)
+	else:
+		driver_actor.global_position = spawn_position
+	if driver_actor.has_method("configure_incident_response"):
+		driver_actor.configure_incident_response(source_vehicle, target_actor)
+
+func _process_pending_incident() -> void:
+	if pending_incident_vehicle == null or not is_instance_valid(pending_incident_vehicle):
+		pending_incident_vehicle = null
+		incident_driver_spawned = false
+		return
+	if player.is_in_vehicle():
+		pending_incident_vehicle = null
+		incident_driver_spawned = false
+		return
+	if incident_driver_spawned:
+		return
+	if not player.is_harm_settled():
+		return
+	if player.get_pending_harm_source() != pending_incident_vehicle:
+		return
+	_maybe_spawn_incident_driver(pending_incident_vehicle, player)
+	incident_driver_spawned = true
+	pending_incident_vehicle = null
 
 func _get_active_player_vehicle() -> Node2D:
 	if not player.is_in_vehicle():

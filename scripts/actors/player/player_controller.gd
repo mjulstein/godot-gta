@@ -4,6 +4,7 @@ const ActorState = preload("res://scripts/core/actor_state.gd")
 
 signal civilian_assaulted(target: Node2D)
 signal vehicle_entry_completed(vehicle: Node2D)
+signal harmed(source: Node2D)
 
 @export var tuning: Resource
 @export var collision_flash_time := 0.12
@@ -14,26 +15,54 @@ var impact_cooldowns: Dictionary = {}
 var pending_entry_vehicle: Node2D
 var pending_entry_position := Vector2.ZERO
 var entry_collision_exception_vehicle: PhysicsBody2D
+var default_collision_layer := 0
+var default_collision_mask := 0
+var impact_recovery_remaining := 0.0
+var impact_collision_disable_remaining := 0.0
+var impact_velocity := Vector2.ZERO
+var knocked_out := false
+var pending_harm_source: Node2D
 
 const VEHICLE_ENTRY_REACHED_DISTANCE := 10.0
+const KNOCKOUT_IMPACT_THRESHOLD := 12.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var interaction_sensor: Area2D = $InteractionSensor
 @onready var body_polygon: Polygon2D = $Body
 
 func _ready() -> void:
+	default_collision_layer = collision_layer
+	default_collision_mask = collision_mask
 	add_to_group("traffic_obstacle")
 	add_to_group("traffic_dynamic_obstacle")
+	add_to_group("pedestrian_actor")
 	add_to_group("player_actor")
 
 func _physics_process(delta: float) -> void:
 	collision_flash_remaining = maxf(0.0, collision_flash_remaining - delta)
+	impact_recovery_remaining = maxf(0.0, impact_recovery_remaining - delta)
+	impact_collision_disable_remaining = maxf(0.0, impact_collision_disable_remaining - delta)
 	_tick_impact_cooldowns(delta)
 	body_polygon.color = Color(1, 0.2, 0.2, 1) if collision_flash_remaining > 0.0 else Color(0.976471, 0.956863, 0.278431, 1)
+	_update_impact_collision_state()
 
 	if active_vehicle != null:
 		velocity = Vector2.ZERO
 		return
+	if impact_recovery_remaining > 0.0 and impact_velocity.length() > 1.0:
+		velocity = impact_velocity
+		impact_velocity = impact_velocity.move_toward(Vector2.ZERO, 320.0 * delta)
+		if velocity != Vector2.ZERO:
+			rotation = velocity.angle()
+		move_and_slide()
+		return
+	if knocked_out:
+		velocity = Vector2.ZERO
+		var recovery_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		if recovery_input == Vector2.ZERO:
+			return
+		knocked_out = false
+		pending_harm_source = null
 	if _update_vehicle_entry_approach(delta):
 		move_and_slide()
 		return
@@ -86,12 +115,26 @@ func get_impact_velocity() -> Vector2:
 
 func get_motion_debug_lines() -> PackedStringArray:
 	return PackedStringArray([
-		"On Foot %.1f kph" % (velocity.length() * 0.18),
-		"Input model: %s" % ("entry assist" if pending_entry_vehicle != null else "direct"),
+	"On Foot %.1f kph" % (velocity.length() * 0.18),
+		"Input model: %s" % ("knocked out" if knocked_out else "entry assist" if pending_entry_vehicle != null else "direct"),
 	])
 
 func get_mass_kg() -> float:
 	return mass_kg
+
+func is_knocked_out() -> bool:
+	return knocked_out
+
+func is_harm_settled() -> bool:
+	return knocked_out and impact_recovery_remaining <= 0.0 and velocity.length() <= 1.0
+
+func get_pending_harm_source() -> Node2D:
+	return pending_harm_source
+
+func register_harm(source: Node2D) -> void:
+	collision_flash_remaining = collision_flash_time
+	_apply_impact_response(source)
+	harmed.emit(source)
 
 func begin_vehicle_entry(vehicle: Node2D) -> void:
 	if vehicle == null:
@@ -112,7 +155,7 @@ func _emit_civilian_impacts() -> void:
 	for index in range(get_slide_collision_count()):
 		var collision := get_slide_collision(index)
 		var collider := collision.get_collider()
-		if collider == null or not collider.is_in_group("civilian_pedestrian"):
+		if collider == null or not collider.is_in_group("pedestrian_actor"):
 			continue
 		if _is_impact_on_cooldown(collider):
 			continue
@@ -171,3 +214,29 @@ func _clear_entry_collision_exception() -> void:
 		return
 	remove_collision_exception_with(entry_collision_exception_vehicle)
 	entry_collision_exception_vehicle = null
+
+func _apply_impact_response(source: Node2D) -> void:
+	if source == null or not source.has_method("get_impact_velocity"):
+		return
+	var source_velocity = source.call("get_impact_velocity")
+	if not (source_velocity is Vector2):
+		return
+	var source_mass := 2000.0
+	if source.has_method("get_mass_kg"):
+		source_mass = source.get_mass_kg()
+	var knockback: Vector2 = source_velocity * (source_mass / maxf(source_mass + mass_kg, 1.0))
+	if knockback.length() < KNOCKOUT_IMPACT_THRESHOLD:
+		return
+	cancel_vehicle_entry()
+	impact_velocity = knockback.limit_length(260.0)
+	impact_recovery_remaining = 0.4
+	impact_collision_disable_remaining = 0.25
+	knocked_out = true
+	pending_harm_source = source
+
+func _update_impact_collision_state() -> void:
+	var collisions_enabled := impact_collision_disable_remaining <= 0.0
+	collision_layer = default_collision_layer if collisions_enabled else 0
+	collision_mask = default_collision_mask if collisions_enabled else 0
+	if collision_shape != null:
+		collision_shape.disabled = not collisions_enabled

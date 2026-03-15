@@ -28,10 +28,15 @@ var default_collision_mask := 0
 var reclaim_vehicle: Node2D
 var reclaim_delay_remaining := 0.0
 var reclaim_attempt_active := false
+var incident_vehicle: Node2D
+var incident_target: Node2D
+var incident_response_active := false
 
 const RECLAIM_SPEED := 74.0
 const RECLAIM_REACHED_DISTANCE := 10.0
 const RECLAIM_VEHICLE_STOP_SPEED := 28.0
+const INCIDENT_APPROACH_DISTANCE := 18.0
+const INCIDENT_TARGET_STOP_SPEED := 18.0
 
 @onready var body_polygon: Polygon2D = $Body
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -44,6 +49,7 @@ func _ready() -> void:
 	add_to_group("civilian")
 	add_to_group("civilian_witness")
 	if actor_type == "pedestrian":
+		add_to_group("pedestrian_actor")
 		add_to_group("civilian_pedestrian")
 	else:
 		add_to_group("civilian_vehicle")
@@ -66,6 +72,9 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if _update_reclaim_attempt():
+		move_and_slide()
+		return
+	if _update_incident_response():
 		move_and_slide()
 		return
 
@@ -130,10 +139,25 @@ func place_displaced_occupant(spawn_position: Vector2, facing_direction: Vector2
 	]))
 	pause_remaining = 0.2
 
+func place_incident_driver(spawn_position: Vector2, facing_direction: Vector2) -> void:
+	global_position = spawn_position
+	anchor_position = spawn_position
+	rotation = facing_direction.angle() if facing_direction != Vector2.ZERO else rotation
+	world_path_points = PackedVector2Array()
+	path_target_index = 0
+	pause_remaining = 0.0
+	velocity = Vector2.ZERO
+
 func configure_reclaim_attempt(target_vehicle: Node2D, should_attempt: bool) -> void:
 	reclaim_vehicle = target_vehicle
 	reclaim_attempt_active = should_attempt
 	reclaim_delay_remaining = 0.75
+
+func configure_incident_response(target_vehicle: Node2D, target_actor: Node2D) -> void:
+	incident_vehicle = target_vehicle
+	incident_target = target_actor
+	incident_response_active = true
+	reclaim_delay_remaining = 0.2
 
 func get_mass_kg() -> float:
 	return mass_kg
@@ -157,7 +181,7 @@ func _follow_world_path() -> void:
 		rotation = velocity.angle()
 
 func _has_pedestrian_ahead(direction_vector: Vector2) -> bool:
-	for candidate in get_tree().get_nodes_in_group("civilian_pedestrian"):
+	for candidate in get_tree().get_nodes_in_group("pedestrian_actor"):
 		if candidate == self or not (candidate is Node2D):
 			continue
 		var pedestrian := candidate as Node2D
@@ -238,6 +262,48 @@ func _attempt_vehicle_reclaim() -> void:
 		reclaim_vehicle.clear_driver()
 	player_actor.exit_vehicle(reclaim_vehicle.get_exit_position())
 	queue_free()
+
+func _update_incident_response() -> bool:
+	if not incident_response_active:
+		return false
+	if reclaim_delay_remaining > 0.0:
+		velocity = Vector2.ZERO
+		return true
+	if incident_vehicle == null or not is_instance_valid(incident_vehicle):
+		incident_response_active = false
+		return false
+	var target_position := global_position
+	var move_speed_target := RECLAIM_SPEED
+	var should_resume_vehicle := false
+	if incident_target != null and is_instance_valid(incident_target):
+		var target_velocity := Vector2.ZERO
+		if incident_target.has_method("get_impact_velocity"):
+			target_velocity = incident_target.get_impact_velocity()
+		var toward_vehicle := incident_vehicle.global_position - incident_target.global_position
+		var target_moving_to_vehicle := toward_vehicle != Vector2.ZERO and target_velocity.dot(toward_vehicle.normalized()) > INCIDENT_TARGET_STOP_SPEED
+		if target_moving_to_vehicle:
+			target_position = incident_vehicle.get_driver_entry_position() if incident_vehicle.has_method("get_driver_entry_position") else incident_vehicle.global_position
+			should_resume_vehicle = true
+		elif target_velocity.length() <= INCIDENT_TARGET_STOP_SPEED:
+			var offset_direction := (global_position - incident_target.global_position).normalized()
+			if offset_direction == Vector2.ZERO:
+				offset_direction = Vector2.LEFT
+			target_position = incident_target.global_position + offset_direction * INCIDENT_APPROACH_DISTANCE
+		else:
+			target_position = incident_vehicle.get_driver_entry_position() if incident_vehicle.has_method("get_driver_entry_position") else incident_vehicle.global_position
+	else:
+		target_position = incident_vehicle.get_driver_entry_position() if incident_vehicle.has_method("get_driver_entry_position") else incident_vehicle.global_position
+
+	var to_target := target_position - global_position
+	if to_target.length() <= RECLAIM_REACHED_DISTANCE:
+		velocity = Vector2.ZERO
+		if should_resume_vehicle and incident_vehicle.has_method("resume_civilian_control"):
+			incident_vehicle.resume_civilian_control()
+			queue_free()
+		return true
+	velocity = to_target.normalized() * move_speed_target
+	rotation = velocity.angle()
+	return true
 
 func _get_body_color() -> Color:
 	if harmed_flash_remaining > 0.0:
