@@ -98,7 +98,7 @@ func _rebuild() -> void:
 	if activity_density >= 5 and pedestrian_routes.size() > 1:
 		_add_pedestrian(pedestrian_routes[1])
 	for route_data in _select_traffic_routes(traffic_routes):
-		_add_traffic(route_data["path"])
+		_add_traffic(route_data)
 
 func _add_pedestrian(path: PackedVector2Array) -> void:
 	if path.size() < 2:
@@ -111,12 +111,15 @@ func _add_pedestrian(path: PackedVector2Array) -> void:
 	if actor.has_method("set_path_active"):
 		actor.call("set_path_active", true)
 
-func _add_traffic(path: PackedVector2Array) -> void:
+func _add_traffic(route_data: Dictionary) -> void:
+	var path: PackedVector2Array = route_data.get("path", PackedVector2Array())
 	if path.size() < 2:
 		return
 	var actor = TrafficScene.instantiate()
 	actor.position = to_local(path[0])
 	add_child(actor)
+	if actor.has_method("set_route_context"):
+		actor.call("set_route_context", route_data.get("heading", ""), route_data.get("lane", "right"))
 	if actor.has_method("set_world_path"):
 		actor.call("set_world_path", path)
 	if actor.has_method("set_path_active"):
@@ -407,13 +410,13 @@ func _lane_offset_for_heading(heading: String, lane: String) -> float:
 	var left_lane := lane == "left"
 	match heading:
 		"east":
-			return -INNER_LANE_OFFSET if left_lane else -OUTER_LANE_OFFSET
+			return INNER_LANE_OFFSET if left_lane else OUTER_LANE_OFFSET
 		"west":
-			return INNER_LANE_OFFSET if left_lane else OUTER_LANE_OFFSET
-		"south":
-			return INNER_LANE_OFFSET if left_lane else OUTER_LANE_OFFSET
-		_:
 			return -INNER_LANE_OFFSET if left_lane else -OUTER_LANE_OFFSET
+		"south":
+			return -INNER_LANE_OFFSET if left_lane else -OUTER_LANE_OFFSET
+		_:
+			return INNER_LANE_OFFSET if left_lane else OUTER_LANE_OFFSET
 
 func _get_entry_side_for_heading(heading: String) -> String:
 	match heading:

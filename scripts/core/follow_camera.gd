@@ -19,6 +19,7 @@ var exit_transition_speed := 0.0
 var exit_transition_direction := Vector2.ZERO
 
 func _ready() -> void:
+	add_to_group("runtime_camera")
 	limit_enabled = false
 	zoom = base_zoom
 
@@ -32,6 +33,9 @@ func set_target(node: Node2D) -> void:
 	target = node
 	if target != null:
 		global_position = _clamp_camera_position(target.global_position)
+
+func get_target() -> Node2D:
+	return target
 
 func set_world_bounds(bounds: Rect2) -> void:
 	world_bounds = bounds

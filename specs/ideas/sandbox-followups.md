@@ -1,0 +1,18 @@
+[root](../../README.md) / [specs](../README.md) / [ideas](./README.md) / sandbox-followups.md
+
+# Sandbox Follow-Ups
+
+Future-facing ideas that came up during foundation-sandbox implementation but are not part of the active stabilization handoff.
+
+## Mission Scope
+
+- Future mission concepts should stay in `specs/ideas/` until they are ready for a dedicated feature spec.
+
+## Open Design Ideas
+
+- Civilians may eventually move from simple rail behavior to fuller waypoint logic.
+- Mission vehicles may eventually support baked multi-tile routes, but ambient traffic should keep choosing its next tile reactively at runtime.
+- Police may remain on-foot for the current slice but could gain vehicle pursuit in a later slice.
+- The ASCII world layout may later move into data files instead of staying scene-export driven.
+- Wanted-state UI may stay debug-first for now, then later become a lightweight player-facing HUD.
+- A future same-device multiplayer mode could keep players on one shared camera while they remain in the same framed area, then transition into split viewports once they drift too far apart.

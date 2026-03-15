@@ -46,7 +46,6 @@ Stabilize and tune User Story 2 before promoting any new feature ideas into acti
 2. Tune civilian spacing, witness radius, and wanted decay timing
 3. Improve police pursuit behavior and spawn selection across multiple district tiles
 4. Decide whether wanted UI stays debug-first or gains lightweight HUD treatment
-5. Move future mission concepts into `specs/ideas/` until they are ready for a dedicated feature spec
 
 ## Actor TODO
 
@@ -63,6 +62,7 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 - Keep at least half a car length spacing from vehicles or obstacles ahead
 - Handle corners, tees, dead ends, and parking-lot entry or exit cleanly
 - Reroute around blocked lanes by changing lane, turning, or making a left-lane u-turn when needed
+- Fix failed turns where a car hits the curb, flips direction, and stalls instead of completing the legal corner
 - Stop clipping or snagging on overlay collisions
 
 ### Pedestrians
@@ -71,6 +71,7 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 - Choose sensible turns at corners and intersections
 - Cross roads only on valid crossing paths
 - Avoid stepping into traffic lanes outside crossings
+- Fix pedestrians that oscillate inside intersections instead of using the marked crosswalk path
 
 ### Police
 
@@ -95,10 +96,3 @@ Primary task source:
 - Prefer tunable resources over new hardcoded gameplay values
 - Do not commit absolute local paths, machine-specific config, or secrets
 - Commit before switching between spec work and code work
-
-## Open Decisions
-
-- Whether civilians should stay on simple rail movement or switch to waypoint logic
-- Whether police should remain on-foot in the current slice or gain vehicle pursuit in a later slice
-- Whether the ASCII world layout should move into data files or stay scene-export driven
-- Whether wanted-state UI should stay debug-first or gain a player-facing HUD treatment in the current slice

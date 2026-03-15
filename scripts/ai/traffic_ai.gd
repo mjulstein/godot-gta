@@ -2,11 +2,13 @@ extends CharacterBody2D
 
 signal harmed(source: Node2D)
 
+@export var is_important := false
 @export_range(24.0, 180.0, 1.0) var move_speed := 70.0
 @export_range(24.0, 120.0, 1.0) var vehicle_look_ahead := 54.0
 @export_range(24.0, 96.0, 1.0) var pedestrian_look_ahead := 44.0
 @export var harmed_flash_time := 0.45
 @export_range(0.0, 2.0, 0.05) var respawn_pause := 0.35
+@export_range(0.0, 4.0, 0.05) var recycle_check_interval := 0.5
 
 var harmed_flash_remaining := 0.0
 var pause_remaining := 0.0
@@ -14,6 +16,21 @@ var world_path_points := PackedVector2Array()
 var path_target_index := 1
 var default_collision_layer := 0
 var default_collision_mask := 0
+var camera_tracking_count := 0
+var spawn_position := Vector2.ZERO
+var heading := "east"
+var lane := "right"
+var district_tiles: Array[Node2D] = []
+var recycle_check_remaining := 0.0
+var rng := RandomNumberGenerator.new()
+
+const ROAD_HALF_WIDTH := 96.0
+const INNER_LANE_OFFSET := 28.0
+const OUTER_LANE_OFFSET := 68.0
+const CROSSWALK_CLEAR_OFFSET := 120.0
+const INTERSECTION_ENTRY_OFFSET := 76.0
+const ROUTE_SAMPLE_STEP := 24.0
+const TURN_ARC_STEPS := 6
 
 @onready var body_polygon: Polygon2D = $Body
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -21,6 +38,7 @@ var default_collision_mask := 0
 func _ready() -> void:
 	default_collision_layer = collision_layer
 	default_collision_mask = collision_mask
+	rng.randomize()
 	add_to_group("civilian")
 	add_to_group("civilian_vehicle")
 	add_to_group("civilian_witness")
@@ -29,7 +47,14 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	harmed_flash_remaining = maxf(0.0, harmed_flash_remaining - delta)
 	pause_remaining = maxf(0.0, pause_remaining - delta)
+	recycle_check_remaining = maxf(0.0, recycle_check_remaining - delta)
 	body_polygon.color = _get_body_color()
+
+	if recycle_check_remaining == 0.0:
+		recycle_check_remaining = recycle_check_interval
+		if _should_recycle_off_camera():
+			_recycle_to_new_route()
+			return
 
 	if pause_remaining > 0.0 or world_path_points.size() < 2:
 		velocity = Vector2.ZERO
@@ -43,7 +68,13 @@ func set_world_path(points: PackedVector2Array) -> void:
 	world_path_points = points
 	path_target_index = 1 if world_path_points.size() >= 2 else 0
 	if world_path_points.size() >= 1:
+		spawn_position = world_path_points[0]
 		global_position = world_path_points[0]
+	_build_runtime_segment()
+
+func set_route_context(new_heading: String, new_lane: String) -> void:
+	heading = new_heading if not new_heading.is_empty() else heading
+	lane = new_lane
 
 func set_path_active(is_active: bool) -> void:
 	visible = is_active
@@ -60,13 +91,17 @@ func register_harm(source: Node2D) -> void:
 	pause_remaining = maxf(pause_remaining, 0.4)
 	harmed.emit(source)
 
+func set_camera_tracked(is_tracked: bool) -> void:
+	camera_tracking_count += 1 if is_tracked else -1
+	camera_tracking_count = maxi(0, camera_tracking_count)
+
+func is_camera_tracked() -> bool:
+	return camera_tracking_count > 0
+
 func _follow_world_path() -> void:
+	_refresh_path_target()
 	var target_position := world_path_points[path_target_index]
 	var to_target := target_position - global_position
-	if to_target.length() <= 6.0:
-		_advance_path_target()
-		target_position = world_path_points[path_target_index]
-		to_target = target_position - global_position
 
 	var direction_vector := to_target.normalized() if to_target.length() > 0.0 else Vector2.ZERO
 	velocity = direction_vector * move_speed
@@ -75,13 +110,149 @@ func _follow_world_path() -> void:
 	if velocity != Vector2.ZERO:
 		rotation = velocity.angle()
 
+func _refresh_path_target() -> void:
+	var iterations := 0
+	while iterations < world_path_points.size():
+		var target_position := world_path_points[path_target_index]
+		var to_target := target_position - global_position
+		if to_target.length() <= 10.0:
+			_advance_path_target()
+			iterations += 1
+			continue
+		if _is_target_behind_vehicle(to_target):
+			_advance_path_target()
+			iterations += 1
+			continue
+		break
+
 func _advance_path_target() -> void:
 	path_target_index += 1
 	if path_target_index < world_path_points.size():
 		return
-	global_position = world_path_points[0]
-	path_target_index = 1 if world_path_points.size() >= 2 else 0
+	if _build_runtime_segment():
+		return
+	if is_camera_tracked():
+		velocity = Vector2.ZERO
+		path_target_index = max(0, world_path_points.size() - 1)
+		return
+	if _should_recycle_off_camera():
+		_recycle_to_new_route()
+		return
+	velocity = Vector2.ZERO
+	path_target_index = max(0, world_path_points.size() - 1)
+
+func _should_recycle_off_camera() -> bool:
+	if is_important:
+		return false
+	var active_cameras := _get_active_cameras()
+	if active_cameras.is_empty():
+		return false
+	var current_tile := _find_district_tile(global_position)
+	var tile_size := Vector2(1280, 1280)
+	if current_tile != null:
+		var configured_size = current_tile.get("tile_world_size")
+		if configured_size is Vector2:
+			tile_size = configured_size
+	var recycle_margin := tile_size
+	for camera_node in active_cameras:
+		if _is_within_camera_bounds(camera_node, recycle_margin):
+			return false
+	return true
+
+func _recycle_to_new_route() -> void:
+	var next_spawn := _pick_recycle_spawn()
+	if next_spawn.is_empty():
+		return
+	var tile := next_spawn["tile"] as Node2D
+	heading = next_spawn["heading"]
+	lane = next_spawn["lane"]
+	spawn_position = _spawn_point(tile, heading, lane)
+	global_position = spawn_position
+	rotation = _forward_vector_for_heading(heading).angle()
+	velocity = Vector2.ZERO
 	pause_remaining = respawn_pause
+	_build_runtime_segment()
+
+func _pick_recycle_spawn() -> Dictionary:
+	if district_tiles.is_empty():
+		district_tiles = _collect_district_tiles(get_tree().root)
+	var current_tile := _find_district_tile(global_position)
+	var candidates: Array[Dictionary] = []
+	for tile in district_tiles:
+		if tile == current_tile:
+			continue
+		if _tile_is_within_any_camera(tile):
+			continue
+		for spawn_heading in ["east", "west", "north", "south"]:
+			if not _tile_open(tile, _entry_side_for_heading(spawn_heading)):
+				continue
+			for spawn_lane in ["left", "right"]:
+				candidates.append({
+					"tile": tile,
+					"heading": spawn_heading,
+					"lane": spawn_lane,
+				})
+	if candidates.is_empty():
+		return {}
+	return candidates[rng.randi_range(0, candidates.size() - 1)]
+
+func _is_within_camera_bounds(camera_node: Camera2D, margin: Vector2) -> bool:
+	var viewport_size := camera_node.get_viewport_rect().size
+	if viewport_size == Vector2.ZERO:
+		return false
+	var half_visible := Vector2(
+		viewport_size.x / maxf(camera_node.zoom.x, 0.001),
+		viewport_size.y / maxf(camera_node.zoom.y, 0.001)
+	) * 0.5
+	var bounds := Rect2(camera_node.global_position - half_visible - margin, half_visible * 2.0 + margin * 2.0)
+	return bounds.has_point(global_position)
+
+func _tile_is_within_any_camera(tile: Node2D) -> bool:
+	var active_cameras := _get_active_cameras()
+	if active_cameras.is_empty():
+		return false
+	var tile_size = tile.get("tile_world_size")
+	if not (tile_size is Vector2):
+		return false
+	var margin: Vector2 = tile_size
+	for camera_node in active_cameras:
+		if _tile_within_camera_bounds(tile, camera_node, margin):
+			return true
+	return false
+
+func _get_active_cameras() -> Array[Camera2D]:
+	var cameras: Array[Camera2D] = []
+	for candidate in get_tree().get_nodes_in_group("runtime_camera"):
+		if not (candidate is Camera2D):
+			continue
+		var camera_node := candidate as Camera2D
+		if not camera_node.is_inside_tree():
+			continue
+		if not camera_node.enabled:
+			continue
+		cameras.append(camera_node)
+	return cameras
+
+func _tile_within_camera_bounds(tile: Node2D, camera_node: Camera2D, margin: Vector2) -> bool:
+	var viewport_size := camera_node.get_viewport_rect().size
+	if viewport_size == Vector2.ZERO:
+		return false
+	var half_visible := Vector2(
+		viewport_size.x / maxf(camera_node.zoom.x, 0.001),
+		viewport_size.y / maxf(camera_node.zoom.y, 0.001)
+	) * 0.5
+	var bounds := Rect2(camera_node.global_position - half_visible - margin, half_visible * 2.0 + margin * 2.0)
+	var tile_size: Vector2 = tile.get("tile_world_size")
+	var tile_rect := Rect2(tile.global_position - tile_size * 0.5, tile_size)
+	return bounds.intersects(tile_rect)
+
+func _is_target_behind_vehicle(to_target: Vector2) -> bool:
+	if to_target == Vector2.ZERO:
+		return false
+	var forward := Vector2.RIGHT.rotated(rotation)
+	if forward == Vector2.ZERO:
+		return false
+	return forward.dot(to_target.normalized()) < -0.2
 
 func _has_pedestrian_ahead(direction_vector: Vector2) -> bool:
 	for candidate in get_tree().get_nodes_in_group("civilian_pedestrian"):
@@ -124,3 +295,241 @@ func _has_vehicle_ahead(direction_vector: Vector2) -> bool:
 
 func _get_body_color() -> Color:
 	return Color(1, 0.2, 0.2, 1) if harmed_flash_remaining > 0.0 else Color(0.105882, 0.760784, 1, 1)
+
+func _build_runtime_segment() -> bool:
+	var tile := _find_district_tile(global_position)
+	if tile == null:
+		return false
+
+	var action := _choose_action(tile)
+	var next_heading := heading
+	var next_lane := lane
+	match action:
+		"left":
+			next_heading = _get_left_heading(heading)
+			next_lane = "left"
+		"right":
+			next_heading = _get_right_heading(heading)
+			next_lane = "right"
+		"uturn":
+			next_heading = _get_opposite_heading(heading)
+			next_lane = "right"
+		"merge_left_uturn":
+			next_heading = _get_opposite_heading(heading)
+			next_lane = "right"
+
+	var points: Array[Vector2] = [global_position]
+	var entry_clear := _world_point(tile, heading, lane, CROSSWALK_CLEAR_OFFSET, false)
+	if global_position.distance_to(entry_clear) > 8.0:
+		points.append(entry_clear)
+
+	match action:
+		"straight":
+			points.append(_world_point(tile, heading, lane, _next_tile_offset(tile, heading), true))
+		"left", "right":
+			var entry_point := _world_point(tile, heading, lane, INTERSECTION_ENTRY_OFFSET, false)
+			if points[points.size() - 1].distance_to(entry_point) > 8.0:
+				points.append(entry_point)
+			points.append_array(_sample_corner(
+				entry_point,
+				_turn_pivot(tile, heading, lane, next_heading, next_lane),
+				_world_point(tile, next_heading, next_lane, _next_tile_offset(tile, next_heading), true)
+			))
+		"uturn":
+			var u_entry := _world_point(tile, heading, "left", INTERSECTION_ENTRY_OFFSET, false)
+			if points[points.size() - 1].distance_to(u_entry) > 8.0:
+				points.append(u_entry)
+			points.append_array(_sample_corner(
+				u_entry,
+				tile.global_position,
+				_world_point(tile, next_heading, next_lane, _next_tile_offset(tile, next_heading), true)
+			))
+		"merge_left_uturn":
+			var merge_point := _merge_point(tile, heading, "right", "left")
+			if points[points.size() - 1].distance_to(merge_point) > 8.0:
+				points.append(merge_point)
+			var merge_entry := _world_point(tile, heading, "left", INTERSECTION_ENTRY_OFFSET, false)
+			points.append_array(_sample_corner(
+				merge_entry,
+				tile.global_position,
+				_world_point(tile, next_heading, next_lane, _next_tile_offset(tile, next_heading), true)
+			))
+
+	world_path_points = PackedVector2Array(points)
+	path_target_index = 1 if world_path_points.size() >= 2 else 0
+	heading = next_heading
+	lane = next_lane
+	return world_path_points.size() >= 2
+
+func _find_district_tile(position: Vector2) -> Node2D:
+	if district_tiles.is_empty():
+		district_tiles = _collect_district_tiles(get_tree().root)
+	for candidate in district_tiles:
+		var tile_size = candidate.get("tile_world_size")
+		if not (tile_size is Vector2):
+			continue
+		var half_tile: Vector2 = tile_size * 0.5
+		var local_position := position - candidate.global_position
+		if absf(local_position.x) <= half_tile.x and absf(local_position.y) <= half_tile.y:
+			return candidate
+	return null
+
+func _collect_district_tiles(node: Node) -> Array[Node2D]:
+	var results: Array[Node2D] = []
+	if node is Node2D and node.has_node("Ground") and node.has_method("get") and node.get("tile_world_size") is Vector2:
+		results.append(node as Node2D)
+	for child in node.get_children():
+		results.append_array(_collect_district_tiles(child))
+	return results
+
+func _spawn_point(tile: Node2D, direction: String, lane_name: String) -> Vector2:
+	return _world_point(tile, direction, lane_name, _spawn_offset(tile, direction), false)
+
+func _choose_action(tile: Node2D) -> String:
+	var can_go_straight := _tile_open(tile, _get_exit_side_for_heading(heading))
+	var can_turn_left := _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(heading)))
+	var can_turn_right := _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(heading)))
+	if lane == "left":
+		if can_go_straight:
+			return "straight"
+		if can_turn_left:
+			return "left"
+		if can_turn_right:
+			return "right"
+		return "uturn"
+	if can_turn_right:
+		return "right"
+	if can_go_straight:
+		return "straight"
+	if can_turn_left:
+		return "left"
+	return "merge_left_uturn"
+
+func _tile_open(tile: Node2D, side: String) -> bool:
+	return bool(tile.get("open_%s" % side))
+
+func _next_tile_offset(tile: Node2D, direction: String) -> float:
+	var tile_size: Vector2 = tile.get("tile_world_size")
+	var half_extent := (tile_size.x if _is_horizontal(direction) else tile_size.y) * 0.5
+	return half_extent + CROSSWALK_CLEAR_OFFSET
+
+func _spawn_offset(tile: Node2D, direction: String) -> float:
+	var tile_size: Vector2 = tile.get("tile_world_size")
+	var half_extent := (tile_size.x if _is_horizontal(direction) else tile_size.y) * 0.5
+	return half_extent + CROSSWALK_CLEAR_OFFSET
+
+func _world_point(tile: Node2D, direction: String, lane_name: String, axis_offset: float, use_exit_side: bool) -> Vector2:
+	var signed_axis := axis_offset * _axis_sign(direction, use_exit_side)
+	var lane_coordinate := _lane_coordinate(direction, lane_name)
+	if _is_horizontal(direction):
+		return tile.global_position + Vector2(signed_axis, lane_coordinate)
+	return tile.global_position + Vector2(lane_coordinate, signed_axis)
+
+func _turn_pivot(tile: Node2D, entry_heading: String, entry_lane: String, exit_heading: String, exit_lane: String) -> Vector2:
+	return tile.global_position + Vector2(
+		_lane_coordinate(exit_heading, exit_lane),
+		_lane_coordinate(entry_heading, entry_lane)
+	)
+
+func _merge_point(tile: Node2D, direction: String, from_lane: String, to_lane: String) -> Vector2:
+	var axis_offset := (CROSSWALK_CLEAR_OFFSET + INTERSECTION_ENTRY_OFFSET) * 0.5
+	var signed_axis := axis_offset * _axis_sign(direction, false)
+	var lane_coordinate := lerpf(_lane_coordinate(direction, from_lane), _lane_coordinate(direction, to_lane), 0.7)
+	if _is_horizontal(direction):
+		return tile.global_position + Vector2(signed_axis, lane_coordinate)
+	return tile.global_position + Vector2(lane_coordinate, signed_axis)
+
+func _sample_corner(start: Vector2, pivot: Vector2, end: Vector2) -> Array[Vector2]:
+	var points: Array[Vector2] = []
+	var curve_length := start.distance_to(pivot) + pivot.distance_to(end)
+	var step_count := maxi(TURN_ARC_STEPS, int(ceil(curve_length / ROUTE_SAMPLE_STEP)))
+	for index in range(1, step_count + 1):
+		var t := float(index) / float(step_count)
+		var a := start.lerp(pivot, t)
+		var b := pivot.lerp(end, t)
+		points.append(a.lerp(b, t))
+	return points
+
+func _lane_coordinate(direction: String, lane_name: String) -> float:
+	var left_lane := lane_name == "left"
+	match direction:
+		"east":
+			return INNER_LANE_OFFSET if left_lane else OUTER_LANE_OFFSET
+		"west":
+			return -INNER_LANE_OFFSET if left_lane else -OUTER_LANE_OFFSET
+		"south":
+			return -INNER_LANE_OFFSET if left_lane else -OUTER_LANE_OFFSET
+		_:
+			return INNER_LANE_OFFSET if left_lane else OUTER_LANE_OFFSET
+
+func _axis_sign(direction: String, use_exit_side: bool) -> float:
+	match direction:
+		"east":
+			return 1.0 if use_exit_side else -1.0
+		"west":
+			return -1.0 if use_exit_side else 1.0
+		"south":
+			return 1.0 if use_exit_side else -1.0
+		_:
+			return -1.0 if use_exit_side else 1.0
+
+func _is_horizontal(direction: String) -> bool:
+	return direction == "east" or direction == "west"
+
+func _forward_vector_for_heading(direction: String) -> Vector2:
+	match direction:
+		"east":
+			return Vector2.RIGHT
+		"west":
+			return Vector2.LEFT
+		"south":
+			return Vector2.DOWN
+		_:
+			return Vector2.UP
+
+func _get_exit_side_for_heading(direction: String) -> String:
+	return direction
+
+func _entry_side_for_heading(direction: String) -> String:
+	match direction:
+		"east":
+			return "west"
+		"west":
+			return "east"
+		"south":
+			return "north"
+		_:
+			return "south"
+
+func _get_left_heading(direction: String) -> String:
+	match direction:
+		"east":
+			return "north"
+		"west":
+			return "south"
+		"south":
+			return "east"
+		_:
+			return "west"
+
+func _get_right_heading(direction: String) -> String:
+	match direction:
+		"east":
+			return "south"
+		"west":
+			return "north"
+		"south":
+			return "west"
+		_:
+			return "east"
+
+func _get_opposite_heading(direction: String) -> String:
+	match direction:
+		"east":
+			return "west"
+		"west":
+			return "east"
+		"south":
+			return "north"
+		_:
+			return "south"

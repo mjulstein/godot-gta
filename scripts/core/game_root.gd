@@ -12,6 +12,9 @@ const ActorState = preload("res://scripts/core/actor_state.gd")
 @onready var debug_overlay: Control = $Ui/DebugOverlay
 @onready var interaction_prompt = $Ui/InteractionPrompt
 @onready var interaction_system: Node = $VehicleInteractionSystem
+@onready var pause_controller: Node = $Ui/PauseController
+
+var traffic_camera_target: Node2D
 
 func _ready() -> void:
 	var player_spawn := _find_spawn_marker("player_spawn")
@@ -33,10 +36,12 @@ func _ready() -> void:
 	interaction_prompt.set_debug_state(debug_state)
 	camera.set_world_bounds(_compute_world_bounds())
 	camera.set_target(player)
+	if pause_controller.has_signal("pause_toggled"):
+		pause_controller.pause_toggled.connect(_on_pause_toggled)
 
 func _process(_delta: float) -> void:
-	var active_actor: Node2D = vehicle if player.is_in_vehicle() else player
-	if camera.target != active_actor:
+	var active_actor: Node2D = _get_active_camera_target()
+	if camera.get_target() != active_actor:
 		camera.set_target(active_actor)
 
 	debug_state.set_player_mode("Driving" if player.get_state_name() == ActorState.DRIVING else "On Foot")
@@ -44,6 +49,12 @@ func _process(_delta: float) -> void:
 	debug_state.set_speed(vehicle.velocity.length() * 0.18 if player.is_in_vehicle() else player.velocity.length() * 0.18)
 	var collision_active: bool = vehicle.has_recent_collision() if player.is_in_vehicle() else player.has_recent_collision()
 	debug_state.set_collision_state("Impact" if collision_active else "Clear")
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("debug_camera"):
+		return
+	get_viewport().set_input_as_handled()
+	_toggle_traffic_camera()
 
 func _on_enter_requested(target_vehicle: Node2D) -> void:
 	if not target_vehicle.can_enter():
@@ -99,3 +110,45 @@ func _compute_world_bounds() -> Rect2:
 		max_corner.x = maxf(max_corner.x, node.global_position.x + half_tile.x)
 		max_corner.y = maxf(max_corner.y, node.global_position.y + half_tile.y)
 	return Rect2(min_corner, max_corner - min_corner)
+
+func _get_active_camera_target() -> Node2D:
+	if is_instance_valid(traffic_camera_target):
+		return traffic_camera_target
+	return vehicle if player.is_in_vehicle() else player
+
+func _toggle_traffic_camera() -> void:
+	_set_traffic_camera_target(_find_nearby_traffic_vehicle(traffic_camera_target))
+
+func _set_traffic_camera_target(target_vehicle: Node2D) -> void:
+	if traffic_camera_target == target_vehicle:
+		return
+	if is_instance_valid(traffic_camera_target) and traffic_camera_target.has_method("set_camera_tracked"):
+		traffic_camera_target.call("set_camera_tracked", false)
+	traffic_camera_target = target_vehicle
+	if is_instance_valid(traffic_camera_target) and traffic_camera_target.has_method("set_camera_tracked"):
+		traffic_camera_target.call("set_camera_tracked", true)
+
+func _find_nearby_traffic_vehicle(excluded_vehicle: Node2D = null) -> Node2D:
+	var search_origin := camera.global_position
+	var best_vehicle: Node2D
+	var best_distance := INF
+	for candidate in get_tree().get_nodes_in_group("traffic_vehicle"):
+		if not (candidate is Node2D):
+			continue
+		var traffic_vehicle := candidate as Node2D
+		if traffic_vehicle == excluded_vehicle:
+			continue
+		if not traffic_vehicle.visible:
+			continue
+		var distance := search_origin.distance_squared_to(traffic_vehicle.global_position)
+		if distance < best_distance:
+			best_distance = distance
+			best_vehicle = traffic_vehicle
+	if best_vehicle == null and is_instance_valid(excluded_vehicle):
+		return excluded_vehicle
+	return best_vehicle
+
+func _on_pause_toggled(is_paused: bool) -> void:
+	if is_paused:
+		return
+	_set_traffic_camera_target(null)
