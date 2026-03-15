@@ -1,6 +1,7 @@
 extends Node2D
 
 const ActorState = preload("res://scripts/core/actor_state.gd")
+const CivilianPedestrianScene = preload("res://scenes/actors/civilians/civilian_pedestrian.tscn")
 
 @onready var debug_state: Node = $DebugState
 @onready var world: Node2D = $World
@@ -15,6 +16,7 @@ const ActorState = preload("res://scripts/core/actor_state.gd")
 @onready var pause_controller: Node = $Ui/PauseController
 
 var traffic_camera_target: Node2D
+var active_vehicle_source_label := "Parked Vehicle"
 
 func _ready() -> void:
 	var player_spawn := _find_spawn_marker("player_spawn")
@@ -28,9 +30,10 @@ func _ready() -> void:
 	interaction_system.enter_requested.connect(_on_enter_requested)
 	interaction_system.exit_requested.connect(_on_exit_requested)
 	player.civilian_assaulted.connect(_on_player_civilian_assaulted)
-	vehicle.civilian_hit.connect(_on_vehicle_civilian_hit)
+	_connect_vehicle_signals(vehicle)
 	crime_system.crime_reported.connect(wanted_system.handle_crime)
 	wanted_system.configure(player, world, debug_state)
+	get_tree().node_added.connect(_on_tree_node_added)
 
 	debug_overlay.set_debug_state(debug_state)
 	interaction_prompt.set_debug_state(debug_state)
@@ -44,11 +47,17 @@ func _process(_delta: float) -> void:
 	if camera.get_target() != active_actor:
 		camera.set_target(active_actor)
 
+	var active_vehicle := _get_active_player_vehicle()
 	debug_state.set_player_mode("Driving" if player.get_state_name() == ActorState.DRIVING else "On Foot")
 	debug_state.set_interaction_hint(interaction_system.get_interaction_hint())
-	debug_state.set_speed(vehicle.velocity.length() * 0.18 if player.is_in_vehicle() else player.velocity.length() * 0.18)
-	var collision_active: bool = vehicle.has_recent_collision() if player.is_in_vehicle() else player.has_recent_collision()
+	debug_state.set_active_vehicle_label(_get_active_vehicle_label(active_vehicle))
+	debug_state.set_takeover_state(_get_takeover_state())
+	debug_state.set_speed(active_vehicle.velocity.length() * 0.18 if active_vehicle != null else player.velocity.length() * 0.18)
+	var collision_active: bool = active_vehicle.has_recent_collision() if active_vehicle != null else player.has_recent_collision()
 	debug_state.set_collision_state("Impact" if collision_active else "Clear")
+	debug_state.set_motion_debug_lines(_get_motion_debug_lines())
+	if debug_state.impact_state != "None" and (active_vehicle == null or not collision_active):
+		debug_state.set_impact_state("None")
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("debug_camera"):
@@ -59,11 +68,14 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_enter_requested(target_vehicle: Node2D) -> void:
 	if not target_vehicle.can_enter():
 		return
-	target_vehicle.set_driver(player)
-	player.enter_vehicle(target_vehicle)
+	var vehicle_to_drive := _prepare_vehicle_takeover(target_vehicle)
+	vehicle_to_drive.set_driver(player)
+	player.enter_vehicle(vehicle_to_drive)
 	if target_vehicle.has_method("was_theft_reported") and not target_vehicle.was_theft_reported():
-		if crime_system.report_vehicle_theft(player, target_vehicle):
+		if crime_system.report_vehicle_theft(player, vehicle_to_drive):
 			target_vehicle.mark_theft_reported()
+			if vehicle_to_drive != target_vehicle and vehicle_to_drive.has_method("mark_theft_reported"):
+				vehicle_to_drive.mark_theft_reported()
 
 func _on_exit_requested(target_vehicle: Node2D) -> void:
 	target_vehicle.clear_driver()
@@ -72,10 +84,12 @@ func _on_exit_requested(target_vehicle: Node2D) -> void:
 func _on_player_civilian_assaulted(target: Node2D) -> void:
 	crime_system.report_pedestrian_assault(player, target)
 
-func _on_vehicle_civilian_hit(target: Node2D) -> void:
-	if not player.is_in_vehicle():
+func _on_vehicle_civilian_hit(source: Node2D, target: Node2D) -> void:
+	if not player.is_in_vehicle() or source != _get_active_player_vehicle():
 		return
-	crime_system.report_harmful_collision(vehicle, target)
+	var source_speed: float = source.get_impact_velocity().length() if source.has_method("get_impact_velocity") else 0.0
+	debug_state.set_impact_state("Pedestrian hit at %.1f kph" % (source_speed * 0.18))
+	crime_system.report_harmful_collision(source, target)
 
 func _find_spawn_marker(marker_kind: String) -> Marker2D:
 	return _find_spawn_marker_in_node(world, marker_kind)
@@ -114,7 +128,8 @@ func _compute_world_bounds() -> Rect2:
 func _get_active_camera_target() -> Node2D:
 	if is_instance_valid(traffic_camera_target):
 		return traffic_camera_target
-	return vehicle if player.is_in_vehicle() else player
+	var active_vehicle := _get_active_player_vehicle()
+	return active_vehicle if active_vehicle != null else player
 
 func _toggle_traffic_camera() -> void:
 	_set_traffic_camera_target(_find_debug_traffic_vehicle(traffic_camera_target))
@@ -166,3 +181,82 @@ func _on_pause_toggled(is_paused: bool) -> void:
 	if is_paused:
 		return
 	_set_traffic_camera_target(null)
+
+func _on_tree_node_added(node: Node) -> void:
+	if node == null:
+		return
+	if node.has_signal("civilian_hit"):
+		_connect_vehicle_signals(node)
+
+func _connect_vehicle_signals(node: Node) -> void:
+	if node == null or not node.has_signal("civilian_hit"):
+		return
+	var bound_callable := Callable(self, "_on_connected_vehicle_civilian_hit").bind(node)
+	if not node.is_connected("civilian_hit", bound_callable):
+		node.connect("civilian_hit", bound_callable)
+
+func _on_connected_vehicle_civilian_hit(target: Node2D, source: Node2D) -> void:
+	_on_vehicle_civilian_hit(source, target)
+
+func _prepare_vehicle_takeover(target_vehicle: Node2D) -> Node2D:
+	if target_vehicle == vehicle:
+		active_vehicle_source_label = "Parked Vehicle"
+		return vehicle
+	var displaced_position: Vector2 = target_vehicle.get_exit_position() if target_vehicle.has_method("get_exit_position") else target_vehicle.global_position
+	var forward := Vector2.RIGHT.rotated(target_vehicle.rotation)
+	var side := Vector2.DOWN.rotated(target_vehicle.rotation)
+	if target_vehicle.has_method("has_civilian_occupant") and target_vehicle.has_civilian_occupant():
+		_spawn_displaced_occupant(displaced_position, forward, side)
+		target_vehicle.consume_civilian_occupant()
+	vehicle.global_position = target_vehicle.global_position
+	vehicle.rotation = target_vehicle.rotation
+	var source_body := target_vehicle as CharacterBody2D
+	vehicle.velocity = source_body.velocity if source_body != null else Vector2.ZERO
+	active_vehicle_source_label = "Civilian Traffic"
+	target_vehicle.queue_free()
+	return vehicle
+
+func _spawn_displaced_occupant(spawn_position: Vector2, facing_direction: Vector2, escape_direction: Vector2) -> void:
+	var occupant := CivilianPedestrianScene.instantiate()
+	world.add_child(occupant)
+	if occupant.has_method("place_displaced_occupant"):
+		occupant.place_displaced_occupant(spawn_position, facing_direction, escape_direction)
+	else:
+		occupant.global_position = spawn_position
+
+func _get_active_player_vehicle() -> Node2D:
+	if not player.is_in_vehicle():
+		return null
+	return player.active_vehicle as Node2D
+
+func _get_active_vehicle_label(active_vehicle: Node2D) -> String:
+	if active_vehicle == null:
+		return "None"
+	return active_vehicle_source_label
+
+func _get_takeover_state() -> String:
+	if player.is_in_vehicle():
+		return "Driving %s" % active_vehicle_source_label.to_lower()
+	var candidate: Node2D = interaction_system.get_nearest_vehicle()
+	if candidate == null:
+		return "No vehicle nearby"
+	if candidate == vehicle:
+		return "Parked car ready"
+	return "Civilian takeover ready"
+
+func _get_motion_debug_lines() -> PackedStringArray:
+	if is_instance_valid(traffic_camera_target) and traffic_camera_target.has_method("get_motion_debug_lines"):
+		var traffic_lines = traffic_camera_target.call("get_motion_debug_lines")
+		if traffic_lines is PackedStringArray:
+			var lines: PackedStringArray = traffic_lines
+			lines.insert(0, "Inspecting traffic car")
+			return lines
+	if player.is_in_vehicle():
+		var active_vehicle := _get_active_player_vehicle()
+		if active_vehicle != null and active_vehicle.has_method("get_motion_debug_lines"):
+			var vehicle_lines = active_vehicle.call("get_motion_debug_lines")
+			if vehicle_lines is PackedStringArray:
+				var lines: PackedStringArray = vehicle_lines
+				lines.insert(0, "Inspecting player car")
+				return lines
+	return player.get_motion_debug_lines()

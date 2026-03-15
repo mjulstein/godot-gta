@@ -3,6 +3,7 @@ extends CharacterBody2D
 const CivilianVehicleTuning = preload("res://scripts/ai/vehicular/civilian/civilian_vehicle_tuning.gd")
 
 signal harmed(source: Node2D)
+signal civilian_hit(target: Node2D)
 
 @export var tuning: CivilianVehicleTuning
 @export var is_important := false
@@ -46,6 +47,9 @@ var last_dynamic_obstacle_ahead_distance := -1.0
 var last_barrier_ahead_distance := -1.0
 var recent_tiles: Array[Vector2] = []
 var current_speed := 0.0
+var theft_reported := false
+var impact_cooldowns: Dictionary = {}
+var occupant_present := true
 
 const ROAD_HALF_WIDTH := 96.0
 const INNER_LANE_OFFSET := 28.0
@@ -84,6 +88,7 @@ func _physics_process(delta: float) -> void:
 	recycle_check_remaining = maxf(0.0, recycle_check_remaining - delta)
 	recovery_cooldown_remaining = maxf(0.0, recovery_cooldown_remaining - delta)
 	reroute_focus_remaining = maxf(0.0, reroute_focus_remaining - delta)
+	_tick_impact_cooldowns(delta)
 	body_polygon.color = _get_body_color()
 
 	if recycle_check_remaining == 0.0:
@@ -101,6 +106,8 @@ func _physics_process(delta: float) -> void:
 	_follow_world_path()
 	move_and_slide()
 	_update_rotation_from_motion(previous_position)
+	if get_slide_collision_count() > 0:
+		_emit_civilian_impacts()
 
 func initialize_runtime_spawn(initial_heading: String, initial_lane: String, initial_action: String = "straight") -> void:
 	heading = initial_heading if not initial_heading.is_empty() else heading
@@ -144,6 +151,45 @@ func register_harm(source: Node2D) -> void:
 	pause_remaining = maxf(pause_remaining, 0.4)
 	harmed.emit(source)
 
+func can_enter() -> bool:
+	return occupant_present
+
+func has_civilian_occupant() -> bool:
+	return occupant_present
+
+func consume_civilian_occupant() -> void:
+	occupant_present = false
+
+func get_exit_position() -> Vector2:
+	return global_position + Vector2.DOWN.rotated(rotation) * 28.0
+
+func mark_theft_reported() -> void:
+	theft_reported = true
+
+func was_theft_reported() -> bool:
+	return theft_reported
+
+func get_impact_velocity() -> Vector2:
+	return velocity
+
+func get_motion_debug_lines() -> PackedStringArray:
+	var target_speed := _target_speed_for_action(active_action)
+	var blocker := "clear"
+	if last_barrier_ahead_distance >= 0.0:
+		blocker = "barrier %.0f" % last_barrier_ahead_distance
+	elif last_dynamic_obstacle_ahead_distance >= 0.0:
+		blocker = "dynamic %.0f" % last_dynamic_obstacle_ahead_distance
+	elif last_pedestrian_ahead_distance >= 0.0:
+		blocker = "ped %.0f" % last_pedestrian_ahead_distance
+	elif last_vehicle_ahead_distance >= 0.0:
+		blocker = "car %.0f" % last_vehicle_ahead_distance
+	return PackedStringArray([
+		"%s lane %s" % [heading, lane],
+		"Action %s%s" % [active_action, " reroute" if is_rerouting() else ""],
+		"Speed %.1f / %.1f kph" % [current_speed * 0.18, target_speed * 0.18],
+		"Blocker: %s" % blocker,
+	])
+
 func set_camera_tracked(is_tracked: bool) -> void:
 	camera_tracking_count += 1 if is_tracked else -1
 	camera_tracking_count = maxi(0, camera_tracking_count)
@@ -168,6 +214,7 @@ func _follow_world_path() -> void:
 	velocity = direction_vector * current_speed
 	var is_blocked := false
 	if direction_vector != Vector2.ZERO:
+		_displace_pedestrians_ahead(direction_vector)
 		is_blocked = _should_stop_for_obstacle(direction_vector)
 		if _should_hold_for_intersection_obstacle(direction_vector):
 			var hold_point := _current_intersection_hold_point()
@@ -496,6 +543,52 @@ func _nearest_forward_distance(group_name: String, direction_vector: Vector2, ma
 
 func _get_body_color() -> Color:
 	return Color(1, 0.2, 0.2, 1) if harmed_flash_remaining > 0.0 else Color(0.105882, 0.760784, 1, 1)
+
+func _emit_civilian_impacts() -> void:
+	for index in range(get_slide_collision_count()):
+		var collision := get_slide_collision(index)
+		var collider := collision.get_collider()
+		if collider == null or not collider.is_in_group("civilian_pedestrian"):
+			continue
+		if _is_impact_on_cooldown(collider):
+			continue
+		_register_pedestrian_impact(collider)
+
+func _tick_impact_cooldowns(delta: float) -> void:
+	for collider_id in impact_cooldowns.keys():
+		var remaining: float = impact_cooldowns[collider_id] - delta
+		if remaining <= 0.0:
+			impact_cooldowns.erase(collider_id)
+		else:
+			impact_cooldowns[collider_id] = remaining
+
+func _is_impact_on_cooldown(collider: Node) -> bool:
+	return impact_cooldowns.has(collider.get_instance_id())
+
+func _displace_pedestrians_ahead(direction_vector: Vector2) -> void:
+	if current_speed < 18.0 or direction_vector == Vector2.ZERO:
+		return
+	var look_ahead := 16.0 + current_speed * 0.08
+	for candidate in get_tree().get_nodes_in_group("civilian_pedestrian"):
+		if not (candidate is Node2D):
+			continue
+		var pedestrian := candidate as Node2D
+		var offset := pedestrian.global_position - global_position
+		var forward_distance := direction_vector.dot(offset)
+		if forward_distance < 0.0 or forward_distance > look_ahead:
+			continue
+		var lateral_distance := absf(direction_vector.orthogonal().dot(offset))
+		if lateral_distance > 16.0:
+			continue
+		if _is_impact_on_cooldown(pedestrian):
+			continue
+		_register_pedestrian_impact(pedestrian)
+
+func _register_pedestrian_impact(collider: Node) -> void:
+	impact_cooldowns[collider.get_instance_id()] = 0.75
+	if collider.has_method("register_harm"):
+		collider.register_harm(self)
+	civilian_hit.emit(collider)
 
 func _build_runtime_segment(forced_action: String = "") -> bool:
 	var tile := _find_district_tile(global_position)

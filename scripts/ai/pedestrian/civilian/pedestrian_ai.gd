@@ -8,11 +8,17 @@ signal harmed(source: Node2D)
 @export_range(0.0, 240.0, 1.0) var move_speed := 52.0
 @export_range(0.0, 4.0, 0.1) var pause_duration := 0.8
 @export var harmed_flash_time := 0.45
+@export_range(0.0, 600.0, 1.0) var impact_drag := 320.0
+@export_range(0.0, 1.0, 0.05) var impact_recovery_time := 0.4
+@export_range(0.0, 1.0, 0.05) var impact_collision_disable_time := 0.25
 
 var anchor_position := Vector2.ZERO
 var direction := 1.0
 var pause_remaining := 0.0
 var harmed_flash_remaining := 0.0
+var impact_recovery_remaining := 0.0
+var impact_collision_disable_remaining := 0.0
+var impact_velocity := Vector2.ZERO
 var world_path_points := PackedVector2Array()
 var path_target_index := 1
 var path_direction := 1
@@ -37,7 +43,18 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	harmed_flash_remaining = maxf(0.0, harmed_flash_remaining - delta)
+	impact_recovery_remaining = maxf(0.0, impact_recovery_remaining - delta)
+	impact_collision_disable_remaining = maxf(0.0, impact_collision_disable_remaining - delta)
 	body_polygon.color = _get_body_color()
+	_update_impact_collision_state()
+
+	if impact_recovery_remaining > 0.0 and impact_velocity.length() > 1.0:
+		velocity = impact_velocity
+		impact_velocity = impact_velocity.move_toward(Vector2.ZERO, impact_drag * delta)
+		if velocity != Vector2.ZERO:
+			rotation = velocity.angle()
+		move_and_slide()
+		return
 
 	if pause_remaining > 0.0:
 		pause_remaining = maxf(0.0, pause_remaining - delta)
@@ -86,7 +103,19 @@ func set_path_active(is_active: bool) -> void:
 func register_harm(source: Node2D) -> void:
 	harmed_flash_remaining = harmed_flash_time
 	pause_remaining = maxf(pause_remaining, 0.4)
+	_apply_impact_response(source)
 	harmed.emit(source)
+
+func place_displaced_occupant(spawn_position: Vector2, facing_direction: Vector2, escape_direction: Vector2) -> void:
+	global_position = spawn_position
+	anchor_position = spawn_position
+	rotation = facing_direction.angle() if facing_direction != Vector2.ZERO else rotation
+	var escape_vector := escape_direction.normalized() if escape_direction != Vector2.ZERO else Vector2.DOWN
+	set_world_path(PackedVector2Array([
+		spawn_position,
+		spawn_position + escape_vector * 52.0,
+	]))
+	pause_remaining = 0.2
 
 func _follow_world_path() -> void:
 	var target_position := world_path_points[path_target_index]
@@ -121,6 +150,26 @@ func _has_pedestrian_ahead(direction_vector: Vector2) -> bool:
 		if lateral_distance <= 18.0:
 			return true
 	return false
+
+func _apply_impact_response(source: Node2D) -> void:
+	if source == null or not source.has_method("get_impact_velocity"):
+		return
+	var source_velocity = source.call("get_impact_velocity")
+	if not (source_velocity is Vector2):
+		return
+	var knockback: Vector2 = source_velocity
+	if knockback.length() < 40.0:
+		return
+	impact_velocity = knockback.limit_length(260.0)
+	impact_recovery_remaining = impact_recovery_time
+	impact_collision_disable_remaining = impact_collision_disable_time
+
+func _update_impact_collision_state() -> void:
+	var collisions_enabled := impact_collision_disable_remaining <= 0.0
+	collision_layer = default_collision_layer if collisions_enabled else 0
+	collision_mask = default_collision_mask if collisions_enabled else 0
+	if collision_shape != null:
+		collision_shape.disabled = not collisions_enabled
 
 func _get_body_color() -> Color:
 	if harmed_flash_remaining > 0.0:

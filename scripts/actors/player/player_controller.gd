@@ -28,9 +28,19 @@ func _physics_process(delta: float) -> void:
 		return
 	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var target_speed: float = 220.0 if tuning == null else tuning.move_speed
-	velocity = input_vector * target_speed
+	var target_velocity := input_vector * target_speed
+	var acceleration_rate: float = 1320.0 if tuning == null else tuning.acceleration
+	var deceleration_rate: float = 1460.0 if tuning == null else tuning.deceleration
+	var carry_factor: float = 0.08 if tuning == null else tuning.direction_carry
 	if input_vector != Vector2.ZERO:
-		rotation = input_vector.angle()
+		var carry_velocity := velocity * carry_factor
+		var blended_target := target_velocity + carry_velocity
+		if blended_target.length() > target_speed:
+			blended_target = blended_target.normalized() * target_speed
+		velocity = velocity.move_toward(blended_target, acceleration_rate * delta)
+		rotation = blended_target.angle()
+	else:
+		velocity = velocity.move_toward(Vector2.ZERO, deceleration_rate * delta)
 	move_and_slide()
 	if get_slide_collision_count() > 0:
 		collision_flash_remaining = collision_flash_time
@@ -57,6 +67,15 @@ func get_state_name() -> String:
 
 func has_recent_collision() -> bool:
 	return collision_flash_remaining > 0.0
+
+func get_impact_velocity() -> Vector2:
+	return velocity
+
+func get_motion_debug_lines() -> PackedStringArray:
+	return PackedStringArray([
+		"On Foot %.1f kph" % (velocity.length() * 0.18),
+		"Input model: direct",
+	])
 
 func _emit_civilian_impacts() -> void:
 	for index in range(get_slide_collision_count()):

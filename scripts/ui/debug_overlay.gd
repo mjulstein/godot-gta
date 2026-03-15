@@ -13,18 +13,25 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	if debug_state == null:
 		return
-	stats_label.text = "\n".join([
+	var lines := PackedStringArray([
 		"Mode: %s" % debug_state.player_mode,
+		"Vehicle: %s" % debug_state.active_vehicle_label,
 		"Hint: %s" % debug_state.interaction_hint,
+		"Takeover: %s" % debug_state.takeover_state,
 		"Speed: %.1f kph" % debug_state.speed_kph,
 		"Collision: %s" % debug_state.collision_state,
-		"Wanted: %d" % debug_state.wanted_level,
-		"Police: %d" % debug_state.police_count,
-		"Mission: %s" % debug_state.mission_state,
+		"Impact: %s" % debug_state.impact_state,
+		"Traffic: %d active" % get_tree().get_nodes_in_group("traffic_vehicle").size(),
+	])
+	if debug_state.motion_debug_lines.size() > 0:
+		lines.append("")
+		lines.append_array(debug_state.motion_debug_lines)
+	lines.append_array(PackedStringArray([
 		"",
 		"Controls:",
 		"WASD move / drive",
 		"E enter or exit vehicle",
 		"O toggle debug overlay",
 		"P pause + palette key",
-	])
+	]))
+	stats_label.text = "\n".join(lines)

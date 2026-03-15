@@ -1,6 +1,8 @@
 [root](../../README.md) / [tests](../README.md) / [manual](./README.md) / us2_wanted_loop.md
 
-# US2 Wanted Loop Validation
+# Deferred Wanted Loop Reference
+
+Police and wanted behavior is out of active branch scope for `001-foundation-sandbox`. This file remains only as a deferred reference for later work.
 
 ## Goal
 

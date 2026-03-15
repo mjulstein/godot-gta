@@ -80,11 +80,11 @@
 - [x] T024 [US2] Implement simple civilian movement or traffic behavior in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [ ] T025 [US2] Upgrade civilian pedestrian movement so crossings and sidewalk use stay aligned with western traffic expectations in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
 - [ ] T026 [US2] Upgrade civilian vehicle behavior so lane usage, direction of travel, and crossing approach stay aligned with western traffic expectations in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [ ] T027 [US2] Implement player takeover of civilian vehicles while leaving a displaced pedestrian occupant in `scripts/systems/vehicle_interaction_system.gd` and `scripts/actors/player/player_controller.gd`
-- [ ] T028 [US2] Add momentum-based vehicle-to-pedestrian collision response so pedestrians are displaced by vehicle motion and cannot push vehicles in `scripts/vehicles/vehicle_controller.gd` and pedestrian scripts
-- [ ] T029 [US2] Expose debug state for takeover and collision momentum through `scripts/ui/debug_overlay.gd`
-- [ ] T030 [US2] Wire civilian spawns and takeover-ready occupied vehicles into `scenes/world/district_slice.tscn`
-- [ ] T031 [US2] Document repeatable traffic, takeover, and impact validation steps in `tests/manual/`
+- [x] T027 [US2] Implement player takeover of civilian vehicles while leaving a displaced pedestrian occupant in `scripts/systems/vehicle_interaction_system.gd` and `scripts/actors/player/player_controller.gd`
+- [x] T028 [US2] Add momentum-based vehicle-to-pedestrian collision response so pedestrians are displaced by vehicle motion and cannot push vehicles in `scripts/vehicles/vehicle_controller.gd` and pedestrian scripts
+- [x] T029 [US2] Expose debug state for takeover and collision momentum through `scripts/ui/debug_overlay.gd`
+- [x] T030 [US2] Wire civilian spawns and takeover-ready occupied vehicles into `scenes/world/district_slice.tscn`
+- [x] T031 [US2] Document repeatable traffic, takeover, and impact validation steps in `tests/manual/`
 
 **Checkpoint**: User Stories 1 and 2 work together, and the city now supports the baseline sandbox loop
 
@@ -96,7 +96,7 @@
 
 - [ ] T041 [P] Tune player movement, vehicle handling, traffic response, and collision response values in `data/tuning/`
 - [ ] T042 [P] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
-- [ ] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
+- [x] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
 - [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
 - [ ] T045 Run full manual validation for US1 and US2 and record results in `tests/manual/`
 - [ ] T046 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
