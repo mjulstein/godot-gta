@@ -5,7 +5,17 @@ signal harmed(source: Node2D)
 @export var is_important := false
 @export_range(24.0, 180.0, 1.0) var move_speed := 70.0
 @export_range(24.0, 120.0, 1.0) var vehicle_look_ahead := 54.0
+@export_range(24.0, 160.0, 1.0) var police_look_ahead := 120.0
 @export_range(24.0, 96.0, 1.0) var pedestrian_look_ahead := 44.0
+@export_range(24.0, 144.0, 1.0) var obstacle_look_ahead := 84.0
+@export_range(8.0, 64.0, 1.0) var vehicle_stop_buffer := 22.0
+@export_range(8.0, 64.0, 1.0) var pedestrian_stop_buffer := 22.0
+@export_range(8.0, 64.0, 1.0) var dynamic_obstacle_stop_buffer := 22.0
+@export_range(16.0, 128.0, 1.0) var police_stop_buffer := 88.0
+@export_range(16.0, 96.0, 1.0) var barrier_stop_buffer := 48.0
+@export_range(0.2, 8.0, 0.1) var blockage_threshold := 1.25
+@export_range(0.2, 8.0, 0.1) var recovery_cooldown := 1.0
+@export_range(0.2, 6.0, 0.1) var reroute_focus_time := 2.5
 @export var harmed_flash_time := 0.45
 @export_range(0.0, 2.0, 0.05) var respawn_pause := 0.35
 @export_range(0.0, 4.0, 0.05) var recycle_check_interval := 0.5
@@ -23,6 +33,14 @@ var lane := "right"
 var district_tiles: Array[Node2D] = []
 var recycle_check_remaining := 0.0
 var rng := RandomNumberGenerator.new()
+var blockage_time := 0.0
+var recovery_cooldown_remaining := 0.0
+var reroute_focus_remaining := 0.0
+var last_vehicle_ahead_distance := -1.0
+var last_police_ahead_distance := -1.0
+var last_pedestrian_ahead_distance := -1.0
+var last_dynamic_obstacle_ahead_distance := -1.0
+var last_barrier_ahead_distance := -1.0
 
 const ROAD_HALF_WIDTH := 96.0
 const INNER_LANE_OFFSET := 28.0
@@ -48,6 +66,8 @@ func _physics_process(delta: float) -> void:
 	harmed_flash_remaining = maxf(0.0, harmed_flash_remaining - delta)
 	pause_remaining = maxf(0.0, pause_remaining - delta)
 	recycle_check_remaining = maxf(0.0, recycle_check_remaining - delta)
+	recovery_cooldown_remaining = maxf(0.0, recovery_cooldown_remaining - delta)
+	reroute_focus_remaining = maxf(0.0, reroute_focus_remaining - delta)
 	body_polygon.color = _get_body_color()
 
 	if recycle_check_remaining == 0.0:
@@ -98,6 +118,9 @@ func set_camera_tracked(is_tracked: bool) -> void:
 func is_camera_tracked() -> bool:
 	return camera_tracking_count > 0
 
+func is_rerouting() -> bool:
+	return reroute_focus_remaining > 0.0
+
 func _follow_world_path() -> void:
 	_refresh_path_target()
 	var target_position := world_path_points[path_target_index]
@@ -105,8 +128,31 @@ func _follow_world_path() -> void:
 
 	var direction_vector := to_target.normalized() if to_target.length() > 0.0 else Vector2.ZERO
 	velocity = direction_vector * move_speed
-	if direction_vector != Vector2.ZERO and (_has_pedestrian_ahead(direction_vector) or _has_vehicle_ahead(direction_vector)):
+	var is_blocked := false
+	if direction_vector != Vector2.ZERO:
+		is_blocked = _should_stop_for_obstacle(direction_vector)
+		if _should_hold_for_intersection_obstacle(direction_vector):
+			var hold_point := _current_intersection_hold_point()
+			var to_hold := hold_point - global_position
+			if to_hold.length() > 8.0:
+				velocity = to_hold.normalized() * move_speed
+				rotation = velocity.angle()
+				return
+		if _should_immediately_switch_for_barrier():
+			velocity = Vector2.ZERO
+			if _attempt_barrier_lane_switch():
+				blockage_time = 0.0
+				recovery_cooldown_remaining = recovery_cooldown
+				return
+	if is_blocked:
 		velocity = Vector2.ZERO
+		blockage_time += get_physics_process_delta_time()
+		if blockage_time >= blockage_threshold and recovery_cooldown_remaining == 0.0 and _can_attempt_blockage_recovery() and _attempt_blockage_recovery():
+			blockage_time = 0.0
+			recovery_cooldown_remaining = recovery_cooldown
+			return
+	else:
+		blockage_time = 0.0
 	if velocity != Vector2.ZERO:
 		rotation = velocity.angle()
 
@@ -254,6 +300,116 @@ func _is_target_behind_vehicle(to_target: Vector2) -> bool:
 		return false
 	return forward.dot(to_target.normalized()) < -0.2
 
+func has_persistent_blockage() -> bool:
+	return blockage_time >= blockage_threshold
+
+func _should_stop_for_obstacle(direction_vector: Vector2) -> bool:
+	last_barrier_ahead_distance = _nearest_forward_distance("traffic_barrier", direction_vector, obstacle_look_ahead, 28.0)
+	if last_barrier_ahead_distance >= 0.0 and last_barrier_ahead_distance <= barrier_stop_buffer:
+		return true
+	last_dynamic_obstacle_ahead_distance = _nearest_forward_distance("traffic_dynamic_obstacle", direction_vector, obstacle_look_ahead, 24.0)
+	if last_dynamic_obstacle_ahead_distance >= 0.0 and last_dynamic_obstacle_ahead_distance <= dynamic_obstacle_stop_buffer:
+		return true
+	last_police_ahead_distance = _nearest_forward_distance("police_unit", direction_vector, police_look_ahead, 24.0)
+	if last_police_ahead_distance >= 0.0 and last_police_ahead_distance <= police_stop_buffer:
+		return true
+	last_pedestrian_ahead_distance = _nearest_forward_distance("civilian_pedestrian", direction_vector, pedestrian_look_ahead, 18.0)
+	if last_pedestrian_ahead_distance >= 0.0 and last_pedestrian_ahead_distance <= pedestrian_stop_buffer:
+		return true
+	last_vehicle_ahead_distance = _nearest_forward_distance("traffic_vehicle", direction_vector, vehicle_look_ahead, 20.0)
+	if last_vehicle_ahead_distance >= 0.0 and last_vehicle_ahead_distance <= vehicle_stop_buffer:
+		return true
+	return false
+
+func _can_attempt_blockage_recovery() -> bool:
+	if last_barrier_ahead_distance >= 0.0 and last_barrier_ahead_distance <= barrier_stop_buffer:
+		return true
+	if last_police_ahead_distance >= 0.0 and last_police_ahead_distance <= police_stop_buffer:
+		return true
+	if last_dynamic_obstacle_ahead_distance >= 0.0 and last_dynamic_obstacle_ahead_distance <= dynamic_obstacle_stop_buffer:
+		return true
+	# Only the lead vehicle in a queue should reroute. Cars blocked by another car
+	# should keep their spacing instead of all fanning out through the junction.
+	if last_pedestrian_ahead_distance >= 0.0 and last_pedestrian_ahead_distance <= pedestrian_stop_buffer:
+		return false
+	if last_vehicle_ahead_distance >= 0.0 and last_vehicle_ahead_distance <= vehicle_look_ahead:
+		return false
+	return true
+
+func _should_immediately_switch_for_barrier() -> bool:
+	if last_barrier_ahead_distance < 0.0 or last_barrier_ahead_distance > barrier_stop_buffer:
+		return false
+	var tile := _find_district_tile(global_position)
+	return tile != null and _is_before_intersection_hold_point(tile) and _can_switch_lane(tile)
+
+func _should_hold_for_intersection_obstacle(direction_vector: Vector2) -> bool:
+	var non_traffic_distance := _nearest_non_traffic_blocking_distance()
+	if non_traffic_distance < 0.0:
+		return false
+	var tile := _find_district_tile(global_position)
+	if tile == null:
+		return false
+	var hold_point := _world_point(tile, heading, lane, CROSSWALK_CLEAR_OFFSET, false)
+	var to_hold := hold_point - global_position
+	var hold_forward_distance := direction_vector.dot(to_hold)
+	if hold_forward_distance <= 8.0:
+		return false
+	return hold_forward_distance < non_traffic_distance
+
+func _nearest_non_traffic_blocking_distance() -> float:
+	var nearest_distance := -1.0
+	for distance in [
+		last_barrier_ahead_distance,
+		last_police_ahead_distance,
+		last_dynamic_obstacle_ahead_distance,
+	]:
+		if distance < 0.0:
+			continue
+		if nearest_distance < 0.0 or distance < nearest_distance:
+			nearest_distance = distance
+	return nearest_distance
+
+func _current_intersection_hold_point() -> Vector2:
+	var tile := _find_district_tile(global_position)
+	if tile == null:
+		return global_position
+	return _world_point(tile, heading, lane, CROSSWALK_CLEAR_OFFSET, false)
+
+func _attempt_barrier_lane_switch() -> bool:
+	var tile := _find_district_tile(global_position)
+	if tile == null or not _is_before_intersection_hold_point(tile) or not _can_switch_lane(tile):
+		return false
+	var forced_action := "switch_left" if lane == "right" else "switch_right"
+	if not _build_runtime_segment(forced_action):
+		return false
+	reroute_focus_remaining = reroute_focus_time
+	return true
+
+func _nearest_forward_distance(group_name: String, direction_vector: Vector2, max_distance: float, max_lateral_distance: float) -> float:
+	var nearest_distance := -1.0
+	for candidate in get_tree().get_nodes_in_group(group_name):
+		if candidate == self or not (candidate is Node2D):
+			continue
+		var node := candidate as Node2D
+		if not node.visible:
+			continue
+		var offset: Vector2 = node.global_position - global_position
+		if offset.length() > max_distance:
+			continue
+		var forward_distance := direction_vector.dot(offset)
+		if forward_distance <= 0.0:
+			continue
+		var lateral_distance := absf(direction_vector.orthogonal().dot(offset))
+		if lateral_distance > max_lateral_distance:
+			continue
+		if group_name == "traffic_vehicle":
+			var vehicle_forward := Vector2.RIGHT.rotated(node.rotation)
+			if direction_vector.dot(vehicle_forward) < 0.35:
+				continue
+		if nearest_distance < 0.0 or forward_distance < nearest_distance:
+			nearest_distance = forward_distance
+	return nearest_distance
+
 func _has_pedestrian_ahead(direction_vector: Vector2) -> bool:
 	for candidate in get_tree().get_nodes_in_group("civilian_pedestrian"):
 		if candidate == self or not (candidate is Node2D):
@@ -296,12 +452,12 @@ func _has_vehicle_ahead(direction_vector: Vector2) -> bool:
 func _get_body_color() -> Color:
 	return Color(1, 0.2, 0.2, 1) if harmed_flash_remaining > 0.0 else Color(0.105882, 0.760784, 1, 1)
 
-func _build_runtime_segment() -> bool:
+func _build_runtime_segment(forced_action: String = "") -> bool:
 	var tile := _find_district_tile(global_position)
 	if tile == null:
 		return false
 
-	var action := _choose_action(tile)
+	var action := forced_action if not forced_action.is_empty() else _choose_action(tile)
 	var next_heading := heading
 	var next_lane := lane
 	match action:
@@ -316,6 +472,10 @@ func _build_runtime_segment() -> bool:
 			next_lane = "right"
 		"merge_left_uturn":
 			next_heading = _get_opposite_heading(heading)
+			next_lane = "right"
+		"switch_left":
+			next_lane = "left"
+		"switch_right":
 			next_lane = "right"
 
 	var points: Array[Vector2] = [global_position]
@@ -354,12 +514,51 @@ func _build_runtime_segment() -> bool:
 				tile.global_position,
 				_world_point(tile, next_heading, next_lane, _next_tile_offset(tile, next_heading), true)
 			))
+		"switch_left", "switch_right":
+			var switch_entry := _world_point(tile, heading, lane, INTERSECTION_ENTRY_OFFSET, false)
+			if points[points.size() - 1].distance_to(switch_entry) > 8.0:
+				points.append(switch_entry)
+			points.append_array(_sample_corner(
+				switch_entry,
+				_merge_point(tile, heading, lane, next_lane),
+				_world_point(tile, heading, next_lane, _next_tile_offset(tile, heading), true)
+			))
 
 	world_path_points = PackedVector2Array(points)
 	path_target_index = 1 if world_path_points.size() >= 2 else 0
 	heading = next_heading
 	lane = next_lane
 	return world_path_points.size() >= 2
+
+func _attempt_blockage_recovery() -> bool:
+	var tile := _find_district_tile(global_position)
+	if tile == null:
+		return false
+
+	var forced_action := ""
+	if _is_before_intersection_hold_point(tile) and _can_switch_lane(tile):
+		forced_action = "switch_left" if lane == "right" else "switch_right"
+	elif lane == "right":
+		if _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(heading))):
+			forced_action = "right"
+		elif _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(heading))):
+			forced_action = "left"
+		else:
+			forced_action = "merge_left_uturn"
+	else:
+		if _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(heading))):
+			forced_action = "left"
+		elif _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(heading))):
+			forced_action = "right"
+		else:
+			forced_action = "uturn"
+
+	if forced_action.is_empty():
+		return false
+	if not _build_runtime_segment(forced_action):
+		return false
+	reroute_focus_remaining = reroute_focus_time
+	return true
 
 func _find_district_tile(position: Vector2) -> Node2D:
 	if district_tiles.is_empty():
@@ -404,6 +603,31 @@ func _choose_action(tile: Node2D) -> String:
 	if can_turn_left:
 		return "left"
 	return "merge_left_uturn"
+
+func _can_switch_lane(tile: Node2D) -> bool:
+	if tile == null:
+		return false
+	if not _tile_open(tile, _get_exit_side_for_heading(heading)):
+		return false
+	var target_lane := "left" if lane == "right" else "right"
+	var merge_point := _merge_point(tile, heading, lane, target_lane)
+	for candidate in get_tree().get_nodes_in_group("traffic_vehicle"):
+		if candidate == self or not (candidate is Node2D):
+			continue
+		var vehicle := candidate as Node2D
+		if not vehicle.visible:
+			continue
+		if vehicle.global_position.distance_to(merge_point) <= vehicle_stop_buffer * 1.5:
+			return false
+	return true
+
+func _is_before_intersection_hold_point(tile: Node2D) -> bool:
+	if tile == null:
+		return false
+	var hold_point := _world_point(tile, heading, lane, CROSSWALK_CLEAR_OFFSET, false)
+	var to_hold := hold_point - global_position
+	var forward := _forward_vector_for_heading(heading)
+	return forward.dot(to_hold) > 8.0
 
 func _tile_open(tile: Node2D, side: String) -> bool:
 	return bool(tile.get("open_%s" % side))

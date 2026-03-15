@@ -14,6 +14,10 @@ var impact_cooldowns: Dictionary = {}
 @onready var interaction_sensor: Area2D = $InteractionSensor
 @onready var body_polygon: Polygon2D = $Body
 
+func _ready() -> void:
+	add_to_group("traffic_obstacle")
+	add_to_group("traffic_dynamic_obstacle")
+
 func _physics_process(delta: float) -> void:
 	collision_flash_remaining = maxf(0.0, collision_flash_remaining - delta)
 	_tick_impact_cooldowns(delta)

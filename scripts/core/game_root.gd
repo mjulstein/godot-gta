@@ -117,7 +117,7 @@ func _get_active_camera_target() -> Node2D:
 	return vehicle if player.is_in_vehicle() else player
 
 func _toggle_traffic_camera() -> void:
-	_set_traffic_camera_target(_find_nearby_traffic_vehicle(traffic_camera_target))
+	_set_traffic_camera_target(_find_debug_traffic_vehicle(traffic_camera_target))
 
 func _set_traffic_camera_target(target_vehicle: Node2D) -> void:
 	if traffic_camera_target == target_vehicle:
@@ -128,7 +128,13 @@ func _set_traffic_camera_target(target_vehicle: Node2D) -> void:
 	if is_instance_valid(traffic_camera_target) and traffic_camera_target.has_method("set_camera_tracked"):
 		traffic_camera_target.call("set_camera_tracked", true)
 
-func _find_nearby_traffic_vehicle(excluded_vehicle: Node2D = null) -> Node2D:
+func _find_debug_traffic_vehicle(excluded_vehicle: Node2D = null) -> Node2D:
+	var rerouting_vehicle := _find_nearby_traffic_vehicle(excluded_vehicle, true)
+	if rerouting_vehicle != null:
+		return rerouting_vehicle
+	return _find_nearby_traffic_vehicle(excluded_vehicle, false)
+
+func _find_nearby_traffic_vehicle(excluded_vehicle: Node2D = null, require_rerouting: bool = false) -> Node2D:
 	var search_origin := camera.global_position
 	var best_vehicle: Node2D
 	var best_distance := INF
@@ -140,10 +146,18 @@ func _find_nearby_traffic_vehicle(excluded_vehicle: Node2D = null) -> Node2D:
 			continue
 		if not traffic_vehicle.visible:
 			continue
+		if require_rerouting:
+			if not traffic_vehicle.has_method("is_rerouting"):
+				continue
+			if not traffic_vehicle.call("is_rerouting"):
+				continue
 		var distance := search_origin.distance_squared_to(traffic_vehicle.global_position)
 		if distance < best_distance:
 			best_distance = distance
 			best_vehicle = traffic_vehicle
+	if best_vehicle == null and require_rerouting and is_instance_valid(excluded_vehicle):
+		if excluded_vehicle.has_method("is_rerouting") and excluded_vehicle.call("is_rerouting"):
+			return excluded_vehicle
 	if best_vehicle == null and is_instance_valid(excluded_vehicle):
 		return excluded_vehicle
 	return best_vehicle
