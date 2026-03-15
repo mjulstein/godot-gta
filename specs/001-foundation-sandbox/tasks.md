@@ -39,17 +39,17 @@
 - [x] T009 Create tuning resources for player, vehicle, and wanted values under `data/tuning/`
 - [x] T010 [P] Create the prototype district scene shell at `scenes/world/district_slice.tscn`
 - [x] T011 [P] Create spawn-point marker scenes or scripts under `scenes/world/props/` and `scripts/core/`
-- [x] T012 Implement debug state plumbing for player mode and wanted level in `scripts/core/debug_state.gd`
+- [x] T012 Implement debug state plumbing for player mode and vehicle inspection in `scripts/core/debug_state.gd`
 
 **Checkpoint**: Project shell, shared systems, tuning resources, and debug foundations are ready
 
 ---
 
-## Phase 3: User Story 1 - Move, steal, and survive in the city (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Move through a living tile-based city (Priority: P1) 🎯 MVP
 
-**Goal**: Deliver a playable top-down district where the player can move on foot, enter a vehicle, drive, collide, exit, and continue exploring
+**Goal**: Deliver a playable top-down tile-based district where the player can move on foot through readable sidewalks, crossings, and traffic lanes
 
-**Independent Test**: Launch the main scene, walk around the district, enter a parked vehicle, drive through streets and obstacles, exit, and continue on foot without scene reload
+**Independent Test**: Launch the main scene, walk around the district, and verify that the player can navigate the city while civilian pedestrians and cars follow readable western traffic rules
 
 ### Implementation for User Story 1
 
@@ -57,37 +57,36 @@
 - [x] T014 [P] [US1] Create the player scene at `scenes/actors/player/player.tscn`
 - [x] T015 [US1] Implement top-down player movement and interaction logic in `scripts/actors/player/player_controller.gd`
 - [x] T016 [P] [US1] Create the base vehicle scene at `scenes/vehicles/civilian/civilian_vehicle.tscn`
-- [x] T017 [US1] Implement vehicle handling, occupancy, and damage basics in `scripts/vehicles/vehicle_controller.gd`
-- [x] T018 [US1] Implement player enter-exit vehicle flow in `scripts/systems/vehicle_interaction_system.gd`
-- [x] T019 [US1] Connect camera ownership switching between player and active vehicle in `scripts/core/follow_camera.gd`
-- [x] T020 [US1] Add collision feedback hooks for props, walls, and vehicles in `scripts/vehicles/vehicle_controller.gd` and `scripts/actors/player/player_controller.gd`
-- [x] T021 [US1] Wire the district, player, vehicle, camera, and debug overlay together in `scenes/main/game.tscn`
+- [x] T017 [US1] Implement base vehicle handling and occupancy hooks in `scripts/vehicles/vehicle_controller.gd`
+- [x] T018 [US1] Connect camera ownership switching between player and active vehicle in `scripts/core/follow_camera.gd`
+- [x] T019 [US1] Wire the district, player, vehicle, camera, and debug overlay together in `scenes/main/game.tscn`
+- [ ] T020 [US1] Tune civilian pedestrians and traffic so sidewalks, crossings, lane usage, and western traffic flow stay readable in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [ ] T021 [US1] Add validation notes for readable city movement, crossings, and traffic flow in `tests/manual/us1_playable_core.md`
 - [x] T022 [US1] Document the manual MVP validation flow in `tests/manual/us1_playable_core.md`
 
-**Checkpoint**: User Story 1 is playable and validates the basic GTA-style sandbox loop
+**Checkpoint**: User Story 1 is playable and validates the city-navigation baseline
 
 ---
 
-## Phase 4: User Story 2 - Trigger and evade police response (Priority: P2)
+## Phase 4: User Story 2 - Take over traffic and hit with momentum (Priority: P2)
 
-**Goal**: Add civilian street life, crime detection, wanted escalation, and a police pursuit loop the player can trigger and escape
+**Goal**: Add civilian vehicle takeover, displaced occupants, and momentum-based pedestrian impacts
 
-**Independent Test**: Start clean, commit a defined crime, observe wanted escalation and police response, evade pursuit, and clear the wanted state without restarting
+**Independent Test**: Start on foot, enter a civilian vehicle, verify a pedestrian remains behind as the displaced occupant, drive through the district, and confirm pedestrians are displaced by vehicle momentum without pushing the vehicle back
 
 ### Implementation for User Story 2
 
 - [x] T023 [P] [US2] Create civilian pedestrian and traffic placeholder scenes in `scenes/actors/civilians/` and `scenes/vehicles/civilian/`
 - [x] T024 [US2] Implement simple civilian movement or traffic behavior in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [x] T025 [US2] Add crime event definitions and dispatch logic in `scripts/systems/crime_system.gd`
-- [x] T026 [US2] Emit crime events for vehicle theft, pedestrian assault, and harmful collision from `scripts/actors/player/player_controller.gd` and `scripts/vehicles/vehicle_controller.gd`
-- [x] T027 [US2] Implement wanted-state tracking and decay in `scripts/systems/wanted_system.gd`
-- [x] T028 [P] [US2] Create police unit placeholder scenes in `scenes/actors/police/` and `scenes/vehicles/police/`
-- [x] T029 [US2] Implement police spawn and pursuit behavior in `scripts/ai/police_ai.gd`
-- [x] T030 [US2] Wire civilian spawns, police spawns, and response triggers into `scenes/world/district_slice.tscn`
-- [x] T031 [US2] Expose wanted state and police counts through `scripts/ui/debug_overlay.gd`
-- [x] T032 [US2] Document repeatable pursuit validation steps in `tests/manual/us2_wanted_loop.md`
+- [ ] T025 [US2] Upgrade civilian pedestrian movement so crossings and sidewalk use stay aligned with western traffic expectations in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
+- [ ] T026 [US2] Upgrade civilian vehicle behavior so lane usage, direction of travel, and crossing approach stay aligned with western traffic expectations in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [ ] T027 [US2] Implement player takeover of civilian vehicles while leaving a displaced pedestrian occupant in `scripts/systems/vehicle_interaction_system.gd` and `scripts/actors/player/player_controller.gd`
+- [ ] T028 [US2] Add momentum-based vehicle-to-pedestrian collision response so pedestrians are displaced by vehicle motion and cannot push vehicles in `scripts/vehicles/vehicle_controller.gd` and pedestrian scripts
+- [ ] T029 [US2] Expose debug state for takeover and collision momentum through `scripts/ui/debug_overlay.gd`
+- [ ] T030 [US2] Wire civilian spawns and takeover-ready occupied vehicles into `scenes/world/district_slice.tscn`
+- [ ] T031 [US2] Document repeatable traffic, takeover, and impact validation steps in `tests/manual/`
 
-**Checkpoint**: User Stories 1 and 2 work together, and the city now reacts to player crime
+**Checkpoint**: User Stories 1 and 2 work together, and the city now supports the baseline sandbox loop
 
 ---
 
@@ -95,7 +94,7 @@
 
 **Purpose**: Improve feel, readability, and handoff quality across the entire slice
 
-- [ ] T041 [P] Tune player movement, vehicle handling, and wanted thresholds in `data/tuning/`
+- [ ] T041 [P] Tune player movement, vehicle handling, traffic response, and collision response values in `data/tuning/`
 - [ ] T042 [P] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
 - [ ] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
 - [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
@@ -104,6 +103,8 @@
 - [ ] T047 Tune civilian traffic speed targets so cars cruise faster than the player on long straights and brake for turns in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `data/tuning/`
 - [ ] T048 Improve civilian traffic stopping distance so cars hold at least half a car length before pedestrians, vehicles, and other forward obstacles in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [ ] T049 Add civilian traffic obstruction recovery so blocked cars can change lane, turn, or make a left-lane u-turn instead of stalling into collisions in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [ ] T050 Tune pedestrian movement so on-foot control stays direct, human-scale, and distinct from vehicle handling, with only light carry on abrupt direction changes in `scripts/actors/player/player_controller.gd` and `data/tuning/`
+- [ ] T051 Verify and document sandbox baseline sign-off for on-foot feel, vehicle feel, collision behavior, and civilian traffic behavior in `tests/manual/`
 
 ---
 
@@ -136,16 +137,16 @@
 1. Finish Setup
 2. Finish Foundational work
 3. Complete User Story 1
-4. Validate the playable on-foot plus vehicle loop before expanding scope
+4. Validate the readable city-navigation loop before expanding scope
 
 ### Incremental Delivery
 
 1. Deliver US1 as the first playable prototype
-2. Layer in US2 to add systemic consequence and replayability
+2. Layer in US2 to add takeover, momentum impacts, and stronger city interaction
 3. Stabilize and tune the sandbox loop before promoting additional feature ideas into active scope
 
 ## Notes
 
 - Prefer original placeholder art and names at every stage
 - Keep debug visibility high while systems are still forming
-- Resist adding extra districts, weapons, factions, or mission systems before US1 and US2 are validated
+- Resist adding police escalation, extra districts, weapons, factions, or mission systems before US1 and US2 are validated

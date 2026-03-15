@@ -7,7 +7,7 @@
 
 ## Summary
 
-Build the first playable vertical slice of an original top-down crime sandbox in Godot 4.x. The slice will focus on one compact district with responsive on-foot movement, vehicle entry and driving, basic civilian street life, and a wanted-level loop with police pursuit. The implementation approach is to keep the world small, split gameplay into clearly bounded systems, and prefer data-driven tuning and debug tooling over broad content scope.
+Build the first playable vertical slice of an original top-down crime sandbox in Godot 4.x. The slice will focus on one compact district with responsive human-scale on-foot movement, vehicle entry and driving, civilian street life that follows readable western traffic rules, and momentum-based vehicle impacts on pedestrians. The implementation approach is to keep the world small, split gameplay into clearly bounded systems, and prefer data-driven tuning and debug tooling over broad content scope until the baseline sandbox feel is approved.
 
 ## Technical Context
 
@@ -17,9 +17,9 @@ Build the first playable vertical slice of an original top-down crime sandbox in
 **Testing**: Manual playtest scenes plus lightweight Godot test coverage where practical for data and pure logic components  
 **Target Platform**: Desktop first, macOS and Windows as primary dev and playtest targets  
 **Project Type**: Single Godot game project  
-**Performance Goals**: Smooth gameplay at 60 FPS in the prototype district with active traffic, pedestrians, and limited police pursuit  
+**Performance Goals**: Smooth gameplay at 60 FPS in the prototype district with active traffic and pedestrians  
 **Constraints**: Top-down readability must remain high, all content must be original, first slice must stay small enough to implement without procedural generation or streaming  
-**Scale/Scope**: One playable district, one player avatar, one drivable civilian vehicle type minimum, one police vehicle or police actor response loop minimum
+**Scale/Scope**: One playable district, one player avatar, one drivable civilian vehicle type minimum, civilian pedestrians, and civilian traffic that supports takeover and momentum collision testing
 
 ## Constitution Check
 
@@ -28,8 +28,8 @@ Build the first playable vertical slice of an original top-down crime sandbox in
 - `Feel-First Top-Down Gameplay`: Pass. The slice centers on movement, driving, collisions, and pursuit readability from an overhead camera.
 - `Original World, Not Asset-Level Imitation`: Pass. The plan assumes original placeholder names, factions, UI text, and art direction only.
 - `Small Vertical Slices Over Broad Scope`: Pass. Scope is intentionally limited to one district and the core sandbox loop.
-- `Data-Driven Systems Where It Matters`: Pass. Vehicle tuning, wanted escalation, and spawn weights will be resource-driven where practical.
-- `Playtestable, Debuggable, Maintainable`: Pass with explicit debug work included for actor state, wanted state, and spawn diagnostics.
+- `Data-Driven Systems Where It Matters`: Pass. Vehicle tuning, pedestrian response, traffic behavior, and spawn weights will be resource-driven where practical.
+- `Playtestable, Debuggable, Maintainable`: Pass with explicit debug work included for actor state, vehicle state, and spawn diagnostics.
 
 No constitution violations are currently expected.
 
@@ -37,9 +37,10 @@ No constitution violations are currently expected.
 
 - Confirm the best 2D scene composition for the prototype district: static world tiles, dynamic actors, collision layers, and camera framing.
 - Decide how all vehicles share one throttle and steering motion rule-set while still allowing different tuning profiles.
-- Decide the simplest police pursuit model that feels responsive without requiring a full traffic simulation.
+- Decide how civilian pedestrians and traffic should follow western traffic rules within the tile-based district.
+- Decide how occupant takeover and momentum transfer should work for vehicle-to-pedestrian collisions.
 - Decide which gameplay values should be stored in `.tres` resources versus script constants in the initial implementation.
-- Define a low-overhead debug overlay for actor state, wanted state, and spawn diagnostics.
+- Define a low-overhead debug overlay for actor state, vehicle state, and spawn diagnostics.
 
 Research output: [specs/001-foundation-sandbox/research.md](specs/001-foundation-sandbox/research.md)
 
@@ -51,22 +52,19 @@ Research output: [specs/001-foundation-sandbox/research.md](specs/001-foundation
 Create one compact city district with roads, sidewalks, collision, spawn points, and camera-safe sightlines.
 
 2. Player Controller
-Implement top-down on-foot movement, interaction prompts, actor state transitions, and health or defeat hooks needed by future systems.
+Implement top-down on-foot movement, interaction prompts, actor state transitions, and health or defeat hooks needed by future systems. Keep pedestrian control direct and distinct from vehicle handling, with tuning space for human top speed, light carry, and future surface response.
 
 3. Vehicle System
 Implement drivable vehicles with enter and exit flow, shared throttle and steering motion rules, handling data, damage state, and camera continuity.
 
 4. Ambient Population
-Add a minimal civilian layer made of pedestrians, parked cars, and moving traffic sufficient to support crime detection and street readability.
+Add a minimal civilian layer made of pedestrians, occupied cars, and moving traffic sufficient to support street readability, vehicle takeover, and impact testing.
 
-5. Crime and Wanted System
-Track criminal actions, witnesses, escalation, de-escalation, and police dispatch state.
+5. Sandbox Interaction Rules
+Handle vehicle takeover, displaced occupants, momentum transfer, and collision readability between vehicles and pedestrians.
 
-6. Police Response
-Spawn police units, navigate them toward the player, and support search or pursuit behavior that works in the prototype district.
-
-7. Debug and Tuning Tools
-Expose current actor state, wanted level, spawn information, and inspectable vehicle motion metrics in a development-only overlay or inspector-friendly format.
+6. Debug and Tuning Tools
+Expose current actor state, spawn information, and inspectable vehicle motion metrics in a development-only overlay or inspector-friendly format.
 
 ### Deliverables
 
@@ -143,24 +141,25 @@ tests/
 - Implement the player controller and one enterable vehicle.
 - Verify the player can move, enter the vehicle, drive, exit, and continue play in one uninterrupted loop.
 
-### Milestone 2: Living Streets and Consequence
+### Milestone 2: Living Streets and Takeover
 
 - Add simple civilians and basic traffic behavior.
-- Implement crime event emission from vehicle theft, pedestrian attack, and harmful collisions.
-- Add wanted-level escalation and police spawning.
-- Verify the player can trigger and clear a wanted state through repeatable manual tests.
+- Implement vehicle takeover, displaced occupant behavior, and momentum-based vehicle-to-pedestrian collisions.
+- Verify the player can move between on-foot and driving states and produce readable impacts through repeatable manual tests.
 
 ### Milestone 3: Stability, Tuning, and Validation
 
-- Tune camera, wanted, and police behavior.
+- Tune on-foot movement, vehicle feel, camera, traffic flow, and pedestrian response.
 - Improve district readability and collision cleanup.
 - Add debug overlay refinements and tuning resources.
-- Run end-to-end slice tests for free-roam and pursuit.
+- Run end-to-end slice tests for free-roam, traffic behavior, takeover, and impacts.
+- Hold the branch open until the basic sandbox feel is accepted across on-foot play, driving, collisions, takeover, and civilian street behavior.
 
 ## Risk Management
 
 - `Vehicle feel risk`: A weak or inconsistent handling model can make the entire prototype feel wrong. Mitigation: define one shared vehicle rule-set first, then tune vehicle-specific profiles on top of it.
-- `AI complexity risk`: Civilian and police behaviors can grow too complex too early. Mitigation: use state machines with short behavior lists and district-specific assumptions.
+- `On-foot feel risk`: If pedestrian control becomes too slippery, too fast, or too vehicle-like, the player sandbox loop loses readability. Mitigation: keep pedestrian movement separate from vehicle rules and tune human-scale speed and carry explicitly.
+- `Traffic readability risk`: If pedestrians and cars ignore expected lane and crossing rules, the city stops reading as a coherent place. Mitigation: constrain early behavior to simple western traffic rules and district-specific assumptions.
 - `Scope risk`: Open-world features can expand quickly. Mitigation: reject additional districts, factions, missions, or weapon breadth until the first sandbox loop is stable.
 - `Readability risk`: Top-down action can become visually muddy. Mitigation: test camera distance, actor silhouettes, and collision feedback before adding visual detail.
 

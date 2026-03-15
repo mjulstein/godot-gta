@@ -2,19 +2,21 @@
 
 # Next Steps
 
+Police and wanted documentation remains in the repository for later reference, but police behavior is not active branch scope for `001-foundation-sandbox`. Any new police behavior work should be captured under `specs/ideas/`.
+
 ## Current Checkpoint
 
-The prototype now covers the first pass of User Story 2:
+The prototype includes a partial implementation beyond the revised branch scope:
 
 - project boots in Godot 4.6+
 - world is generated from a layered ASCII-tiled base level with road, building, and activity maps
 - player can move on foot, steal the parked vehicle, and drive
 - civilian pedestrians and traffic placeholders are spawned from activity overlays
-- witnessed crimes raise wanted level
-- police placeholders spawn and pursue on foot
-- wanted state decays after the player escapes pressure
+- wanted and police placeholder systems exist as deferred work, but are no longer part of active branch completion
 - camera uses fixed viewport stretch, driving look-ahead, speed-aware zoom, and pause palette overlay
-- debug overlay shows wanted level and police count
+- debug overlay shows development state for the current sandbox slice
+
+The branch is still considered in-progress until the basic sandbox feel is accepted across on-foot movement, vehicle handling, collisions, and baseline civilian traffic behavior.
 
 ## Validate First
 
@@ -28,24 +30,28 @@ Then manually verify:
 
 - `scenes/main/game.tscn` loads
 - fullscreen keeps the same framed view instead of revealing more world
+- the city reads clearly as a tile-based space with sidewalks, crossings, and lanes
+- pedestrians stay on valid walking routes
+- civilian traffic follows readable western traffic flow
 - the on-foot to vehicle loop works
 - the driving camera pans ahead and eases back from high-speed exits
-- stealing the vehicle near civilians raises wanted
-- police spawn and wanted can clear again
+- taking over a civilian vehicle leaves a displaced pedestrian occupant
+- vehicle-to-pedestrian impacts displace pedestrians by momentum without pedestrians pushing cars back
 
 Manual validation reference:
 
 - [tests/manual/us1_playable_core.md](../../tests/manual/us1_playable_core.md)
-- [tests/manual/us2_wanted_loop.md](../../tests/manual/us2_wanted_loop.md)
 
 ## Next Target
 
-Stabilize and tune User Story 2 before promoting any new feature ideas into active scope:
+Stabilize and tune the revised sandbox scope before promoting any new feature ideas into active scope:
 
 1. Tune camera framing, zoom-delay, and driving look-ahead feel through manual play
-2. Tune civilian spacing, witness radius, and wanted decay timing
-3. Improve police pursuit behavior and spawn selection across multiple district tiles
-4. Decide whether wanted UI stays debug-first or gains lightweight HUD treatment
+2. Tune on-foot movement so pedestrians stay responsive, human-scale, and distinct from vehicle handling
+3. Tune civilian spacing, lane flow, and crossing behavior
+4. Implement civilian vehicle takeover with displaced occupants
+5. Implement momentum-based vehicle-to-pedestrian impacts
+6. Expand debug state so traffic and collision behavior can be compared during tuning
 
 ## Actor TODO
 
@@ -66,7 +72,7 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 - Yield to pedestrians at crossings
 - Stop at least half a car length before a pedestrian
 - Keep at least half a car length spacing from vehicles or obstacles ahead
-- Keep longer stand-off distance to police and full-car stand-off to barriers
+- Keep full-car stand-off distance to barriers and other hard blockers
 - Handle corners, tees, dead ends, and parking-lot entry or exit cleanly
 - Reroute around blocked lanes by changing lane, turning, or making a left-lane u-turn when needed
 - Fix failed turns where a car hits the curb, flips direction, and stalls instead of completing the legal corner
@@ -79,13 +85,9 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 - Cross roads only on valid crossing paths
 - Avoid stepping into traffic lanes outside crossings
 - Fix pedestrians that oscillate inside intersections instead of using the marked crosswalk path
-
-### Police
-
-- Verify spawned police always move after creation
-- Verify police are not blocked by hidden or stale collisions
-- Improve pursuit routing across multi-tile streets
-- Confirm pressure logic matches visible chase state
+- Keep player on-foot control direct from top-down directional input rather than vehicle steering rules
+- Keep pedestrian top speed within believable human limits for the district scale
+- Allow only light carry on abrupt direction changes, with room for later surface-based tuning
 
 ### Player Vehicle
 
@@ -93,6 +95,8 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 - Re-test road collisions after overlay and tile-profile changes
 - Re-check enter or exit flow near sidewalks, lots, and dead ends
 - Confirm no invisible blockers remain on drivable routes
+- Leave a displaced pedestrian occupant behind when the player takes over a civilian car
+- Transfer vehicle momentum to pedestrians on impact without allowing pedestrians to shove the vehicle
 
 Primary task source:
 
