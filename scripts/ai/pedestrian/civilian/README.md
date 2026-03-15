@@ -6,4 +6,4 @@ Civilian pedestrian behavior lives here.
 
 Current file:
 
-- `pedestrian_ai.gd`: sidewalk and crosswalk path-following for ambient civilians
+- `pedestrian_ai.gd`: local sidewalk and crosswalk walking, small-group formation, obstacle steering, and incident or reclaim behavior for ambient civilians

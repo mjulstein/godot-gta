@@ -9,9 +9,9 @@ Police and wanted documentation remains in the repository for later reference, b
 The prototype includes a partial implementation beyond the revised branch scope:
 
 - project boots in Godot 4.6+
-- world is generated from a layered ASCII-tiled base level with road, building, and activity maps
+- world is generated from a layered ASCII-tiled base level with road, building, pedestrian-density, and traffic-density maps
 - player can move on foot, steal the parked vehicle, and drive
-- civilian pedestrians and traffic placeholders are spawned from activity overlays
+- civilian pedestrians and traffic are spawned from separate ambient overlay densities
 - wanted and police placeholder systems exist as deferred work, but are no longer part of active branch completion
 - camera uses fixed viewport stretch, driving look-ahead, speed-aware zoom, and pause palette overlay
 - debug overlay shows development state for the current sandbox slice
@@ -31,7 +31,8 @@ Then manually verify:
 - `scenes/main/game.tscn` loads
 - fullscreen keeps the same framed view instead of revealing more world
 - the city reads clearly as a tile-based space with sidewalks, crossings, and lanes
-- pedestrians stay on valid walking routes
+- pedestrians stay on curb-adjacent sidewalks and valid crosswalk links
+- pedestrian groups read sensibly, including side-by-side pairs and queued larger groups
 - civilian traffic follows readable western traffic flow
 - the on-foot to vehicle loop works
 - the driving camera pans ahead and eases back from high-speed exits
@@ -48,10 +49,10 @@ Stabilize and tune the revised sandbox scope before promoting any new feature id
 
 1. Tune camera framing, zoom-delay, and driving look-ahead feel through manual play
 2. Tune on-foot movement so pedestrians stay responsive, human-scale, and distinct from vehicle handling
-3. Tune civilian spacing, lane flow, and crossing behavior
-4. Implement civilian vehicle takeover with displaced occupants
-5. Implement momentum-based vehicle-to-pedestrian impacts
-6. Expand debug state so traffic and collision behavior can be compared during tuning
+3. Tune civilian spacing, lane flow, and crossing behavior under heavier density mixes
+4. Tighten curb-constrained pedestrian spawning on all tile profiles through manual play
+5. Verify takeover, incident, and post-impact behavior under repeated sandbox runs
+6. Expand debug state only where tuning is still hard to compare during play
 
 ## Actor TODO
 
@@ -80,11 +81,10 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 
 ### Pedestrians
 
-- Stay on sidewalks and crosswalks only
-- Choose sensible turns at corners and intersections
-- Cross roads only on valid crossing paths
-- Avoid stepping into traffic lanes outside crossings
-- Fix pedestrians that oscillate inside intersections instead of using the marked crosswalk path
+- Keep spawns constrained to curb-adjacent sidewalk bands on every tile profile
+- Keep local sidewalk walking and crosswalk selection readable under high density
+- Keep group movement stable near crosswalk choices, especially for 3-ped and queued formations
+- Keep obstacle steering smooth without grass drift or direction flicker
 - Keep player on-foot control direct from top-down directional input rather than vehicle steering rules
 - Keep pedestrian top speed within believable human limits for the district scale
 - Allow only light carry on abrupt direction changes, with room for later surface-based tuning

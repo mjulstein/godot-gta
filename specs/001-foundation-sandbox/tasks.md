@@ -60,8 +60,8 @@
 - [x] T017 [US1] Implement base vehicle handling and occupancy hooks in `scripts/vehicles/vehicle_controller.gd`
 - [x] T018 [US1] Connect camera ownership switching between player and active vehicle in `scripts/core/follow_camera.gd`
 - [x] T019 [US1] Wire the district, player, vehicle, camera, and debug overlay together in `scenes/main/game.tscn`
-- [ ] T020 [US1] Tune civilian pedestrians and traffic so sidewalks, crossings, lane usage, and western traffic flow stay readable in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [ ] T021 [US1] Add validation notes for readable city movement, crossings, and traffic flow in `tests/manual/us1_playable_core.md`
+- [x] T020 [US1] Tune civilian pedestrians and traffic so sidewalks, crossings, lane usage, and western traffic flow stay readable in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [x] T021 [US1] Add validation notes for readable city movement, crossings, and traffic flow in `tests/manual/us1_playable_core.md`
 - [x] T022 [US1] Document the manual MVP validation flow in `tests/manual/us1_playable_core.md`
 
 **Checkpoint**: User Story 1 is playable and validates the city-navigation baseline
@@ -78,8 +78,8 @@
 
 - [x] T023 [P] [US2] Create civilian pedestrian and traffic placeholder scenes in `scenes/actors/civilians/` and `scenes/vehicles/civilian/`
 - [x] T024 [US2] Implement simple civilian movement or traffic behavior in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [ ] T025 [US2] Upgrade civilian pedestrian movement so crossings and sidewalk use stay aligned with western traffic expectations in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
-- [ ] T026 [US2] Upgrade civilian vehicle behavior so lane usage, direction of travel, and crossing approach stay aligned with western traffic expectations in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [x] T025 [US2] Upgrade civilian pedestrian movement so crossings and sidewalk use stay aligned with western traffic expectations in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
+- [x] T026 [US2] Upgrade civilian vehicle behavior so lane usage, direction of travel, and crossing approach stay aligned with western traffic expectations in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [x] T027 [US2] Implement player takeover of civilian vehicles while leaving a displaced pedestrian occupant in `scripts/systems/vehicle_interaction_system.gd` and `scripts/actors/player/player_controller.gd`
 - [x] T028 [US2] Add momentum-based vehicle-to-pedestrian collision response so pedestrians are displaced by vehicle motion and cannot push vehicles in `scripts/vehicles/vehicle_controller.gd` and pedestrian scripts
 - [x] T029 [US2] Expose debug state for takeover and collision momentum through `scripts/ui/debug_overlay.gd`
@@ -99,7 +99,7 @@
 - [x] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
 - [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
 - [ ] T045 Run full manual validation for US1 and US2 and record results in `tests/manual/`
-- [ ] T046 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [x] T046 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [ ] T047 Tune civilian traffic speed targets so cars cruise faster than the player on long straights and brake for turns in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `data/tuning/`
 - [ ] T048 Improve civilian traffic stopping distance so cars hold at least half a car length before pedestrians, vehicles, and other forward obstacles in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [ ] T049 Add civilian traffic obstruction recovery so blocked cars can change lane, turn, or make a left-lane u-turn instead of stalling into collisions in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
