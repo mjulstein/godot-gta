@@ -9,6 +9,7 @@ signal harmed(source: Node2D)
 @export var tuning: Resource
 @export var collision_flash_time := 0.12
 @export_range(20.0, 200.0, 1.0) var mass_kg := 80.0
+@export_range(0.1, 3.0, 0.05) var knockout_hold_time := 0.85
 var active_vehicle: Node = null
 var collision_flash_remaining := 0.0
 var impact_cooldowns: Dictionary = {}
@@ -22,6 +23,8 @@ var impact_collision_disable_remaining := 0.0
 var impact_velocity := Vector2.ZERO
 var knocked_out := false
 var pending_harm_source: Node2D
+var knockout_hold_remaining := 0.0
+var knockout_input_released := false
 
 const VEHICLE_ENTRY_REACHED_DISTANCE := 10.0
 const KNOCKOUT_IMPACT_THRESHOLD := 12.0
@@ -42,6 +45,7 @@ func _physics_process(delta: float) -> void:
 	collision_flash_remaining = maxf(0.0, collision_flash_remaining - delta)
 	impact_recovery_remaining = maxf(0.0, impact_recovery_remaining - delta)
 	impact_collision_disable_remaining = maxf(0.0, impact_collision_disable_remaining - delta)
+	knockout_hold_remaining = maxf(0.0, knockout_hold_remaining - delta)
 	_tick_impact_cooldowns(delta)
 	body_polygon.color = Color(1, 0.2, 0.2, 1) if collision_flash_remaining > 0.0 else Color(0.976471, 0.956863, 0.278431, 1)
 	_update_impact_collision_state()
@@ -58,10 +62,17 @@ func _physics_process(delta: float) -> void:
 		return
 	if knocked_out:
 		velocity = Vector2.ZERO
+		if knockout_hold_remaining > 0.0:
+			return
 		var recovery_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		if recovery_input == Vector2.ZERO:
+			knockout_input_released = true
+			return
+		if not knockout_input_released:
 			return
 		knocked_out = false
+		knockout_hold_remaining = 0.0
+		knockout_input_released = false
 		pending_harm_source = null
 	if _update_vehicle_entry_approach(delta):
 		move_and_slide()
@@ -126,7 +137,7 @@ func is_knocked_out() -> bool:
 	return knocked_out
 
 func is_harm_settled() -> bool:
-	return knocked_out and impact_recovery_remaining <= 0.0 and velocity.length() <= 1.0
+	return knocked_out and knockout_hold_remaining <= 0.0 and impact_recovery_remaining <= 0.0 and velocity.length() <= 1.0
 
 func get_pending_harm_source() -> Node2D:
 	return pending_harm_source
@@ -232,6 +243,8 @@ func _apply_impact_response(source: Node2D) -> void:
 	impact_recovery_remaining = 0.4
 	impact_collision_disable_remaining = 0.25
 	knocked_out = true
+	knockout_hold_remaining = knockout_hold_time
+	knockout_input_released = false
 	pending_harm_source = source
 
 func _update_impact_collision_state() -> void:

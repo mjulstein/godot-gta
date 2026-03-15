@@ -4,6 +4,7 @@ const CivilianVehicleTuning = preload("res://scripts/ai/vehicular/civilian/civil
 
 signal harmed(source: Node2D)
 signal civilian_hit(target: Node2D)
+signal incident_driver_requested(target: Node2D, inspect_position: Vector2)
 
 @export var tuning: CivilianVehicleTuning
 @export var is_important := false
@@ -24,6 +25,8 @@ signal civilian_hit(target: Node2D)
 @export var harmed_flash_time := 0.45
 @export_range(0.0, 2.0, 0.05) var respawn_pause := 0.35
 @export_range(0.0, 4.0, 0.05) var recycle_check_interval := 0.5
+@export_range(0.0, 3.0, 0.05) var incident_exit_delay := 0.6
+@export_range(0.0, 10.0, 0.1) var driver_exit_after_stop_time := 5.0
 
 var harmed_flash_remaining := 0.0
 var pause_remaining := 0.0
@@ -56,6 +59,11 @@ var last_player_ahead_distance := -1.0
 var collision_flash_remaining := 0.0
 var abandoned_after_theft := false
 var incident_stop_active := false
+var incident_target: Node2D
+var incident_driver_deployed := false
+var incident_inspect_position := Vector2.ZERO
+var incident_elapsed := 0.0
+var stopped_duration := 0.0
 
 const ROAD_HALF_WIDTH := 96.0
 const INNER_LANE_OFFSET := 28.0
@@ -96,6 +104,8 @@ func _physics_process(delta: float) -> void:
 	recycle_check_remaining = maxf(0.0, recycle_check_remaining - delta)
 	recovery_cooldown_remaining = maxf(0.0, recovery_cooldown_remaining - delta)
 	reroute_focus_remaining = maxf(0.0, reroute_focus_remaining - delta)
+	incident_elapsed = incident_elapsed + delta if incident_stop_active else 0.0
+	_update_stopped_duration(delta)
 	_tick_impact_cooldowns(delta)
 	body_polygon.color = _get_body_color()
 
@@ -113,6 +123,7 @@ func _physics_process(delta: float) -> void:
 		current_speed = 0.0
 		longitudinal_speed = 0.0
 		velocity = Vector2.ZERO
+		_update_incident_state()
 		move_and_slide()
 		return
 
@@ -132,6 +143,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_rotation_from_motion(previous_position)
 	if get_slide_collision_count() > 0:
+		var first_collision := get_slide_collision(0)
+		if first_collision != null:
+			_record_collision_incident(first_collision.get_collider())
 		collision_flash_remaining = harmed_flash_time
 		_emit_civilian_impacts()
 
@@ -175,6 +189,7 @@ func set_path_active(is_active: bool) -> void:
 func register_harm(source: Node2D) -> void:
 	harmed_flash_remaining = harmed_flash_time
 	pause_remaining = maxf(pause_remaining, 0.4)
+	_record_collision_incident(source)
 	harmed.emit(source)
 
 func can_enter() -> bool:
@@ -197,10 +212,17 @@ func clear_driver() -> void:
 	longitudinal_speed = 0.0
 	current_speed = 0.0
 	velocity = Vector2.ZERO
+	stopped_duration = 0.0
 
 func resume_civilian_control() -> void:
 	incident_stop_active = false
+	incident_target = null
+	incident_driver_deployed = false
+	incident_inspect_position = Vector2.ZERO
+	incident_elapsed = 0.0
+	stopped_duration = 0.0
 	abandoned_after_theft = false
+	occupant_present = true
 	driver = null
 	pause_remaining = 0.25
 
@@ -217,13 +239,21 @@ func get_driver_entry_position() -> Vector2:
 func mark_theft_reported() -> void:
 	theft_reported = true
 
-func begin_incident_stop() -> void:
+func begin_incident_stop(target: Node2D) -> void:
 	if driver != null:
 		return
 	incident_stop_active = true
+	incident_target = target
+	incident_driver_deployed = false
+	incident_inspect_position = target.global_position if target != null and is_instance_valid(target) else _incident_front_position()
+	incident_elapsed = 0.0
+	stopped_duration = 0.0
 	current_speed = 0.0
 	longitudinal_speed = 0.0
 	velocity = Vector2.ZERO
+
+func has_active_incident() -> bool:
+	return incident_stop_active
 
 func was_theft_reported() -> bool:
 	return theft_reported
@@ -749,18 +779,61 @@ func _register_pedestrian_impact(collider: Node) -> void:
 	impact_cooldowns[collider.get_instance_id()] = 0.75
 	if collider.has_method("register_harm"):
 		collider.register_harm(self)
+	if driver == null and occupant_present:
+		begin_incident_stop(collider)
 	civilian_hit.emit(collider)
 
 func release_driver_for_incident() -> bool:
-	if not occupant_present or driver != null:
+	if not incident_stop_active or (incident_target == null and incident_inspect_position == Vector2.ZERO) or not occupant_present or driver != null:
 		return false
-	incident_stop_active = false
 	occupant_present = false
-	abandoned_after_theft = true
 	current_speed = 0.0
 	longitudinal_speed = 0.0
 	velocity = Vector2.ZERO
 	return true
+
+func _update_incident_state() -> void:
+	if incident_target != null and not is_instance_valid(incident_target):
+		incident_target = null
+	if incident_target == null and incident_inspect_position == Vector2.ZERO:
+		incident_stop_active = false
+		incident_driver_deployed = false
+		incident_inspect_position = Vector2.ZERO
+		return
+	if incident_driver_deployed:
+		return
+	if incident_elapsed < incident_exit_delay:
+		return
+	if incident_target != null:
+		if incident_target.has_method("is_harm_settled") and not incident_target.is_harm_settled():
+			return
+	incident_driver_deployed = true
+	incident_driver_requested.emit(incident_target, incident_inspect_position)
+
+func _record_collision_incident(collider: Object) -> void:
+	if incident_stop_active or driver != null or not occupant_present:
+		return
+	var target_actor: Node2D = collider as Node2D if collider is Node2D else null
+	begin_incident_stop(target_actor)
+	if target_actor == null:
+		incident_inspect_position = _incident_front_position()
+	elif is_instance_valid(target_actor):
+		incident_inspect_position = target_actor.global_position
+
+func _incident_front_position() -> Vector2:
+	return global_position + Vector2.RIGHT.rotated(rotation) * (TRAFFIC_CAR_LENGTH * 0.8)
+
+func _update_stopped_duration(delta: float) -> void:
+	if driver != null or not occupant_present:
+		stopped_duration = 0.0
+		return
+	var stopped_speed := maxf(maxf(absf(longitudinal_speed), current_speed), velocity.length())
+	if stopped_speed > 2.0:
+		stopped_duration = 0.0
+		return
+	stopped_duration += delta
+	if not incident_stop_active and stopped_duration >= driver_exit_after_stop_time:
+		begin_incident_stop(null)
 
 func _impact_candidates() -> Array[Node2D]:
 	var results: Array[Node2D] = []

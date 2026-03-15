@@ -31,6 +31,7 @@ var reclaim_attempt_active := false
 var incident_vehicle: Node2D
 var incident_target: Node2D
 var incident_response_active := false
+var incident_inspect_position := Vector2.ZERO
 
 const RECLAIM_SPEED := 74.0
 const RECLAIM_REACHED_DISTANCE := 10.0
@@ -153,14 +154,18 @@ func configure_reclaim_attempt(target_vehicle: Node2D, should_attempt: bool) -> 
 	reclaim_attempt_active = should_attempt
 	reclaim_delay_remaining = 0.75
 
-func configure_incident_response(target_vehicle: Node2D, target_actor: Node2D) -> void:
+func configure_incident_response(target_vehicle: Node2D, target_actor: Node2D, inspect_position: Vector2 = Vector2.ZERO) -> void:
 	incident_vehicle = target_vehicle
 	incident_target = target_actor
+	incident_inspect_position = inspect_position
 	incident_response_active = true
 	reclaim_delay_remaining = 0.2
 
 func get_mass_kg() -> float:
 	return mass_kg
+
+func is_harm_settled() -> bool:
+	return harmed_flash_remaining > 0.0 and impact_recovery_remaining <= 0.0 and impact_velocity.length() <= 1.0
 
 func _follow_world_path() -> void:
 	var target_position := world_path_points[path_target_index]
@@ -274,17 +279,13 @@ func _update_incident_response() -> bool:
 		return false
 	var target_position := global_position
 	var move_speed_target := RECLAIM_SPEED
-	var should_resume_vehicle := false
 	if incident_target != null and is_instance_valid(incident_target):
 		var target_velocity := Vector2.ZERO
 		if incident_target.has_method("get_impact_velocity"):
 			target_velocity = incident_target.get_impact_velocity()
 		var toward_vehicle := incident_vehicle.global_position - incident_target.global_position
 		var target_moving_to_vehicle := toward_vehicle != Vector2.ZERO and target_velocity.dot(toward_vehicle.normalized()) > INCIDENT_TARGET_STOP_SPEED
-		if target_moving_to_vehicle:
-			target_position = incident_vehicle.get_driver_entry_position() if incident_vehicle.has_method("get_driver_entry_position") else incident_vehicle.global_position
-			should_resume_vehicle = true
-		elif target_velocity.length() <= INCIDENT_TARGET_STOP_SPEED:
+		if target_velocity.length() <= INCIDENT_TARGET_STOP_SPEED or target_moving_to_vehicle:
 			var offset_direction := (global_position - incident_target.global_position).normalized()
 			if offset_direction == Vector2.ZERO:
 				offset_direction = Vector2.LEFT
@@ -292,14 +293,11 @@ func _update_incident_response() -> bool:
 		else:
 			target_position = incident_vehicle.get_driver_entry_position() if incident_vehicle.has_method("get_driver_entry_position") else incident_vehicle.global_position
 	else:
-		target_position = incident_vehicle.get_driver_entry_position() if incident_vehicle.has_method("get_driver_entry_position") else incident_vehicle.global_position
+		target_position = incident_inspect_position if incident_inspect_position != Vector2.ZERO else incident_vehicle.global_position
 
 	var to_target := target_position - global_position
 	if to_target.length() <= RECLAIM_REACHED_DISTANCE:
 		velocity = Vector2.ZERO
-		if should_resume_vehicle and incident_vehicle.has_method("resume_civilian_control"):
-			incident_vehicle.resume_civilian_control()
-			queue_free()
 		return true
 	velocity = to_target.normalized() * move_speed_target
 	rotation = velocity.angle()

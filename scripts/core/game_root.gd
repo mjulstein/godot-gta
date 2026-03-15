@@ -17,8 +17,6 @@ const CivilianPedestrianScene = preload("res://scenes/actors/civilians/civilian_
 
 var traffic_camera_target: Node2D
 var active_vehicle_source_label := "Parked Vehicle"
-var pending_incident_vehicle: Node2D
-var incident_driver_spawned := false
 
 func _ready() -> void:
 	var player_spawn := _find_spawn_marker("player_spawn")
@@ -34,6 +32,8 @@ func _ready() -> void:
 	player.vehicle_entry_completed.connect(_on_enter_requested)
 	player.civilian_assaulted.connect(_on_player_civilian_assaulted)
 	_connect_vehicle_signals(vehicle)
+	for traffic_vehicle in get_tree().get_nodes_in_group("traffic_vehicle"):
+		_connect_vehicle_signals(traffic_vehicle)
 	crime_system.crime_reported.connect(wanted_system.handle_crime)
 	wanted_system.configure(player, world, debug_state)
 	get_tree().node_added.connect(_on_tree_node_added)
@@ -61,7 +61,6 @@ func _process(_delta: float) -> void:
 	debug_state.set_motion_debug_lines(_get_motion_debug_lines())
 	if debug_state.impact_state != "None" and (active_vehicle == null or not collision_active):
 		debug_state.set_impact_state("None")
-	_process_pending_incident()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("debug_camera"):
@@ -94,11 +93,6 @@ func _on_vehicle_civilian_hit(source: Node2D, target: Node2D) -> void:
 		debug_state.set_impact_state("Pedestrian hit at %.1f kph" % (source_speed * 0.18))
 		crime_system.report_harmful_collision(source, target)
 		return
-	if target == player and not player.is_in_vehicle():
-		if source.has_method("begin_incident_stop"):
-			source.begin_incident_stop()
-		pending_incident_vehicle = source
-		incident_driver_spawned = false
 
 func _find_spawn_marker(marker_kind: String) -> Marker2D:
 	return _find_spawn_marker_in_node(world, marker_kind)
@@ -198,14 +192,22 @@ func _on_tree_node_added(node: Node) -> void:
 		_connect_vehicle_signals(node)
 
 func _connect_vehicle_signals(node: Node) -> void:
-	if node == null or not node.has_signal("civilian_hit"):
+	if node == null:
 		return
-	var bound_callable := Callable(self, "_on_connected_vehicle_civilian_hit").bind(node)
-	if not node.is_connected("civilian_hit", bound_callable):
-		node.connect("civilian_hit", bound_callable)
+	if node.has_signal("civilian_hit"):
+		var hit_callable := Callable(self, "_on_connected_vehicle_civilian_hit").bind(node)
+		if not node.is_connected("civilian_hit", hit_callable):
+			node.connect("civilian_hit", hit_callable)
+	if node.has_signal("incident_driver_requested"):
+		var incident_callable := Callable(self, "_on_connected_vehicle_incident_driver_requested").bind(node)
+		if not node.is_connected("incident_driver_requested", incident_callable):
+			node.connect("incident_driver_requested", incident_callable)
 
 func _on_connected_vehicle_civilian_hit(target: Node2D, source: Node2D) -> void:
 	_on_vehicle_civilian_hit(source, target)
+
+func _on_connected_vehicle_incident_driver_requested(target: Node2D, inspect_position: Vector2, source: Node2D) -> void:
+	_maybe_spawn_incident_driver(source, target, inspect_position)
 
 func _prepare_vehicle_takeover(target_vehicle: Node2D) -> Node2D:
 	if target_vehicle == vehicle:
@@ -230,7 +232,7 @@ func _spawn_displaced_occupant(spawn_position: Vector2, facing_direction: Vector
 	if occupant.has_method("configure_reclaim_attempt"):
 		occupant.configure_reclaim_attempt(target_vehicle, randf() < 0.5)
 
-func _maybe_spawn_incident_driver(source_vehicle: Node2D, target_actor: Node2D) -> void:
+func _maybe_spawn_incident_driver(source_vehicle: Node2D, target_actor: Node2D, inspect_position: Vector2 = Vector2.ZERO) -> void:
 	if source_vehicle == null or not is_instance_valid(source_vehicle):
 		return
 	if not source_vehicle.has_method("release_driver_for_incident") or not source_vehicle.release_driver_for_incident():
@@ -249,26 +251,8 @@ func _maybe_spawn_incident_driver(source_vehicle: Node2D, target_actor: Node2D) 
 	else:
 		driver_actor.global_position = spawn_position
 	if driver_actor.has_method("configure_incident_response"):
-		driver_actor.configure_incident_response(source_vehicle, target_actor)
+		driver_actor.configure_incident_response(source_vehicle, target_actor, inspect_position)
 
-func _process_pending_incident() -> void:
-	if pending_incident_vehicle == null or not is_instance_valid(pending_incident_vehicle):
-		pending_incident_vehicle = null
-		incident_driver_spawned = false
-		return
-	if player.is_in_vehicle():
-		pending_incident_vehicle = null
-		incident_driver_spawned = false
-		return
-	if incident_driver_spawned:
-		return
-	if not player.is_harm_settled():
-		return
-	if player.get_pending_harm_source() != pending_incident_vehicle:
-		return
-	_maybe_spawn_incident_driver(pending_incident_vehicle, player)
-	incident_driver_spawned = true
-	pending_incident_vehicle = null
 
 func _get_active_player_vehicle() -> Node2D:
 	if not player.is_in_vehicle():
