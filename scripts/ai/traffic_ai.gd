@@ -41,6 +41,7 @@ var last_police_ahead_distance := -1.0
 var last_pedestrian_ahead_distance := -1.0
 var last_dynamic_obstacle_ahead_distance := -1.0
 var last_barrier_ahead_distance := -1.0
+var recent_tiles: Array[Vector2] = []
 
 const ROAD_HALF_WIDTH := 96.0
 const INNER_LANE_OFFSET := 28.0
@@ -49,6 +50,10 @@ const CROSSWALK_CLEAR_OFFSET := 120.0
 const INTERSECTION_ENTRY_OFFSET := 76.0
 const ROUTE_SAMPLE_STEP := 24.0
 const TURN_ARC_STEPS := 6
+const RECENT_TILE_MEMORY := 6
+const ROUTE_LOOKAHEAD_DEPTH := 3
+const RECENT_TILE_PENALTY := 10
+const UTURN_PENALTY := 3
 
 @onready var body_polygon: Polygon2D = $Body
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -87,6 +92,7 @@ func _physics_process(delta: float) -> void:
 func set_world_path(points: PackedVector2Array) -> void:
 	world_path_points = points
 	path_target_index = 1 if world_path_points.size() >= 2 else 0
+	recent_tiles.clear()
 	if world_path_points.size() >= 1:
 		spawn_position = world_path_points[0]
 		global_position = world_path_points[0]
@@ -217,6 +223,7 @@ func _recycle_to_new_route() -> void:
 	rotation = _forward_vector_for_heading(heading).angle()
 	velocity = Vector2.ZERO
 	pause_remaining = respawn_pause
+	recent_tiles.clear()
 	_build_runtime_segment()
 
 func _pick_recycle_spawn() -> Dictionary:
@@ -456,6 +463,7 @@ func _build_runtime_segment(forced_action: String = "") -> bool:
 	var tile := _find_district_tile(global_position)
 	if tile == null:
 		return false
+	_remember_tile(tile)
 
 	var action := forced_action if not forced_action.is_empty() else _choose_action(tile)
 	var next_heading := heading
@@ -535,23 +543,7 @@ func _attempt_blockage_recovery() -> bool:
 	if tile == null:
 		return false
 
-	var forced_action := ""
-	if _is_before_intersection_hold_point(tile) and _can_switch_lane(tile):
-		forced_action = "switch_left" if lane == "right" else "switch_right"
-	elif lane == "right":
-		if _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(heading))):
-			forced_action = "right"
-		elif _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(heading))):
-			forced_action = "left"
-		else:
-			forced_action = "merge_left_uturn"
-	else:
-		if _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(heading))):
-			forced_action = "left"
-		elif _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(heading))):
-			forced_action = "right"
-		else:
-			forced_action = "uturn"
+	var forced_action := _choose_recovery_action(tile)
 
 	if forced_action.is_empty():
 		return false
@@ -585,24 +577,162 @@ func _spawn_point(tile: Node2D, direction: String, lane_name: String) -> Vector2
 	return _world_point(tile, direction, lane_name, _spawn_offset(tile, direction), false)
 
 func _choose_action(tile: Node2D) -> String:
-	var can_go_straight := _tile_open(tile, _get_exit_side_for_heading(heading))
-	var can_turn_left := _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(heading)))
-	var can_turn_right := _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(heading)))
-	if lane == "left":
+	if lane == "left" and _should_prepare_right_lane_escape(tile) and _can_switch_lane(tile):
+		return "switch_right"
+	return _pick_preferred_action(tile, heading, lane, _available_actions_for(tile, heading, lane))
+
+func _choose_recovery_action(tile: Node2D) -> String:
+	var candidates: Array[String] = []
+	if _is_before_intersection_hold_point(tile) and _can_switch_lane(tile):
+		candidates.append("switch_left" if lane == "right" else "switch_right")
+	if lane == "right":
+		candidates.append_array(["right", "left", "merge_left_uturn"])
+	else:
+		candidates.append_array(["left", "right", "uturn"])
+	return _pick_preferred_action(tile, heading, lane, candidates)
+
+func _pick_preferred_action(tile: Node2D, entry_heading: String, entry_lane: String, candidates: Array[String]) -> String:
+	var valid_actions: Array[String] = []
+	for action in candidates:
+		if _action_is_valid(tile, entry_heading, entry_lane, action):
+			valid_actions.append(action)
+	if valid_actions.is_empty():
+		return ""
+	var best_action := valid_actions[0]
+	var best_score := _action_loop_score(tile, entry_heading, entry_lane, best_action, ROUTE_LOOKAHEAD_DEPTH)
+	for action in valid_actions:
+		var score := _action_loop_score(tile, entry_heading, entry_lane, action, ROUTE_LOOKAHEAD_DEPTH)
+		if score < best_score:
+			best_score = score
+			best_action = action
+	return best_action
+
+func _available_actions_for(tile: Node2D, entry_heading: String, entry_lane: String) -> Array[String]:
+	var actions: Array[String] = []
+	var can_go_straight := _tile_open(tile, _get_exit_side_for_heading(entry_heading))
+	var can_turn_left := _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(entry_heading)))
+	var can_turn_right := _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(entry_heading)))
+	if entry_lane == "left":
 		if can_go_straight:
-			return "straight"
+			actions.append("straight")
 		if can_turn_left:
-			return "left"
-		if can_turn_right:
-			return "right"
-		return "uturn"
+			actions.append("left")
+		if actions.is_empty() and can_turn_right:
+			actions.append("right")
+		if actions.is_empty():
+			actions.append("uturn")
+		return actions
 	if can_turn_right:
-		return "right"
+		actions.append("right")
 	if can_go_straight:
-		return "straight"
+		actions.append("straight")
 	if can_turn_left:
-		return "left"
-	return "merge_left_uturn"
+		actions.append("left")
+	if actions.is_empty():
+		actions.append("merge_left_uturn")
+	return actions
+
+func _action_is_valid(tile: Node2D, entry_heading: String, entry_lane: String, action: String) -> bool:
+	match action:
+		"straight", "switch_left", "switch_right":
+			return _tile_open(tile, _get_exit_side_for_heading(entry_heading))
+		"left":
+			return _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(entry_heading)))
+		"right":
+			return _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(entry_heading)))
+		"uturn", "merge_left_uturn":
+			return true
+		_:
+			return false
+
+func _should_prepare_right_lane_escape(tile: Node2D) -> bool:
+	if lane != "left" or not _tile_open(tile, _get_exit_side_for_heading(heading)):
+		return false
+	var next_tile := _neighbor_tile(tile, heading)
+	if next_tile == null:
+		return false
+	if _available_actions_for(next_tile, heading, "left").is_empty() or _available_actions_for(next_tile, heading, "right").is_empty():
+		return false
+	var left_score := _best_future_score(next_tile, heading, "left", ROUTE_LOOKAHEAD_DEPTH - 1)
+	var right_score := _best_future_score(next_tile, heading, "right", ROUTE_LOOKAHEAD_DEPTH - 1)
+	return right_score < left_score
+
+func _action_loop_score(tile: Node2D, entry_heading: String, entry_lane: String, action: String, depth: int) -> int:
+	var next_state := _state_after_action(tile, entry_heading, entry_lane, action)
+	var target_tile := next_state.get("tile") as Node2D
+	var score := 0
+	if action == "uturn" or action == "merge_left_uturn":
+		score += UTURN_PENALTY
+	if target_tile == null:
+		return score
+	if _tile_is_recent(target_tile.global_position):
+		score += RECENT_TILE_PENALTY
+	if depth <= 1:
+		return score
+	var next_heading := String(next_state.get("heading", entry_heading))
+	var next_lane := String(next_state.get("lane", entry_lane))
+	return score + _best_future_score(target_tile, next_heading, next_lane, depth - 1)
+
+func _best_future_score(tile: Node2D, entry_heading: String, entry_lane: String, depth: int) -> int:
+	if tile == null or depth <= 0:
+		return 0
+	var actions := _available_actions_for(tile, entry_heading, entry_lane)
+	if actions.is_empty():
+		return 0
+	var best_score := INF
+	for action in actions:
+		if not _action_is_valid(tile, entry_heading, entry_lane, action):
+			continue
+		best_score = mini(best_score, _action_loop_score(tile, entry_heading, entry_lane, action, depth))
+	return 0 if best_score == INF else best_score
+
+func _state_after_action(tile: Node2D, entry_heading: String, entry_lane: String, action: String) -> Dictionary:
+	var exit_heading := entry_heading
+	var exit_lane := entry_lane
+	match action:
+		"left":
+			exit_heading = _get_left_heading(entry_heading)
+			exit_lane = "left"
+		"right":
+			exit_heading = _get_right_heading(entry_heading)
+			exit_lane = "right"
+		"uturn", "merge_left_uturn":
+			exit_heading = _get_opposite_heading(entry_heading)
+			exit_lane = "right"
+		"switch_left":
+			exit_lane = "left"
+		"switch_right":
+			exit_lane = "right"
+	var target_tile := _neighbor_tile(tile, exit_heading)
+	return {
+		"tile": target_tile,
+		"heading": exit_heading,
+		"lane": exit_lane,
+	}
+
+func _neighbor_tile(tile: Node2D, direction: String) -> Node2D:
+	var tile_size_value = tile.get("tile_world_size")
+	if not (tile_size_value is Vector2):
+		return null
+	var tile_size: Vector2 = tile_size_value
+	var offset := Vector2(
+		tile_size.x if direction == "east" else -tile_size.x if direction == "west" else 0.0,
+		tile_size.y if direction == "south" else -tile_size.y if direction == "north" else 0.0
+	)
+	return _find_district_tile(tile.global_position + offset)
+
+func _tile_is_recent(tile_position: Vector2) -> bool:
+	for recent_tile in recent_tiles:
+		if recent_tile.distance_to(tile_position) <= 4.0:
+			return true
+	return false
+
+func _remember_tile(tile: Node2D) -> void:
+	if not recent_tiles.is_empty() and recent_tiles[recent_tiles.size() - 1].distance_to(tile.global_position) <= 4.0:
+		return
+	recent_tiles.append(tile.global_position)
+	while recent_tiles.size() > RECENT_TILE_MEMORY:
+		recent_tiles.remove_at(0)
 
 func _can_switch_lane(tile: Node2D) -> bool:
 	if tile == null:

@@ -14,6 +14,7 @@ Future-facing ideas that came up during foundation-sandbox implementation but ar
 - Mission vehicles may eventually support baked multi-tile routes, but ambient traffic should keep choosing its next tile reactively at runtime.
 - Police may remain on-foot for the current slice but could gain vehicle pursuit in a later slice.
 - The ASCII world layout may later move into data files instead of staying scene-export driven.
+- Traffic barriers should not be statically placed by default. Add a dedicated ASCII grid layer where `0` means no barrier and later map other per-tile characters to barrier directions or predefined barrier formations.
 - Wanted-state UI may stay debug-first for now, then later become a lightweight player-facing HUD.
 - Traffic barriers may later become movable physics props so player vehicles can shove them with impact velocity, while traffic still treats them as lane obstacles.
 - A future same-device multiplayer mode could keep players on one shared camera while they remain in the same framed area, then transition into split viewports once they drift too far apart.

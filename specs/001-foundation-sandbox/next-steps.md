@@ -56,10 +56,14 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 - Keep all movement on lane paths with no grass drift
 - Avoid spawning or despawning on screen
 - Keep rendering stable across tile transitions
+- Keep queueing before intersections instead of bunching inside the junction when lanes are blocked
+- Keep reroute choices from falling into repeat turn loops after obstacle avoidance
+- Continue tuning lane-prep behavior so cars choose the correct lane one tile early when the next junction requires it
 - Reach a higher cruising speed on long straights, then slow before corners
 - Yield to pedestrians at crossings
 - Stop at least half a car length before a pedestrian
 - Keep at least half a car length spacing from vehicles or obstacles ahead
+- Keep longer stand-off distance to police and full-car stand-off to barriers
 - Handle corners, tees, dead ends, and parking-lot entry or exit cleanly
 - Reroute around blocked lanes by changing lane, turning, or making a left-lane u-turn when needed
 - Fix failed turns where a car hits the curb, flips direction, and stalls instead of completing the legal corner
