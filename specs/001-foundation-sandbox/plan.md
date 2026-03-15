@@ -36,7 +36,7 @@ No constitution violations are currently expected.
 ## Phase 0 Research
 
 - Confirm the best 2D scene composition for the prototype district: static world tiles, dynamic actors, collision layers, and camera framing.
-- Decide how vehicle handling and on-foot movement should share or separate control abstractions.
+- Decide how all vehicles share one throttle and steering motion rule-set while still allowing different tuning profiles.
 - Decide the simplest police pursuit model that feels responsive without requiring a full traffic simulation.
 - Decide which gameplay values should be stored in `.tres` resources versus script constants in the initial implementation.
 - Define a low-overhead debug overlay for actor state, wanted state, and spawn diagnostics.
@@ -54,7 +54,7 @@ Create one compact city district with roads, sidewalks, collision, spawn points,
 Implement top-down on-foot movement, interaction prompts, actor state transitions, and health or defeat hooks needed by future systems.
 
 3. Vehicle System
-Implement drivable vehicles with enter and exit flow, handling data, damage state, and camera continuity.
+Implement drivable vehicles with enter and exit flow, shared throttle and steering motion rules, handling data, damage state, and camera continuity.
 
 4. Ambient Population
 Add a minimal civilian layer made of pedestrians, parked cars, and moving traffic sufficient to support crime detection and street readability.
@@ -66,7 +66,7 @@ Track criminal actions, witnesses, escalation, de-escalation, and police dispatc
 Spawn police units, navigate them toward the player, and support search or pursuit behavior that works in the prototype district.
 
 7. Debug and Tuning Tools
-Expose current actor state, wanted level, and spawn information in a development-only overlay or inspector-friendly format.
+Expose current actor state, wanted level, spawn information, and inspectable vehicle motion metrics in a development-only overlay or inspector-friendly format.
 
 ### Deliverables
 
@@ -159,7 +159,7 @@ tests/
 
 ## Risk Management
 
-- `Vehicle feel risk`: A weak handling model can make the entire prototype feel wrong. Mitigation: tune one vehicle deeply before adding variety.
+- `Vehicle feel risk`: A weak or inconsistent handling model can make the entire prototype feel wrong. Mitigation: define one shared vehicle rule-set first, then tune vehicle-specific profiles on top of it.
 - `AI complexity risk`: Civilian and police behaviors can grow too complex too early. Mitigation: use state machines with short behavior lists and district-specific assumptions.
 - `Scope risk`: Open-world features can expand quickly. Mitigation: reject additional districts, factions, missions, or weapon breadth until the first sandbox loop is stable.
 - `Readability risk`: Top-down action can become visually muddy. Mitigation: test camera distance, actor silhouettes, and collision feedback before adding visual detail.

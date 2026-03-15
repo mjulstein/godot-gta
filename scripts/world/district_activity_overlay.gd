@@ -62,6 +62,8 @@ const OUTER_LANE_OFFSET := 68.0
 const SPAWN_MARGIN := 192.0
 const CROSSWALK_CLEAR_OFFSET := 120.0
 const INTERSECTION_ENTRY_OFFSET := 76.0
+const LEFT_TURN_ENTRY_OFFSET := 32.0
+const LEFT_TURN_START_OFFSET := 44.0
 const U_TURN_SWEEP_OFFSET := 24.0
 const ROUTE_SAMPLE_STEP := 24.0
 const TURN_ARC_STEPS := 6
@@ -112,16 +114,15 @@ func _add_pedestrian(path: PackedVector2Array) -> void:
 		actor.call("set_path_active", true)
 
 func _add_traffic(route_data: Dictionary) -> void:
-	var path: PackedVector2Array = route_data.get("path", PackedVector2Array())
-	if path.size() < 2:
-		return
 	var actor = TrafficScene.instantiate()
-	actor.position = to_local(path[0])
 	add_child(actor)
-	if actor.has_method("set_route_context"):
-		actor.call("set_route_context", route_data.get("heading", ""), route_data.get("lane", "right"))
-	if actor.has_method("set_world_path"):
-		actor.call("set_world_path", path)
+	if actor.has_method("initialize_runtime_spawn"):
+		actor.call(
+			"initialize_runtime_spawn",
+			route_data.get("heading", ""),
+			route_data.get("lane", "right"),
+			route_data.get("action", "straight")
+		)
 	if actor.has_method("set_path_active"):
 		actor.call("set_path_active", true)
 
@@ -170,7 +171,6 @@ func _build_traffic_routes() -> Array[Dictionary]:
 					"heading": heading,
 					"lane": lane,
 					"action": action,
-					"path": _build_route(heading, lane, action),
 				})
 	return routes
 
@@ -222,9 +222,9 @@ func _build_route(heading: String, lane: String, action: String) -> PackedVector
 		"straight":
 			return _build_straight_route(heading, lane)
 		"left":
-			return _build_turn_route(heading, lane, _get_left_heading(heading), "left")
+			return _build_turn_route(heading, lane, _get_left_heading(heading), "left", "left")
 		"right":
-			return _build_turn_route(heading, lane, _get_right_heading(heading), "right")
+			return _build_turn_route(heading, lane, _get_right_heading(heading), "right", "right")
 		"uturn":
 			return _build_u_turn_route(heading)
 		"merge_left_uturn":
@@ -240,15 +240,25 @@ func _build_straight_route(heading: String, lane: String) -> PackedVector2Array:
 		_get_despawn_point(heading, lane),
 	])
 
-func _build_turn_route(heading: String, lane: String, exit_heading: String, exit_lane: String) -> PackedVector2Array:
+func _build_turn_route(heading: String, lane: String, exit_heading: String, exit_lane: String, turn_direction: String) -> PackedVector2Array:
+	var entry_point := _get_intersection_entry_point(heading, lane, false, _turn_entry_offset(turn_direction))
+	var exit_entry_point := _get_intersection_entry_point(exit_heading, exit_lane, true)
+	var exit_clear_point := _get_crosswalk_clear_point(exit_heading, exit_lane, true)
 	var points: Array[Vector2] = [
 		_get_spawn_point(heading, lane),
 		_get_crosswalk_clear_point(heading, lane),
-		_get_intersection_entry_point(heading, lane, false),
 	]
-	points.append_array(_build_turn_arc_points(heading, lane, exit_heading, exit_lane))
+	if turn_direction == "left":
+		var turn_start := _get_intersection_entry_point(heading, lane, true, LEFT_TURN_START_OFFSET)
+		if points[points.size() - 1].distance_to(turn_start) > 8.0:
+			points.append(turn_start)
+		points.append_array(_build_turn_arc_points(heading, lane, exit_heading, exit_lane, turn_direction, turn_start, exit_entry_point))
+	else:
+		if points[points.size() - 1].distance_to(entry_point) > 8.0:
+			points.append(entry_point)
+		points.append_array(_build_turn_arc_points(heading, lane, exit_heading, exit_lane, turn_direction, entry_point, exit_clear_point))
 	points.append_array([
-		_get_crosswalk_clear_point(exit_heading, exit_lane, true),
+		exit_clear_point,
 		_get_despawn_point(exit_heading, exit_lane),
 	])
 	return _sample_route(points)
@@ -307,13 +317,6 @@ func _allowed_actions(heading: String, lane: String) -> PackedStringArray:
 
 	if can_turn_right:
 		actions.append("right")
-		return actions
-	if can_go_straight:
-		actions.append("straight")
-	if can_turn_left and actions.is_empty():
-		actions.append("left")
-	if actions.is_empty():
-		actions.append("merge_left_uturn")
 	return actions
 
 func _get_spawn_point(heading: String, lane: String) -> Vector2:
@@ -325,8 +328,8 @@ func _get_despawn_point(heading: String, lane: String) -> Vector2:
 func _get_crosswalk_clear_point(heading: String, lane: String, use_exit_side := false) -> Vector2:
 	return _point_for_heading(heading, lane, CROSSWALK_CLEAR_OFFSET, use_exit_side)
 
-func _get_intersection_entry_point(heading: String, lane: String, use_exit_side: bool) -> Vector2:
-	return _point_for_heading(heading, lane, INTERSECTION_ENTRY_OFFSET, use_exit_side)
+func _get_intersection_entry_point(heading: String, lane: String, use_exit_side: bool, axis_offset := INTERSECTION_ENTRY_OFFSET) -> Vector2:
+	return _point_for_heading(heading, lane, axis_offset, use_exit_side)
 
 func _get_merge_point(heading: String, from_lane: String, to_lane: String) -> Vector2:
 	var merge_axis := (CROSSWALK_CLEAR_OFFSET + INTERSECTION_ENTRY_OFFSET) * 0.5
@@ -338,16 +341,17 @@ func _get_merge_point(heading: String, from_lane: String, to_lane: String) -> Ve
 		return Vector2(signed_axis, lane_coordinate)
 	return Vector2(lane_coordinate, signed_axis)
 
-func _build_turn_arc_points(entry_heading: String, entry_lane: String, exit_heading: String, exit_lane: String) -> Array[Vector2]:
+func _build_turn_arc_points(entry_heading: String, entry_lane: String, exit_heading: String, exit_lane: String, turn_direction: String, arc_start: Vector2, arc_end: Vector2) -> Array[Vector2]:
 	var points: Array[Vector2] = []
-	var entry_point := _get_intersection_entry_point(entry_heading, entry_lane, false)
-	var exit_point := _get_intersection_entry_point(exit_heading, exit_lane, true)
 	var pivot := Vector2(
 		_lane_coordinate_for_heading(exit_heading, exit_lane),
 		_lane_coordinate_for_heading(entry_heading, entry_lane)
 	)
-	points.append_array(_sample_corner(entry_point, pivot, exit_point))
+	points.append_array(_sample_corner(arc_start, pivot, arc_end))
 	return points
+
+func _turn_entry_offset(turn_direction: String) -> float:
+	return LEFT_TURN_ENTRY_OFFSET if turn_direction == "left" else INTERSECTION_ENTRY_OFFSET
 
 func _build_u_turn_arc_points(entry_heading: String, exit_heading: String, exit_lane: String) -> Array[Vector2]:
 	var points: Array[Vector2] = []

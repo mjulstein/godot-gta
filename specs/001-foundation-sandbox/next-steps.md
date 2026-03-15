@@ -54,12 +54,15 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 ### Traffic Cars
 
 - Keep all movement on lane paths with no grass drift
+- Keep civilian traffic on the same shared throttle and steering vehicle rule-set as the player vehicle
 - Avoid spawning or despawning on screen
 - Keep rendering stable across tile transitions
 - Keep queueing before intersections instead of bunching inside the junction when lanes are blocked
 - Keep reroute choices from falling into repeat turn loops after obstacle avoidance
 - Continue tuning lane-prep behavior so cars choose the correct lane one tile early when the next junction requires it
 - Reach a higher cruising speed on long straights, then slow before corners
+- Keep AI-driven vehicle rotation coupled to actual motion; stopped cars should not pivot in place unless collision response rotates them
+- Expose enough debug state to compare civilian and player vehicle motion under the same metrics
 - Yield to pedestrians at crossings
 - Stop at least half a car length before a pedestrian
 - Keep at least half a car length spacing from vehicles or obstacles ahead
@@ -86,6 +89,7 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 
 ### Player Vehicle
 
+- Keep player vehicle physics aligned with the same shared throttle and steering rule-set used by civilian traffic
 - Re-test road collisions after overlay and tile-profile changes
 - Re-check enter or exit flow near sidewalks, lots, and dead ends
 - Confirm no invisible blockers remain on drivable routes

@@ -15,6 +15,7 @@
 *.import
 
 # Codex local runtime artifacts
+.codex/config.toml
 .codex/sessions/
 .codex/tmp/
 .codex/logs/

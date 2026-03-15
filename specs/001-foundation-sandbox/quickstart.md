@@ -35,5 +35,6 @@ Boot a Godot project that can demonstrate the first crime-sandbox slice describe
 ## Debug Expectations
 
 - Toggle a development overlay showing player mode, wanted level, and police state count.
+- Allow the same overlay to inspect any tracked vehicle's speed, throttle, brake, steering, and motion state when debugging traffic behavior.
 - Support a pause overlay that shows the current role palette.
 - Keep tuning data editable without rewriting scene logic.

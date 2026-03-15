@@ -13,6 +13,7 @@ Current implemented baseline:
 - layered ASCII-tiled base world with road, building, and activity maps
 - player movement
 - drivable vehicle
+- shared throttle and steering rule-set target for player and civilian vehicles
 - follow camera with fixed viewport stretch, driving look-ahead, and speed-aware zoom
 - debug overlay
 - pause palette overlay
@@ -70,6 +71,15 @@ HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 - `E`: enter or exit vehicle
 - `O`: toggle debug overlay
 - `P`: pause game and toggle palette key
+
+## Vehicle Rules
+
+The intended simulation rule is that all vehicles share the same core motion model:
+
+- throttle or brake drives forward or reverse motion
+- steering changes heading while the vehicle is actually moving
+- AI and player vehicles differ by intent and tuning, not by separate physics rules
+- debug tooling should be able to inspect civilian vehicles with the same movement stats used for the player vehicle
 
 ## World Layout
 

@@ -54,12 +54,14 @@ As a player, I can commit simple crimes such as assaulting pedestrians, stealing
 - **FR-002**: The player MUST be able to move on foot with responsive acceleration, facing, collision, and interaction prompts appropriate for a top-down camera.
 - **FR-003**: The player MUST be able to enter and exit supported vehicles without scene reloads or control loss.
 - **FR-004**: The driving model MUST support acceleration, braking, steering, collision response, and distinct handling from on-foot movement.
+- **FR-004a**: All drivable vehicles MUST follow the same core motion rule-set, including throttle or brake driven longitudinal movement, steering-based heading change, and no self-driven rotation while effectively stationary.
 - **FR-005**: The camera MUST keep the active player-controlled actor readable during on-foot and vehicle gameplay.
 - **FR-006**: The district MUST contain civilian traffic and or pedestrians sufficient to create believable street activity in the playable area.
 - **FR-007**: The game MUST detect at least the following crime events: vehicle theft, pedestrian assault, and harmful collisions involving civilians.
 - **FR-008**: The game MUST track a wanted state that can increase from crime events and decrease when pursuit conditions are no longer met.
 - **FR-009**: Police units MUST be able to spawn, navigate toward the player, and apply pressure appropriate to the current wanted state.
 - **FR-010**: The game MUST expose debugging aids for at least actor state and wanted state during development builds.
+- **FR-010a**: Development debugging MUST be able to inspect non-player vehicles using the same motion and handling metrics used for the player vehicle so civilian and player driving behavior can be compared directly.
 - **FR-011**: The project MUST use original placeholder or final content for art, naming, UI text, audio, and narrative elements rather than copied GTA assets.
 - **FR-012**: Core gameplay tuning values for movement, driving, and police escalation SHOULD be editable without rewriting core system logic.
 
@@ -67,6 +69,7 @@ As a player, I can commit simple crimes such as assaulting pedestrians, stealing
 
 - **Player Actor**: The currently controlled character or vehicle, including movement state, health or defeat state, current wanted status, and interaction context.
 - **Vehicle**: A drivable world actor with seat availability, handling values, damage state, occupancy state, and ownership or faction context.
+- **Vehicle Motion Rule Set**: Shared vehicle movement rules covering throttle, brake, steering, collision response, low-speed rotation limits, and debug-visible runtime stats for any inspected vehicle.
 - **Civilian Actor**: A pedestrian or non-police vehicle participant used to populate the city and act as witnesses, traffic, or incidental hazards.
 - **Police Unit**: A law-enforcement actor with patrol, search, and pursuit state, spawn rules, escalation level, and target tracking behavior.
 - **Crime Event**: A recorded gameplay event that may affect wanted level, witness response, and police dispatch behavior.

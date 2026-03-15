@@ -1,13 +1,14 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/ai/traffic_ai.gd" id="1"]
+[ext_resource type="Resource" path="res://data/tuning/traffic_tuning.tres" id="2"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(30, 16)
 
 [node name="TrafficVehicle" type="CharacterBody2D"]
 script = ExtResource("1")
-move_speed = 70.0
+tuning = ExtResource("2")
 collision_layer = 1
 collision_mask = 1
 
