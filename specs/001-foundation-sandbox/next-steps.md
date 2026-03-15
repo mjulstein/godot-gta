@@ -55,9 +55,14 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 ### Traffic Cars
 
 - Keep all movement on lane paths with no grass drift
+- Avoid spawning or despawning on screen
 - Keep rendering stable across tile transitions
+- Reach a higher cruising speed on long straights, then slow before corners
 - Yield to pedestrians at crossings
+- Stop at least half a car length before a pedestrian
+- Keep at least half a car length spacing from vehicles or obstacles ahead
 - Handle corners, tees, dead ends, and parking-lot entry or exit cleanly
+- Reroute around blocked lanes by changing lane, turning, or making a left-lane u-turn when needed
 - Stop clipping or snagging on overlay collisions
 
 ### Pedestrians

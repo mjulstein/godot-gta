@@ -100,6 +100,10 @@
 - [ ] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
 - [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
 - [ ] T045 Run full manual validation for US1 and US2 and record results in `tests/manual/`
+- [ ] T046 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/traffic_ai.gd`
+- [ ] T047 Tune civilian traffic speed targets so cars cruise faster than the player on long straights and brake for turns in `scripts/ai/traffic_ai.gd` and `data/tuning/`
+- [ ] T048 Improve civilian traffic stopping distance so cars hold at least half a car length before pedestrians, vehicles, and other forward obstacles in `scripts/ai/traffic_ai.gd`
+- [ ] T049 Add civilian traffic obstruction recovery so blocked cars can change lane, turn, or make a left-lane u-turn instead of stalling into collisions in `scripts/world/district_activity_overlay.gd` and `scripts/ai/traffic_ai.gd`
 
 ---
 
