@@ -19,6 +19,16 @@ const TILE_DISTRICT := "D"
 		activity_rows = value
 		_rebuild_if_ready()
 
+@export_multiline var pedestrian_density_rows := "":
+	set(value):
+		pedestrian_density_rows = value
+		_rebuild_if_ready()
+
+@export_multiline var traffic_density_rows := "":
+	set(value):
+		traffic_density_rows = value
+		_rebuild_if_ready()
+
 @export var district_tile_scene: PackedScene:
 	set(value):
 		district_tile_scene = value
@@ -65,7 +75,9 @@ func _rebuild_tiles() -> void:
 
 	var rows := _parse_rows()
 	var building_map := _parse_density_rows(building_rows)
-	var activity_map := _parse_density_rows(activity_rows)
+	var fallback_activity_map := _parse_density_rows(activity_rows)
+	var pedestrian_map := _parse_density_rows(pedestrian_density_rows if not pedestrian_density_rows.strip_edges().is_empty() else activity_rows)
+	var traffic_map := _parse_density_rows(traffic_density_rows if not traffic_density_rows.strip_edges().is_empty() else activity_rows)
 	var district_tiles: Array[Node2D] = []
 	var building_layers: Array[Node] = []
 	var activity_layers: Array[Node] = []
@@ -86,16 +98,22 @@ func _rebuild_tiles() -> void:
 				_apply_district_properties(tile, rows, row_index, column_index)
 				district_tiles.append(tile)
 				var building_density := _density_at(building_map, row_index, column_index)
-				var activity_density := _density_at(activity_map, row_index, column_index)
+				var pedestrian_density := _density_at(pedestrian_map, row_index, column_index)
+				var traffic_density := _density_at(traffic_map, row_index, column_index)
+				if pedestrian_density == 0 and traffic_density == 0:
+					var fallback_density := _density_at(fallback_activity_map, row_index, column_index)
+					pedestrian_density = fallback_density
+					traffic_density = fallback_density
 				if building_density > 0:
 					var building_overlay := _build_overlay(building_overlay_scene, "Buildings", rows, row_index, column_index)
 					if building_overlay != null:
 						building_overlay.set("building_density", building_density)
 						building_layers.append(building_overlay)
-				if activity_density > 0:
+				if pedestrian_density > 0 or traffic_density > 0:
 					var activity_overlay := _build_overlay(activity_overlay_scene, "Activity", rows, row_index, column_index)
 					if activity_overlay != null:
-						activity_overlay.set("activity_density", activity_density)
+						activity_overlay.set("pedestrian_density", pedestrian_density)
+						activity_overlay.set("traffic_density", traffic_density)
 						activity_layers.append(activity_overlay)
 
 	for tile in district_tiles:

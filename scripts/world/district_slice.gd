@@ -61,6 +61,7 @@ const PROFILE_DEAD_END_EAST := "dead_end_east"
 const PROFILE_DEAD_END_WEST := "dead_end_west"
 
 func _ready() -> void:
+	add_to_group("district_tile")
 	refresh_tile_profile()
 
 func _get_configuration_warnings() -> PackedStringArray:

@@ -28,6 +28,14 @@ building_rows = "66666601
 66066603
 60066666
 00006600"
+pedestrian_density_rows = "77555301
+56066401
+20655354
+55420300"
+traffic_density_rows = "35678608
+35067608
+40645478
+68730400"
 
 [node name="Player" parent="." unique_id=1335328156 instance=ExtResource("6")]
 
