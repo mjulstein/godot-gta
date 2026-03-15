@@ -17,6 +17,7 @@ const CivilianPedestrianScene = preload("res://scenes/actors/civilians/civilian_
 
 var traffic_camera_target: Node2D
 var active_vehicle_source_label := "Parked Vehicle"
+var possessed_traffic_vehicle: Node2D
 
 func _ready() -> void:
 	var player_spawn := _find_spawn_marker("player_spawn")
@@ -52,7 +53,7 @@ func _process(_delta: float) -> void:
 
 	var active_vehicle := _get_active_player_vehicle()
 	debug_state.set_player_mode("Driving" if player.get_state_name() == ActorState.DRIVING else "On Foot")
-	debug_state.set_interaction_hint(interaction_system.get_interaction_hint())
+	debug_state.set_interaction_hint(_get_interaction_hint())
 	debug_state.set_active_vehicle_label(_get_active_vehicle_label(active_vehicle))
 	debug_state.set_takeover_state(_get_takeover_state())
 	debug_state.set_speed(active_vehicle.velocity.length() * 0.18 if active_vehicle != null else player.velocity.length() * 0.18)
@@ -63,6 +64,10 @@ func _process(_delta: float) -> void:
 		debug_state.set_impact_state("None")
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("interact") and _can_toggle_traffic_possession():
+		get_viewport().set_input_as_handled()
+		_toggle_traffic_possession()
+		return
 	if not event.is_action_pressed("debug_camera"):
 		return
 	get_viewport().set_input_as_handled()
@@ -140,6 +145,8 @@ func _toggle_traffic_camera() -> void:
 func _set_traffic_camera_target(target_vehicle: Node2D) -> void:
 	if traffic_camera_target == target_vehicle:
 		return
+	if is_instance_valid(traffic_camera_target) and traffic_camera_target == possessed_traffic_vehicle and target_vehicle != possessed_traffic_vehicle:
+		_release_traffic_possession()
 	if is_instance_valid(traffic_camera_target) and traffic_camera_target.has_method("set_camera_tracked"):
 		traffic_camera_target.call("set_camera_tracked", false)
 	traffic_camera_target = target_vehicle
@@ -147,38 +154,29 @@ func _set_traffic_camera_target(target_vehicle: Node2D) -> void:
 		traffic_camera_target.call("set_camera_tracked", true)
 
 func _find_debug_traffic_vehicle(excluded_vehicle: Node2D = null) -> Node2D:
-	var rerouting_vehicle := _find_nearby_traffic_vehicle(excluded_vehicle, true)
-	if rerouting_vehicle != null:
-		return rerouting_vehicle
-	return _find_nearby_traffic_vehicle(excluded_vehicle, false)
-
-func _find_nearby_traffic_vehicle(excluded_vehicle: Node2D = null, require_rerouting: bool = false) -> Node2D:
-	var search_origin := camera.global_position
-	var best_vehicle: Node2D
-	var best_distance := INF
+	var candidates: Array[Node2D] = []
 	for candidate in get_tree().get_nodes_in_group("traffic_vehicle"):
 		if not (candidate is Node2D):
 			continue
 		var traffic_vehicle := candidate as Node2D
-		if traffic_vehicle == excluded_vehicle:
-			continue
 		if not traffic_vehicle.visible:
 			continue
-		if require_rerouting:
-			if not traffic_vehicle.has_method("is_rerouting"):
-				continue
-			if not traffic_vehicle.call("is_rerouting"):
-				continue
-		var distance := search_origin.distance_squared_to(traffic_vehicle.global_position)
-		if distance < best_distance:
-			best_distance = distance
-			best_vehicle = traffic_vehicle
-	if best_vehicle == null and require_rerouting and is_instance_valid(excluded_vehicle):
-		if excluded_vehicle.has_method("is_rerouting") and excluded_vehicle.call("is_rerouting"):
-			return excluded_vehicle
-	if best_vehicle == null and is_instance_valid(excluded_vehicle):
-		return excluded_vehicle
-	return best_vehicle
+		if traffic_vehicle.has_method("is_debug_trackable") and not traffic_vehicle.is_debug_trackable():
+			continue
+		if traffic_vehicle.has_method("is_manned") and not traffic_vehicle.is_manned():
+			continue
+		candidates.append(traffic_vehicle)
+	if candidates.is_empty():
+		return null
+	candidates.sort_custom(func(a: Node2D, b: Node2D) -> bool:
+		return a.get_instance_id() < b.get_instance_id()
+	)
+	if excluded_vehicle == null or not is_instance_valid(excluded_vehicle):
+		return candidates[0]
+	var excluded_index := candidates.find(excluded_vehicle)
+	if excluded_index == -1:
+		return candidates[0]
+	return candidates[(excluded_index + 1) % candidates.size()]
 
 func _on_pause_toggled(is_paused: bool) -> void:
 	if is_paused:
@@ -258,6 +256,39 @@ func _get_active_player_vehicle() -> Node2D:
 	if not player.is_in_vehicle():
 		return null
 	return player.active_vehicle as Node2D
+
+func _get_interaction_hint() -> String:
+	if _can_toggle_traffic_possession():
+		return "Press E to return driver" if possessed_traffic_vehicle == traffic_camera_target else "Press E to possess driver"
+	return interaction_system.get_interaction_hint()
+
+func _can_toggle_traffic_possession() -> bool:
+	if player.is_in_vehicle():
+		return false
+	if not is_instance_valid(traffic_camera_target):
+		return false
+	if not traffic_camera_target.has_method("set_possessed_by_player"):
+		return false
+	if traffic_camera_target.has_method("is_debug_trackable") and not traffic_camera_target.is_debug_trackable() and possessed_traffic_vehicle != traffic_camera_target:
+		return false
+	return true
+
+func _toggle_traffic_possession() -> void:
+	if possessed_traffic_vehicle == traffic_camera_target:
+		_release_traffic_possession()
+		return
+	_release_traffic_possession()
+	possessed_traffic_vehicle = traffic_camera_target
+	if is_instance_valid(possessed_traffic_vehicle) and possessed_traffic_vehicle.has_method("set_possessed_by_player"):
+		possessed_traffic_vehicle.set_possessed_by_player(true)
+
+func _release_traffic_possession() -> void:
+	if not is_instance_valid(possessed_traffic_vehicle):
+		possessed_traffic_vehicle = null
+		return
+	if possessed_traffic_vehicle.has_method("set_possessed_by_player"):
+		possessed_traffic_vehicle.set_possessed_by_player(false)
+	possessed_traffic_vehicle = null
 
 func _get_active_vehicle_label(active_vehicle: Node2D) -> String:
 	if active_vehicle == null:

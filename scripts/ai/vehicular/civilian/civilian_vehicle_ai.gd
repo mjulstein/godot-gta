@@ -54,6 +54,7 @@ var theft_reported := false
 var impact_cooldowns: Dictionary = {}
 var occupant_present := true
 var driver: Node = null
+var possessed_by_player := false
 var longitudinal_speed := 0.0
 var last_player_ahead_distance := -1.0
 var collision_flash_remaining := 0.0
@@ -112,6 +113,9 @@ func _physics_process(delta: float) -> void:
 	if driver != null:
 		_drive_player_controlled(delta)
 		return
+	if possessed_by_player:
+		_drive_player_controlled(delta)
+		return
 
 	if abandoned_after_theft:
 		current_speed = 0.0
@@ -141,7 +145,7 @@ func _physics_process(delta: float) -> void:
 	var previous_position := global_position
 	_follow_world_path()
 	move_and_slide()
-	_update_rotation_from_motion(previous_position)
+	_update_rotation_from_motion(previous_position, delta)
 	if get_slide_collision_count() > 0:
 		var first_collision := get_slide_collision(0)
 		if first_collision != null:
@@ -255,11 +259,41 @@ func begin_incident_stop(target: Node2D) -> void:
 func has_active_incident() -> bool:
 	return incident_stop_active
 
+func is_debug_trackable() -> bool:
+	if stopped_duration >= 0.5:
+		return false
+	if abandoned_after_theft:
+		return false
+	if incident_stop_active and incident_driver_deployed:
+		return false
+	if not occupant_present and maxf(maxf(absf(longitudinal_speed), current_speed), velocity.length()) <= 2.0:
+		return false
+	return true
+
 func was_theft_reported() -> bool:
 	return theft_reported
 
 func has_driver() -> bool:
 	return driver != null
+
+func is_manned() -> bool:
+	return driver != null or occupant_present or possessed_by_player
+
+func is_possessed_by_player() -> bool:
+	return possessed_by_player
+
+func set_possessed_by_player(is_possessed: bool) -> void:
+	possessed_by_player = is_possessed
+	if is_possessed:
+		current_speed = 0.0
+		longitudinal_speed = 0.0
+		velocity = Vector2.ZERO
+		incident_stop_active = false
+		incident_target = null
+		incident_driver_deployed = false
+		incident_inspect_position = Vector2.ZERO
+		incident_elapsed = 0.0
+		stopped_duration = 0.0
 
 func is_player_controlled() -> bool:
 	return driver != null and driver.is_in_group("player_actor")
@@ -346,11 +380,21 @@ func _follow_world_path() -> void:
 	else:
 		blockage_time = 0.0
 
-func _update_rotation_from_motion(previous_position: Vector2) -> void:
+func _update_rotation_from_motion(previous_position: Vector2, delta: float) -> void:
 	var displacement := global_position - previous_position
 	if displacement.length() < MIN_ROTATION_DISTANCE:
 		return
-	rotation = displacement.angle()
+	var target_rotation := displacement.angle()
+	var speed_ratio := clampf(current_speed / maxf(_cruise_speed(), 1.0), 0.0, 1.0)
+	var turn_rate := lerpf(2.2, 4.8, speed_ratio)
+	match active_action:
+		"left", "right":
+			turn_rate *= 1.25
+		"uturn", "merge_left_uturn":
+			turn_rate *= 1.45
+		"switch_left", "switch_right":
+			turn_rate *= 1.1
+	rotation = rotate_toward(rotation, target_rotation, turn_rate * delta)
 
 func _refresh_path_target() -> void:
 	var iterations := 0
