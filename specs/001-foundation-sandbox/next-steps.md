@@ -34,6 +34,7 @@ Then manually verify:
 - pedestrians stay on curb-adjacent sidewalks and valid crosswalk links
 - pedestrian groups read sensibly, including side-by-side pairs and queued larger groups
 - civilian traffic follows readable western traffic flow
+- dead-end parking-lot arrivals can now resolve as a U-turn or a parked handoff into a roaming pedestrian
 - the on-foot to vehicle loop works
 - the driving camera pans ahead and eases back from high-speed exits
 - taking over a civilian vehicle leaves a displaced pedestrian occupant
@@ -74,7 +75,7 @@ Work one actor at a time until its baseline behavior is reliable before expandin
 - Stop at least half a car length before a pedestrian
 - Keep at least half a car length spacing from vehicles or obstacles ahead
 - Keep full-car stand-off distance to barriers and other hard blockers
-- Handle corners, tees, dead ends, and parking-lot entry or exit cleanly
+- Keep dead-end parking-lot arrival behavior readable under repeated runs
 - Reroute around blocked lanes by changing lane, turning, or making a left-lane u-turn when needed
 - Fix failed turns where a car hits the curb, flips direction, and stalls instead of completing the legal corner
 - Stop clipping or snagging on overlay collisions

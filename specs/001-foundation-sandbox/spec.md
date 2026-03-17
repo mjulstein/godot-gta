@@ -22,6 +22,7 @@ As a player, I can move through a compact top-down tile-based city where pedestr
 1. **Given** the player starts in the district on foot, **When** the player uses movement input, **Then** the character moves responsively relative to the top-down camera, collides correctly with world geometry, and remains readable as a pedestrian rather than feeling vehicle-like.
 2. **Given** civilian pedestrians are active, **When** they navigate the district, **Then** they remain on curb-adjacent sidewalks and crosswalks except when valid crossing behavior says otherwise.
 3. **Given** civilian vehicles are active, **When** they drive the district, **Then** they stay on valid lanes, follow western traffic flow, and slow to reasonable speeds near crossings and turns.
+4. **Given** a civilian driver reaches a dead-end parking-lot tile, **When** the route resolves at the lot, **Then** the driver either makes a U-turn or parks, exits the car, and becomes a roaming pedestrian on the curb-side sidewalk.
 
 ---
 
@@ -65,6 +66,7 @@ As a player, I can walk to a civilian car, enter it, leave a pedestrian behind i
 - **FR-006b**: Pedestrian and traffic spawn density MUST be independently tunable by district so one area can skew toward foot traffic while another skews toward vehicle flow.
 - **FR-006c**: Civilian pedestrian spawn points MUST stay on curb-adjacent sidewalk space rather than grass or open road space.
 - **FR-006a**: Civilian traffic and pedestrians MUST follow readable western traffic rules, including lane usage, direction of travel, and crossing behavior appropriate to the tile-based district layout.
+- **FR-006d**: Civilian drivers reaching dead-end parking-lot tiles MUST either perform a valid turnaround or park, leave the vehicle, and continue as a civilian pedestrian on nearby curb-adjacent sidewalk space.
 - **FR-007**: Vehicle-to-pedestrian collisions MUST transfer momentum to the pedestrian and MUST NOT allow pedestrians to meaningfully push vehicles.
 - **FR-008**: The game MUST expose debugging aids for at least actor state and shared vehicle-motion state during development builds.
 - **FR-010a**: Development debugging MUST be able to inspect non-player vehicles using the same motion and handling metrics used for the player vehicle so civilian and player driving behavior can be compared directly.
