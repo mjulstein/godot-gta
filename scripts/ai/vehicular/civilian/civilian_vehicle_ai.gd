@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const CivilianVehicleTuning = preload("res://scripts/ai/vehicular/civilian/civilian_vehicle_tuning.gd")
+const CivilianPedestrianScene = preload("res://scenes/actors/civilians/civilian_pedestrian.tscn")
 
 signal harmed(source: Node2D)
 signal civilian_hit(target: Node2D)
@@ -59,6 +60,7 @@ var longitudinal_speed := 0.0
 var last_player_ahead_distance := -1.0
 var collision_flash_remaining := 0.0
 var abandoned_after_theft := false
+var parked_after_arrival := false
 var incident_stop_active := false
 var incident_target: Node2D
 var incident_driver_deployed := false
@@ -119,6 +121,12 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if abandoned_after_theft:
+		current_speed = 0.0
+		longitudinal_speed = 0.0
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+	if parked_after_arrival:
 		current_speed = 0.0
 		longitudinal_speed = 0.0
 		velocity = Vector2.ZERO
@@ -225,6 +233,7 @@ func resume_civilian_control() -> void:
 	incident_elapsed = 0.0
 	stopped_duration = 0.0
 	abandoned_after_theft = false
+	parked_after_arrival = false
 	occupant_present = true
 	driver = null
 	pause_remaining = 0.25
@@ -261,6 +270,8 @@ func is_debug_trackable() -> bool:
 		return false
 	if abandoned_after_theft:
 		return false
+	if parked_after_arrival:
+		return false
 	if incident_stop_active and incident_driver_deployed:
 		return false
 	if not occupant_present and maxf(maxf(absf(longitudinal_speed), current_speed), velocity.length()) <= 2.0:
@@ -274,6 +285,8 @@ func has_driver() -> bool:
 	return driver != null
 
 func is_manned() -> bool:
+	if parked_after_arrival:
+		return false
 	return driver != null or occupant_present or possessed_by_player
 
 func is_possessed_by_player() -> bool:
@@ -337,9 +350,11 @@ func _follow_world_path() -> void:
 	var to_target := target_position - global_position
 
 	var direction_vector := to_target.normalized() if to_target.length() > 0.0 else Vector2.ZERO
+	var target_speed := _target_speed_for_action(active_action)
+	target_speed = minf(target_speed, _approach_speed_limit(to_target.length()))
 	current_speed = move_toward(
 		current_speed,
-		_target_speed_for_action(active_action),
+		target_speed,
 		_acceleration_rate() * get_physics_process_delta_time()
 	)
 	velocity = direction_vector * current_speed
@@ -412,6 +427,9 @@ func _refresh_path_target() -> void:
 func _advance_path_target() -> void:
 	path_target_index += 1
 	if path_target_index < world_path_points.size():
+		return
+	if active_action == "park":
+		_complete_parking_arrival()
 		return
 	if _build_runtime_segment():
 		return
@@ -598,11 +616,9 @@ func _should_stop_for_obstacle(direction_vector: Vector2) -> bool:
 	return false
 
 func _vehicle_follow_distance() -> float:
-	var low_speed_spacing := TRAFFIC_CAR_LENGTH * 1.1
-	var high_speed_spacing := TRAFFIC_CAR_LENGTH * 4.0
-	var cruise_speed := maxf(_cruise_speed(), 1.0)
-	var speed_ratio := clampf(current_speed / cruise_speed, 0.0, 1.0)
-	return lerpf(low_speed_spacing, high_speed_spacing, speed_ratio)
+	var stop_distance := (current_speed * current_speed) / maxf(_brake_rate() * 2.0, 1.0)
+	var base_spacing := TRAFFIC_CAR_LENGTH * _follow_distance_scale() + _vehicle_stop_buffer()
+	return maxf(base_spacing, stop_distance + TRAFFIC_CAR_LENGTH * 0.75)
 
 func _can_attempt_blockage_recovery() -> bool:
 	if last_barrier_ahead_distance >= 0.0 and last_barrier_ahead_distance <= _barrier_stop_buffer():
@@ -737,8 +753,9 @@ func _is_impact_on_cooldown(collider: Node) -> bool:
 	return impact_cooldowns.has(collider.get_instance_id())
 
 func _pedestrian_stop_distance() -> float:
-	var speed_buffer := current_speed * 0.4
-	return maxf(_pedestrian_stop_buffer(), TRAFFIC_CAR_LENGTH + speed_buffer)
+	var stop_distance := (current_speed * current_speed) / maxf(_brake_rate() * 2.0, 1.0)
+	var base_distance := TRAFFIC_CAR_LENGTH + _pedestrian_stop_buffer()
+	return maxf(base_distance, (stop_distance + _pedestrian_stop_buffer()) * _pedestrian_stop_distance_scale())
 
 func _pedestrian_hold_distance() -> float:
 	return maxf(_pedestrian_stop_distance(), TRAFFIC_CAR_LENGTH + _pedestrian_stop_buffer())
@@ -746,6 +763,19 @@ func _pedestrian_hold_distance() -> float:
 func _vehicle_emergency_distance() -> float:
 	var stop_distance := (current_speed * current_speed) / maxf(_brake_rate() * 2.0, 1.0)
 	return maxf(_vehicle_follow_distance(), stop_distance + TRAFFIC_CAR_LENGTH + _vehicle_stop_buffer())
+
+func _approach_speed_limit(distance_to_target: float) -> float:
+	match active_action:
+		"left", "right":
+			if distance_to_target <= _turn_slowdown_distance():
+				return _turn_approach_speed()
+		"switch_left", "switch_right":
+			if distance_to_target <= _lane_change_slowdown_distance():
+				return _lane_change_approach_speed()
+		"uturn", "merge_left_uturn":
+			if distance_to_target <= _u_turn_slowdown_distance():
+				return _u_turn_approach_speed()
+	return _target_speed_for_action(active_action)
 
 func _drive_player_controlled(delta: float) -> void:
 	var acceleration := 380.0
@@ -976,6 +1006,13 @@ func _build_segment_for_tile(tile: Node2D, forced_action: String = "") -> bool:
 	match action:
 		"straight":
 			points.append(_world_point(tile, heading, lane, _next_tile_offset(tile, heading), true))
+		"park":
+			var parking_data := _dead_end_parking_data(tile, heading)
+			if parking_data.is_empty():
+				return false
+			var parking_spot = parking_data.get("spot", global_position)
+			if parking_spot is Vector2 and points[points.size() - 1].distance_to(parking_spot) > 8.0:
+				points.append(parking_spot)
 		"left", "right":
 			var arc_start := _world_point(tile, heading, lane, _turn_entry_offset(action), false)
 			var arc_end := _world_point(tile, next_heading, next_lane, INTERSECTION_ENTRY_OFFSET, true)
@@ -1043,6 +1080,8 @@ func _target_speed_for_action(action: String) -> float:
 			return _u_turn_speed()
 		"switch_left", "switch_right":
 			return _lane_change_speed()
+		"park":
+			return _turn_speed()
 		_:
 			return _cruise_speed()
 
@@ -1069,6 +1108,30 @@ func _acceleration_rate() -> float:
 
 func _brake_rate() -> float:
 	return tuning.brake_power if tuning != null else 260.0
+
+func _turn_approach_speed() -> float:
+	return tuning.turn_approach_speed if tuning != null else _turn_speed() * 0.8
+
+func _lane_change_approach_speed() -> float:
+	return tuning.lane_change_approach_speed if tuning != null else _lane_change_speed() * 0.8
+
+func _u_turn_approach_speed() -> float:
+	return tuning.u_turn_approach_speed if tuning != null else _u_turn_speed() * 0.84
+
+func _turn_slowdown_distance() -> float:
+	return tuning.turn_slowdown_distance if tuning != null else 92.0
+
+func _lane_change_slowdown_distance() -> float:
+	return tuning.lane_change_slowdown_distance if tuning != null else 72.0
+
+func _u_turn_slowdown_distance() -> float:
+	return tuning.u_turn_slowdown_distance if tuning != null else 108.0
+
+func _follow_distance_scale() -> float:
+	return tuning.follow_distance_scale if tuning != null else 1.15
+
+func _pedestrian_stop_distance_scale() -> float:
+	return tuning.pedestrian_stop_distance_scale if tuning != null else 1.1
 
 func _vehicle_look_ahead() -> float:
 	return tuning.vehicle_look_ahead if tuning != null else vehicle_look_ahead
@@ -1157,6 +1220,8 @@ func _spawn_point(tile: Node2D, direction: String, lane_name: String) -> Vector2
 	return _world_point(tile, direction, lane_name, SPAWN_ENTRY_OFFSET, false)
 
 func _choose_action(tile: Node2D) -> String:
+	if _can_park_at_dead_end(tile, heading, lane):
+		return "park" if rng.randf() < 0.5 else "merge_left_uturn"
 	if _should_prepare_next_tile_lane(tile):
 		return "switch_left" if lane == "right" else "switch_right"
 	if _is_before_intersection_hold_point(tile):
@@ -1224,8 +1289,12 @@ func _available_actions_for(tile: Node2D, entry_heading: String, entry_lane: Str
 		if actions.is_empty():
 			actions.append("uturn")
 		return actions
+	if _can_park_at_dead_end(tile, entry_heading, entry_lane):
+		actions.append("park")
 	if can_turn_right:
 		actions.append("right")
+	if actions.is_empty() and _can_park_at_dead_end(tile, entry_heading, entry_lane):
+		actions.append("merge_left_uturn")
 	return actions
 
 func _action_is_valid(tile: Node2D, entry_heading: String, entry_lane: String, action: String) -> bool:
@@ -1236,6 +1305,8 @@ func _action_is_valid(tile: Node2D, entry_heading: String, entry_lane: String, a
 			return _tile_open(tile, _get_exit_side_for_heading(_get_left_heading(entry_heading)))
 		"right":
 			return _tile_open(tile, _get_exit_side_for_heading(_get_right_heading(entry_heading)))
+		"park":
+			return _can_park_at_dead_end(tile, entry_heading, entry_lane)
 		"uturn", "merge_left_uturn":
 			return true
 		_:
@@ -1287,12 +1358,55 @@ func _state_after_action(tile: Node2D, entry_heading: String, entry_lane: String
 			exit_lane = "left"
 		"switch_right":
 			exit_lane = "right"
+		"park":
+			return {
+				"tile": null,
+				"heading": exit_heading,
+				"lane": exit_lane,
+			}
 	var target_tile := _neighbor_tile(tile, exit_heading)
 	return {
 		"tile": target_tile,
 		"heading": exit_heading,
 		"lane": exit_lane,
 	}
+
+func _can_park_at_dead_end(tile: Node2D, entry_heading: String, entry_lane: String) -> bool:
+	if tile == null or entry_lane != "right":
+		return false
+	return not _dead_end_parking_data(tile, entry_heading).is_empty()
+
+func _dead_end_parking_data(tile: Node2D, entry_heading: String) -> Dictionary:
+	if tile == null or not tile.has_method("get_dead_end_parking_data"):
+		return {}
+	var parking_data = tile.get_dead_end_parking_data(entry_heading)
+	return parking_data if parking_data is Dictionary else {}
+
+func _complete_parking_arrival() -> void:
+	velocity = Vector2.ZERO
+	current_speed = 0.0
+	longitudinal_speed = 0.0
+	path_target_index = max(0, world_path_points.size() - 1)
+	if parked_after_arrival:
+		return
+	var tile := _find_district_tile(global_position)
+	var parking_data := _dead_end_parking_data(tile, heading)
+	if parking_data.is_empty():
+		return
+	parked_after_arrival = true
+	if driver != null or not occupant_present:
+		return
+	occupant_present = false
+	var spawn_position = parking_data.get("spot", global_position)
+	var sidewalk_position = parking_data.get("sidewalk", global_position)
+	var facing_direction = parking_data.get("facing", Vector2.RIGHT)
+	var roam_axis = parking_data.get("roam_axis", Vector2.RIGHT)
+	if not (spawn_position is Vector2 and sidewalk_position is Vector2 and facing_direction is Vector2 and roam_axis is Vector2):
+		return
+	var pedestrian := CivilianPedestrianScene.instantiate()
+	get_parent().add_child(pedestrian)
+	if pedestrian.has_method("place_parking_lot_driver"):
+		pedestrian.place_parking_lot_driver(spawn_position, sidewalk_position, facing_direction, roam_axis)
 
 func _neighbor_tile(tile: Node2D, direction: String) -> Node2D:
 	var tile_size_value = tile.get("tile_world_size")

@@ -195,6 +195,43 @@ func _set_node_visible(node_path: String, is_visible: bool) -> void:
 	if node != null:
 		node.visible = is_visible
 
+func get_tile_profile_name() -> String:
+	return _get_tile_profile()
+
+func get_dead_end_parking_data(entry_heading: String) -> Dictionary:
+	var profile := _get_tile_profile()
+	match profile:
+		PROFILE_DEAD_END_NORTH:
+			return {
+				"spot": global_position + Vector2(-36, -236),
+				"sidewalk": global_position + Vector2(-118, -118),
+				"roam_axis": Vector2.RIGHT,
+				"facing": Vector2.UP,
+			}
+		PROFILE_DEAD_END_SOUTH:
+			return {
+				"spot": global_position + Vector2(36, 236),
+				"sidewalk": global_position + Vector2(118, 118),
+				"roam_axis": Vector2.LEFT,
+				"facing": Vector2.DOWN,
+			}
+		PROFILE_DEAD_END_EAST:
+			return {
+				"spot": global_position + Vector2(236, 36),
+				"sidewalk": global_position + Vector2(118, -118),
+				"roam_axis": Vector2.DOWN,
+				"facing": Vector2.RIGHT,
+			}
+		PROFILE_DEAD_END_WEST:
+			return {
+				"spot": global_position + Vector2(-236, -36),
+				"sidewalk": global_position + Vector2(-118, 118),
+				"roam_axis": Vector2.UP,
+				"facing": Vector2.LEFT,
+			}
+		_:
+			return {}
+
 func _get_tile_profile() -> String:
 	var open_count := int(open_north) + int(open_south) + int(open_east) + int(open_west)
 	if open_count == 1:

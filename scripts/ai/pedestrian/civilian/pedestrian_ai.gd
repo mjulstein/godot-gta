@@ -36,6 +36,8 @@ var impact_velocity := Vector2.ZERO
 var world_path_points := PackedVector2Array()
 var path_target_index := 1
 var path_direction := 1
+var switch_to_local_roam_after_path := false
+var local_roam_axis_after_path := Vector2.ZERO
 var default_collision_layer := 0
 var default_collision_mask := 0
 var reclaim_vehicle: Node2D
@@ -213,6 +215,19 @@ func place_incident_driver(spawn_position: Vector2, facing_direction: Vector2) -
 	pause_remaining = 0.0
 	velocity = Vector2.ZERO
 
+func place_parking_lot_driver(spawn_position: Vector2, sidewalk_position: Vector2, facing_direction: Vector2, roam_axis: Vector2) -> void:
+	global_position = spawn_position
+	anchor_position = sidewalk_position
+	rotation = facing_direction.angle() if facing_direction != Vector2.ZERO else rotation
+	switch_to_local_roam_after_path = true
+	local_roam_axis_after_path = roam_axis.normalized() if roam_axis != Vector2.ZERO else movement_axis
+	set_world_path(PackedVector2Array([
+		spawn_position,
+		sidewalk_position,
+	]))
+	pause_remaining = 0.0
+	velocity = Vector2.ZERO
+
 func configure_reclaim_attempt(target_vehicle: Node2D, should_attempt: bool) -> void:
 	reclaim_vehicle = target_vehicle
 	reclaim_attempt_active = should_attempt
@@ -243,6 +258,15 @@ func _follow_world_path() -> void:
 	var target_position := world_path_points[path_target_index]
 	var to_target := target_position - global_position
 	if to_target.length() <= 6.0:
+		if switch_to_local_roam_after_path and path_target_index == world_path_points.size() - 1:
+			world_path_points = PackedVector2Array()
+			path_target_index = 0
+			path_direction = 1
+			switch_to_local_roam_after_path = false
+			movement_axis = local_roam_axis_after_path if local_roam_axis_after_path != Vector2.ZERO else movement_axis
+			anchor_position = global_position
+			velocity = Vector2.ZERO
+			return
 		if path_target_index == world_path_points.size() - 1:
 			path_direction = -1
 		elif path_target_index == 0:

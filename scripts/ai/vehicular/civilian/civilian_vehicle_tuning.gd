@@ -7,6 +7,14 @@ extends Resource
 @export_range(24.0, 180.0, 1.0) var u_turn_speed := 100.0
 @export_range(40.0, 600.0, 1.0) var acceleration := 220.0
 @export_range(40.0, 800.0, 1.0) var brake_power := 360.0
+@export_range(24.0, 192.0, 1.0) var turn_approach_speed := 92.0
+@export_range(24.0, 192.0, 1.0) var lane_change_approach_speed := 118.0
+@export_range(24.0, 192.0, 1.0) var u_turn_approach_speed := 84.0
+@export_range(16.0, 240.0, 1.0) var turn_slowdown_distance := 92.0
+@export_range(16.0, 240.0, 1.0) var lane_change_slowdown_distance := 72.0
+@export_range(16.0, 240.0, 1.0) var u_turn_slowdown_distance := 108.0
+@export_range(0.0, 4.0, 0.05) var follow_distance_scale := 1.15
+@export_range(0.0, 4.0, 0.05) var pedestrian_stop_distance_scale := 1.1
 @export_range(24.0, 120.0, 1.0) var vehicle_look_ahead := 54.0
 @export_range(24.0, 160.0, 1.0) var police_look_ahead := 120.0
 @export_range(24.0, 96.0, 1.0) var pedestrian_look_ahead := 44.0
