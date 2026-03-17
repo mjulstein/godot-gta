@@ -45,6 +45,7 @@ var incident_vehicle: Node2D
 var incident_target: Node2D
 var incident_response_active := false
 var incident_inspect_position := Vector2.ZERO
+var impact_cooldowns: Dictionary = {}
 var rng := RandomNumberGenerator.new()
 var follow_retarget_cooldown := 0.0
 var ambient_network: Array = []
@@ -93,6 +94,7 @@ func _physics_process(delta: float) -> void:
 	reclaim_delay_remaining = maxf(0.0, reclaim_delay_remaining - delta)
 	follow_retarget_cooldown = maxf(0.0, follow_retarget_cooldown - delta)
 	ambient_wait_remaining = maxf(0.0, ambient_wait_remaining - delta)
+	_tick_impact_cooldowns(delta)
 	body_polygon.color = _get_body_color()
 	_update_impact_collision_state()
 
@@ -102,17 +104,20 @@ func _physics_process(delta: float) -> void:
 		if velocity != Vector2.ZERO:
 			rotation = velocity.angle()
 		move_and_slide()
+		_emit_vehicle_impacts()
 		return
 
 	if _update_reclaim_attempt():
 		if velocity == Vector2.ZERO:
 			_update_social_facing(delta)
 		move_and_slide()
+		_emit_vehicle_impacts()
 		return
 	if _update_incident_response():
 		if velocity == Vector2.ZERO:
 			_update_social_facing(delta)
 		move_and_slide()
+		_emit_vehicle_impacts()
 		return
 	if _should_recycle_off_camera():
 		queue_free()
@@ -127,6 +132,7 @@ func _physics_process(delta: float) -> void:
 		_try_follow_moving_pedestrian()
 		_update_social_facing(delta)
 		move_and_slide()
+		_emit_vehicle_impacts()
 		return
 
 	if world_path_points.size() >= 2:
@@ -139,6 +145,7 @@ func _physics_process(delta: float) -> void:
 	if velocity == Vector2.ZERO:
 		_update_social_facing(delta)
 	move_and_slide()
+	_emit_vehicle_impacts()
 
 func set_world_path(points: PackedVector2Array) -> void:
 	world_path_points = points
@@ -230,7 +237,7 @@ func get_ambient_forward_direction() -> Vector2:
 	return ambient_forward_direction
 
 func is_harm_settled() -> bool:
-	return harmed_flash_remaining > 0.0 and impact_recovery_remaining <= 0.0 and impact_velocity.length() <= 1.0
+	return impact_recovery_remaining <= 0.0 and impact_velocity.length() <= 1.0
 
 func _follow_world_path() -> void:
 	var target_position := world_path_points[path_target_index]
@@ -341,6 +348,30 @@ func _apply_impact_response(source: Node2D) -> void:
 	impact_velocity = knockback.limit_length(260.0)
 	impact_recovery_remaining = impact_recovery_time
 	impact_collision_disable_remaining = impact_collision_disable_time
+
+func _emit_vehicle_impacts() -> void:
+	for index in range(get_slide_collision_count()):
+		var collision := get_slide_collision(index)
+		var collider := collision.get_collider()
+		if collider == null or not collider.is_in_group("traffic_vehicle"):
+			continue
+		if _is_impact_on_cooldown(collider):
+			continue
+		impact_cooldowns[collider.get_instance_id()] = 0.6
+		register_harm(collider)
+		if collider.has_method("begin_incident_stop"):
+			collider.begin_incident_stop(self)
+
+func _tick_impact_cooldowns(delta: float) -> void:
+	for collider_id in impact_cooldowns.keys():
+		var remaining: float = impact_cooldowns[collider_id] - delta
+		if remaining <= 0.0:
+			impact_cooldowns.erase(collider_id)
+		else:
+			impact_cooldowns[collider_id] = remaining
+
+func _is_impact_on_cooldown(collider: Node) -> bool:
+	return impact_cooldowns.has(collider.get_instance_id())
 
 func _update_impact_collision_state() -> void:
 	var collisions_enabled := impact_collision_disable_remaining <= 0.0

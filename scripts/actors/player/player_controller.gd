@@ -59,6 +59,7 @@ func _physics_process(delta: float) -> void:
 		if velocity != Vector2.ZERO:
 			rotation = velocity.angle()
 		move_and_slide()
+		_emit_vehicle_impacts()
 		return
 	if knocked_out:
 		velocity = Vector2.ZERO
@@ -76,6 +77,7 @@ func _physics_process(delta: float) -> void:
 		pending_harm_source = null
 	if _update_vehicle_entry_approach(delta):
 		move_and_slide()
+		_emit_vehicle_impacts()
 		return
 	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var target_speed: float = 220.0 if tuning == null else tuning.move_speed
@@ -93,6 +95,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, deceleration_rate * delta)
 	move_and_slide()
+	_emit_vehicle_impacts()
 	if get_slide_collision_count() > 0:
 		collision_flash_remaining = collision_flash_time
 		_emit_civilian_impacts()
@@ -174,6 +177,19 @@ func _emit_civilian_impacts() -> void:
 		if collider.has_method("register_harm"):
 			collider.register_harm(self)
 		civilian_assaulted.emit(collider)
+
+func _emit_vehicle_impacts() -> void:
+	for index in range(get_slide_collision_count()):
+		var collision := get_slide_collision(index)
+		var collider := collision.get_collider()
+		if collider == null or not collider.is_in_group("traffic_vehicle"):
+			continue
+		if _is_impact_on_cooldown(collider):
+			continue
+		impact_cooldowns[collider.get_instance_id()] = 0.6
+		register_harm(collider)
+		if collider.has_method("begin_incident_stop"):
+			collider.begin_incident_stop(self)
 
 func _tick_impact_cooldowns(delta: float) -> void:
 	for collider_id in impact_cooldowns.keys():
