@@ -15,6 +15,7 @@
 [ext_resource type="Resource" path="res://data/tuning/wanted_tuning.tres" id="13"]
 [ext_resource type="PackedScene" path="res://scenes/ui/palette_overlay.tscn" id="14"]
 [ext_resource type="Script" uid="uid://rr6k7nvt35xj" path="res://scripts/ui/pause_controller.gd" id="15"]
+[ext_resource type="PackedScene" path="res://scenes/ui/mobile_controls_hud.tscn" id="16"]
 
 [node name="Game" type="Node2D" unique_id=1520552413]
 script = ExtResource("1")
@@ -71,3 +72,6 @@ script = ExtResource("4")
 [node name="PauseController" type="Node" parent="Ui" unique_id=1265303728]
 script = ExtResource("15")
 overlay_path = NodePath("../PaletteOverlay")
+
+[node name="MobileControlsHud" parent="Ui" unique_id=438147322 instance=ExtResource("16")]
+player_path = NodePath("../../Player")

@@ -7,6 +7,7 @@ Specs are the source of truth for scope, sequencing, and acceptance criteria.
 Current feature set:
 
 - [001-foundation-sandbox](./001-foundation-sandbox/spec.md)
+- [002-mobile-controls](./002-mobile-controls/spec.md)
 
 Idea backlog:
 

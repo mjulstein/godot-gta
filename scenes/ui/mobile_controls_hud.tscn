@@ -1,0 +1,67 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/mobile_controls_hud.gd" id="1"]
+
+[node name="MobileControlsHud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1")
+
+[node name="UpButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+
+[node name="DownButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+
+[node name="LeftButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+
+[node name="RightButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+
+[node name="InteractButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+
+[node name="PauseButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+
+[node name="UpLabel" type="Label" parent="."]
+unique_name_in_owner = true
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "U"
+
+[node name="DownLabel" type="Label" parent="."]
+unique_name_in_owner = true
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "D"
+
+[node name="LeftLabel" type="Label" parent="."]
+unique_name_in_owner = true
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "L"
+
+[node name="RightLabel" type="Label" parent="."]
+unique_name_in_owner = true
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "R"
+
+[node name="InteractLabel" type="Label" parent="."]
+unique_name_in_owner = true
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "ACT"
+
+[node name="PauseLabel" type="Label" parent="."]
+unique_name_in_owner = true
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "PAUSE"

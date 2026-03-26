@@ -9,6 +9,9 @@
 .env
 .env.*
 *.local
+ConfigOverride.xcconfig
+ios/ConfigOverride.xcconfig
+ios/build/
 
 # Godot generated/editor state
 .godot/
