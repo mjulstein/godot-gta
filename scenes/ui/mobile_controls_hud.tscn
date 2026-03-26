@@ -30,6 +30,12 @@ unique_name_in_owner = true
 [node name="PauseButton" type="TouchScreenButton" parent="."]
 unique_name_in_owner = true
 
+[node name="DebugButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+
+[node name="OpacityButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+
 [node name="UpLabel" type="Label" parent="."]
 unique_name_in_owner = true
 horizontal_alignment = 1
@@ -65,3 +71,15 @@ unique_name_in_owner = true
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "PAUSE"
+
+[node name="DebugLabel" type="Label" parent="."]
+unique_name_in_owner = true
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "DBG"
+
+[node name="OpacityLabel" type="Label" parent="."]
+unique_name_in_owner = true
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "OP"

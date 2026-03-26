@@ -75,3 +75,4 @@ overlay_path = NodePath("../PaletteOverlay")
 
 [node name="MobileControlsHud" parent="Ui" unique_id=438147322 instance=ExtResource("16")]
 player_path = NodePath("../../Player")
+debug_overlay_path = NodePath("../DebugOverlay")

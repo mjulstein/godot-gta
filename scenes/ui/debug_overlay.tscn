@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/debug_overlay.gd" id="1"]
 
 [node name="DebugOverlay" type="Control"]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,8 +27,18 @@ theme_override_constants/margin_bottom = 10
 
 [node name="Content" type="VBoxContainer" parent="Panel/Margin"]
 
-[node name="Title" type="Label" parent="Panel/Margin/Content"]
+[node name="Header" type="HBoxContainer" parent="Panel/Margin/Content"]
+
+[node name="Title" type="Label" parent="Panel/Margin/Content/Header"]
 text = "Foundation Sandbox"
+
+[node name="HeaderSpacer" type="Control" parent="Panel/Margin/Content/Header"]
+size_flags_horizontal = 3
+
+[node name="TakeoverButton" type="Button" parent="Panel/Margin/Content/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 28)
+text = "C"
 
 [node name="Stats" type="Label" parent="Panel/Margin/Content"]
 unique_name_in_owner = true

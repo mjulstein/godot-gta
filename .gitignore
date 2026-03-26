@@ -11,7 +11,7 @@
 *.local
 ConfigOverride.xcconfig
 ios/ConfigOverride.xcconfig
-ios/build/
+ios/xcode/
 
 # Godot generated/editor state
 .godot/

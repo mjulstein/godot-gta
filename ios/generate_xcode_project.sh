@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BUILD_DIR="$ROOT_DIR/ios/build/GodotGTA"
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+	echo "Run this script, do not source it:" >&2
+	echo "  ios/generate_xcode_project.sh" >&2
+	return 1 2>/dev/null || exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+BUILD_DIR="$ROOT_DIR/ios/xcode"
 APP_DIR="$BUILD_DIR/GodotGTA"
 XCODEPROJ_DIR="$BUILD_DIR/GodotGTA.xcodeproj"
 SCHEME_DIR="$XCODEPROJ_DIR/xcshareddata/xcschemes"
@@ -12,6 +19,8 @@ TEMPLATE_ZIP="$GODOT_HOME_DIR/Library/Application Support/Godot/export_templates
 ICON_PNG="$BUILD_DIR/godot-gta-icon.png"
 APPICON_DIR="$APP_DIR/Images.xcassets/godot-gta.appiconset"
 CONFIG_ID="A1B2C3D4E5F6012345678901"
+MOLTENVK_BUILD_ID="A1B2C3D4E5F6012345678902"
+MOLTENVK_FILE_ID="A1B2C3D4E5F6012345678903"
 
 require_cmd() {
 	command -v "$1" >/dev/null 2>&1 || {
@@ -151,10 +160,10 @@ patch_pbxproj() {
 	replace_all "$pbxproj" '$additional_pbx_files' ''
 	replace_all "$pbxproj" '$pbx_locale_file_reference' ''
 	replace_all "$pbxproj" '$pbx_locale_build_reference' ''
-	replace_all "$pbxproj" '$moltenvk_buildfile' ''
-	replace_all "$pbxproj" '$moltenvk_fileref' ''
-	replace_all "$pbxproj" '$moltenvk_buildphase' ''
-	replace_all "$pbxproj" '$moltenvk_buildgrp' ''
+	replace_all "$pbxproj" '$moltenvk_buildfile' "${MOLTENVK_BUILD_ID} /* MoltenVK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = ${MOLTENVK_FILE_ID} /* MoltenVK.xcframework */; };"
+	replace_all "$pbxproj" '$moltenvk_fileref' "${MOLTENVK_FILE_ID} /* MoltenVK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = MoltenVK.xcframework; sourceTree = \"<group>\"; };"
+	replace_all "$pbxproj" '$moltenvk_buildphase' "${MOLTENVK_BUILD_ID} /* MoltenVK.xcframework in Frameworks */,"
+	replace_all "$pbxproj" '$moltenvk_buildgrp' "${MOLTENVK_FILE_ID} /* MoltenVK.xcframework */,"
 	replace_all "$pbxproj" '$pbx_launch_screen_build_reference' ''
 	replace_all "$pbxproj" '$pbx_launch_screen_file_reference' ''
 	replace_all "$pbxproj" '$pbx_launch_screen_copy_files' ''
@@ -204,6 +213,44 @@ patch_workspace_and_scheme() {
 	replace_all "$workspace" 'location = "self:GodotGTA.xcodeproj"' 'location = "self:"'
 }
 
+patch_template_sources() {
+	cat >"$APP_DIR/dummy.cpp" <<'EOF'
+/**************************************************************************/
+/*  dummy.cpp                                                             */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+void godot_apple_embedded_plugins_initialize() {}
+void godot_apple_embedded_plugins_deinitialize() {}
+EOF
+	replace_all "$APP_DIR/dummy.swift" '$swift_code' ''
+}
+
 require_cmd godot
 require_cmd unzip
 require_cmd perl
@@ -220,7 +267,7 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
 HOME="$GODOT_HOME_DIR" godot --headless --path "$ROOT_DIR" --export-pack LinuxPack "$PACK_PATH"
-unzip -q "$TEMPLATE_ZIP" -d "$BUILD_DIR"
+unzip -oq "$TEMPLATE_ZIP" -d "$BUILD_DIR"
 
 mv "$BUILD_DIR/data.pck" "$BUILD_DIR/data.pck.template"
 mv "$PACK_PATH" "$BUILD_DIR/GodotGTA.pck"
@@ -237,6 +284,7 @@ write_entitlements
 write_export_options
 patch_pbxproj
 patch_workspace_and_scheme
+patch_template_sources
 
 cp "$ROOT_DIR/ios/base-icon.png" "$ICON_PNG"
 mkdir -p "$APPICON_DIR"

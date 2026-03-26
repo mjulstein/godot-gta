@@ -204,8 +204,10 @@ func _connect_vehicle_signals(node: Node) -> void:
 func _on_connected_vehicle_civilian_hit(target: Node2D, source: Node2D) -> void:
 	_on_vehicle_civilian_hit(source, target)
 
-func _on_connected_vehicle_incident_driver_requested(target: Node2D, inspect_position: Vector2, source: Node2D) -> void:
-	_maybe_spawn_incident_driver(source, target, inspect_position)
+func _on_connected_vehicle_incident_driver_requested(target: Node, inspect_position: Vector2, source: Node) -> void:
+	var source_vehicle: Node2D = source as Node2D
+	var target_actor: Node2D = target as Node2D
+	_maybe_spawn_incident_driver(source_vehicle, target_actor, inspect_position)
 
 func _prepare_vehicle_takeover(target_vehicle: Node2D) -> Node2D:
 	if target_vehicle == vehicle:
