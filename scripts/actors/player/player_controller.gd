@@ -5,6 +5,7 @@ const ActorState = preload("res://scripts/core/actor_state.gd")
 signal civilian_assaulted(target: Node2D)
 signal vehicle_entry_completed(vehicle: Node2D)
 signal harmed(source: Node2D)
+signal collision_feedback_requested(speed_loss: float)
 
 @export var tuning: Resource
 @export var collision_flash_time := 0.12
@@ -76,8 +77,12 @@ func _physics_process(delta: float) -> void:
 		knockout_input_released = false
 		pending_harm_source = null
 	if _update_vehicle_entry_approach(delta):
+		var entry_speed_before_move := velocity.length()
 		move_and_slide()
 		_emit_vehicle_impacts()
+		if get_slide_collision_count() > 0:
+			collision_flash_remaining = collision_flash_time
+			collision_feedback_requested.emit(maxf(entry_speed_before_move - velocity.length(), 0.0))
 		return
 	var input_vector := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var target_speed: float = 220.0 if tuning == null else tuning.move_speed
@@ -94,10 +99,12 @@ func _physics_process(delta: float) -> void:
 		rotation = blended_target.angle()
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, deceleration_rate * delta)
+	var speed_before_move := velocity.length()
 	move_and_slide()
 	_emit_vehicle_impacts()
 	if get_slide_collision_count() > 0:
 		collision_flash_remaining = collision_flash_time
+		collision_feedback_requested.emit(maxf(speed_before_move - velocity.length(), 0.0))
 		_emit_civilian_impacts()
 
 func is_in_vehicle() -> bool:

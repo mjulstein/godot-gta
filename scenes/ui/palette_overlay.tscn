@@ -47,6 +47,10 @@ text = "Toggle Debug"
 unique_name_in_owner = true
 text = "HUD Opacity"
 
+[node name="ImpactVibrationButton" type="Button" parent="Panel/Margin/Rows/Actions"]
+unique_name_in_owner = true
+text = "Impact Vibration: Off"
+
 [node name="PlayerRow" type="HBoxContainer" parent="Panel/Margin/Rows"]
 
 [node name="Icon" type="Control" parent="Panel/Margin/Rows/PlayerRow"]
