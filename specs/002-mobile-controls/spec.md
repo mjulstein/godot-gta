@@ -4,7 +4,7 @@
 
 **Feature Branch**: `002-mobile-controls`  
 **Created**: 2026-03-26  
-**Status**: Draft  
+**Status**: Implemented  
 **Input**: User description: "Add a mobile controls feature spec using the repo's existing Spec Kit workflow so the game is playable on iPhone/iOS with simple on-screen controls."
 
 ## Feature Summary
@@ -32,6 +32,8 @@ As an iPhone player, I can control the character and vehicles using simple on-sc
 3. **Given** the player is driving a vehicle, **When** the player steers with the lower-left joystick and uses right-hand `GAS` or `BRK` buttons, **Then** the game routes that input through the existing driving actions so the vehicle accelerates, brakes, and steers without a separate mobile-only control system.
 4. **Given** the player is in active gameplay on iPhone, **When** the player presses the top-right `P` button, **Then** the game triggers the existing `pause` action and opens the same pause flow used on desktop.
 5. **Given** the player holds a movement control and taps interact or pause, **When** the touches overlap, **Then** both inputs are handled correctly through multitouch without losing the held directional input.
+6. **Given** the player opens the pause overlay, **When** the player cycles gameplay input scale, **Then** the joystick and gameplay action surfaces scale from their existing screen corners without resizing pause-only controls.
+7. **Given** the player opens the pause overlay, **When** the player toggles impact vibration or presses restart, **Then** those controls affect only pause-time mobile quality-of-life behavior and not the core gameplay input mapping.
 
 ---
 
@@ -72,7 +74,12 @@ As a desktop player or developer, I can keep using the current keyboard controls
 - **FR-010**: The mobile controls MUST be visible by default on every platform and MUST NOT interfere with existing desktop keyboard play.
 - **FR-011**: The first implementation MUST prefer a simple lower-left virtual joystick plus a small set of action buttons over gestures, tilt controls, or a separate mobile-only gameplay controller.
 - **FR-012**: The pause overlay MUST expose a button to toggle the debug overlay and a button to cycle on-screen HUD opacity for gameplay.
-- **FR-013**: The feature spec MUST define the control layout, behavior, and implementation approach clearly enough that an engineer can implement it without guessing.
+- **FR-013**: The pause overlay MUST expose a button to cycle gameplay input surface scale from `1.00x` to `2.00x` in `0.25x` steps.
+- **FR-014**: Gameplay input surface scaling MUST affect only gameplay touch surfaces, with each surface growing from its existing screen corner rather than from the pause overlay layout.
+- **FR-015**: The pause overlay MUST expose a vibration toggle for crash feedback, defaulted off.
+- **FR-016**: Crash vibration MUST ignore low-speed bumps and scale duration with impact severity up to `0.25` seconds for strong impacts.
+- **FR-017**: The pause overlay MUST expose a restart control placed away from the main pause actions so it remains available without reading as a common gameplay input.
+- **FR-018**: The feature spec MUST define the control layout, behavior, and implementation approach clearly enough that an engineer can implement it without guessing.
 
 ### Non-Functional Requirements
 
@@ -105,7 +112,7 @@ As a desktop player or developer, I can keep using the current keyboard controls
 - Bind button press and release behavior to the existing input actions instead of calling gameplay methods directly.
 - Instance the mobile controls scene under the main gameplay UI layer used by `scenes/main/game.tscn`.
 - Keep the first version simple, with a lower-left joystick, top-right `ACT` and `P` buttons, and right-hand `GAS` and `BRK` buttons for driving.
-- Keep debug toggle and HUD opacity controls inside the pause overlay rather than in the always-on gameplay HUD.
+- Keep debug toggle, HUD opacity, input scale, impact vibration, and restart controls inside the pause overlay rather than in the always-on gameplay HUD.
 - Treat HUD visibility as player-controlled opacity, not as an automatic platform decision.
 - Treat iOS device testing as the main validation target for the first implementation.
 
@@ -117,5 +124,6 @@ As a desktop player or developer, I can keep using the current keyboard controls
 - **SC-002**: On iPhone, a player can enter and exit vehicles using the top-right `ACT` control in repeatable manual tests.
 - **SC-003**: On iPhone, a player can drive vehicles using left-hand steering plus right-hand `GAS` and `BRK` controls in repeatable manual tests.
 - **SC-004**: On iPhone, a player can pause gameplay using touch input without losing the ability to resume and continue play.
-- **SC-005**: Desktop keyboard play remains functional after the feature is implemented, with no regression in the current sandbox loop while the HUD remains available.
-- **SC-006**: The spec and plan define the feature clearly enough that implementation work can proceed without inventing new control behavior during coding.
+- **SC-005**: On iPhone, a player can use the pause overlay to adjust gameplay HUD opacity, gameplay input scale, impact vibration, and restart without affecting the desktop keyboard path.
+- **SC-006**: Desktop keyboard play remains functional after the feature is implemented, with no regression in the current sandbox loop while the HUD remains available.
+- **SC-007**: The spec and plan define the feature clearly enough that implementation work can proceed without inventing new control behavior during coding.

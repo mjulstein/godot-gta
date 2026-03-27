@@ -7,7 +7,7 @@
 
 ## Summary
 
-Add a minimal mobile touch HUD that makes the current sandbox loop playable on iPhone by mapping a lower-left on-screen joystick, top-right action buttons, and right-hand driving pedals to the existing action-driven input model. The implementation should stay UI-local, use Godot-native touch controls, keep desktop keyboard play unchanged, and avoid automatic platform-based HUD switching.
+Add a minimal mobile touch HUD that makes the current sandbox loop playable on iPhone by mapping a lower-left on-screen joystick, top-right action buttons, and right-hand driving pedals to the existing action-driven input model. Keep the implementation UI-local, preserve desktop keyboard play, avoid automatic platform-based HUD switching, and expose pause-time HUD controls for opacity, gameplay input scale, impact vibration, and restart.
 
 ## Technical Context
 
@@ -73,7 +73,7 @@ Create a mobile HUD scene under `scenes/ui/` with:
 - a bottom-left joystick for movement and steering
 - top-right `ACT` and `P` buttons
 - right-hand `GAS` and `BRK` buttons while driving
-- pause-overlay buttons for debug visibility and HUD opacity
+- pause-overlay buttons for debug visibility, HUD opacity, gameplay input scale, impact vibration, and restart
 
 Prefer Godot-native touch events for joystick drag handling and action button press or release handling.
 
@@ -95,6 +95,7 @@ Instance the mobile HUD beneath the main gameplay UI layer in `scenes/main/game.
 - Keep the HUD available on every platform.
 - Keep desktop keyboard controls unchanged.
 - Let the player fade the HUD to `0%` opacity instead of automatically hiding it by platform.
+- Let the player scale gameplay touch surfaces from `1.00x` to `2.00x` in `0.25x` steps from the pause overlay.
 - Ensure the HUD supports overlapping touches so movement can continue while `interact` or `pause` is pressed.
 
 ### Phase 4: Validation
@@ -103,7 +104,7 @@ Validate with:
 
 - `HOME=/tmp/godot-home godot --headless --path . --quit-after 1`
 - desktop manual verification that keyboard play still works
-- iPhone or iOS simulator manual verification for walking, vehicle entry or exit, driving, pause, and multitouch overlap
+- iPhone or iOS simulator manual verification for walking, vehicle entry or exit, driving, pause, multitouch overlap, gameplay input resizing, crash vibration, and restart
 
 ## Implementation Notes
 
@@ -112,6 +113,8 @@ Validate with:
 - Keep touch-specific code out of player and vehicle scripts unless a small state exposure is required to choose the current directional mapping.
 - If platform detection is ambiguous during development, prefer a narrow, explicit gating point in the HUD scene or bootstrap layer so desktop behavior stays predictable.
 - Keep art and styling minimal for v1; clarity, reachability, and safe-area spacing matter more than polish.
+- Keep gameplay input scaling anchored to each control cluster's existing corner so larger surfaces do not drift across the screen.
+- Keep pause-only controls visually separate from frequent gameplay controls.
 
 ## Risks And Mitigations
 
@@ -119,6 +122,7 @@ Validate with:
 - `Multitouch risk`: Button interactions can cancel each other if press and release handling is naive. Mitigation: use Godot-native touch controls and verify overlapping press paths on device.
 - `Desktop regression risk`: UI focus or unconditional HUD loading could affect current play. Mitigation: keep keyboard input untouched and let the player fade the HUD to `0%` opacity.
 - `Layout risk`: Buttons can overlap notches or reduce play-area readability on iPhone. Mitigation: keep v1 layout simple and validate against safe-area constraints during device testing.
+- `Control crowding risk`: Extra pause-time options can blur the difference between gameplay buttons and meta controls. Mitigation: keep new options in the pause overlay and keep restart de-emphasized near the lower-right edge rather than mixing it with gameplay surfaces.
 
 ## Open Questions
 

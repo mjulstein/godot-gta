@@ -38,3 +38,12 @@ Boot a Godot project that can demonstrate the first crime-sandbox slice describe
 - Allow the same overlay to inspect any tracked vehicle's speed, throttle, brake, steering, and motion state when debugging traffic behavior.
 - Support a pause overlay that shows the current role palette.
 - Keep tuning data editable without rewriting scene logic.
+
+## Current Branch Extensions
+
+The current repository branch layers additional controls and deployment helpers on top of the foundation sandbox slice:
+
+- always-on mobile touch HUD for joystick, action, pause, and driving inputs
+- pause-overlay controls for debug toggle, HUD opacity, gameplay input scale, impact vibration, and restart
+- debug traffic camera cycling and temporary driver possession for inspecting civilian traffic
+- local iOS Xcode project generation and build or deploy helpers under `ios/`

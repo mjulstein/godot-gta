@@ -13,7 +13,10 @@ The prototype includes a partial implementation beyond the revised branch scope:
 - player can move on foot, steal the parked vehicle, and drive
 - civilian pedestrians and traffic are spawned from separate ambient overlay densities
 - wanted and police placeholder systems exist as deferred work, but are no longer part of active branch completion
-- camera uses fixed viewport stretch, driving look-ahead, speed-aware zoom, and pause palette overlay
+- camera uses fixed viewport stretch, driving look-ahead, speed-aware zoom, debug traffic-camera cycling, and pause palette overlay
+- mobile HUD support exists for joystick, action, pause, and driving controls
+- pause overlay now includes gameplay HUD opacity, gameplay input scale, impact vibration, and restart controls
+- local iOS project generation and build or deploy helpers exist under `ios/`
 - debug overlay shows development state for the current sandbox slice
 
 The branch is still considered in-progress until the basic sandbox feel is accepted across on-foot movement, vehicle handling, collisions, and baseline civilian traffic behavior.
@@ -39,6 +42,8 @@ Then manually verify:
 - the driving camera pans ahead and eases back from high-speed exits
 - taking over a civilian vehicle leaves a displaced pedestrian occupant
 - vehicle-to-pedestrian impacts displace pedestrians by momentum without pedestrians pushing cars back
+- mobile HUD touch controls can complete the on-foot, vehicle, pause, and resume loop
+- pause overlay controls affect gameplay HUD opacity and gameplay input scale without changing keyboard paths
 
 Manual validation reference:
 

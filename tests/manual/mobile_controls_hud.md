@@ -18,11 +18,15 @@ Validate the current mobile HUD on iPhone, iPad simulator in landscape, or deskt
 4. While driving, use the left-hand joystick to steer and confirm it no longer applies throttle or brake by itself.
 5. While driving, hold `GAS` and steer, then hold `BRK` and steer, and confirm the vehicle responds through the normal drive actions.
 6. While driving, tap `ACT` and confirm the player exits the vehicle through the normal interaction flow.
-7. Tap the top-right `P` button, then confirm the pause overlay appears with `Debug` and `HUD Opacity` buttons.
+7. Tap the top-right `P` button, then confirm the pause overlay appears with `Debug`, `HUD Opacity`, `Input Scale`, `Impact Vibration`, and `Restart` controls.
 8. Use the pause overlay `Debug` button and confirm the debug overlay toggles.
 9. Use the pause overlay `HUD Opacity` button, resume gameplay, and confirm the mobile HUD opacity changed during non-paused play.
-10. Press `M` and confirm the HUD toggles between the current visible opacity and `0%`, then press `M` again to restore the previous opacity.
-11. Repeat joystick plus `ACT`, joystick plus `P`, and steering plus `GAS` overlap checks to confirm multitouch does not cancel held input unexpectedly.
+10. Use the pause overlay `Input Scale` button repeatedly and confirm the gameplay touch surfaces cycle from `1.00x` to `2.00x` in `0.25x` steps.
+11. Resume gameplay and confirm the joystick still scales from the lower-left corner, `ACT` stays pinned to the top-right corner, and `GAS` or `BRK` stay pinned to the lower-right corner.
+12. Toggle `Impact Vibration` on, resume gameplay, and confirm low-speed bumps do not vibrate while harder crashes can vibrate the phone briefly; then turn it back off and confirm crashes no longer vibrate.
+13. Re-open pause and confirm the lower-right `Restart` button is available but visually separated from the main pause actions.
+14. Press `M` and confirm the HUD toggles between the current visible opacity and `0%`, then press `M` again to restore the previous opacity.
+15. Repeat joystick plus `ACT`, joystick plus `P`, and steering plus `GAS` overlap checks to confirm multitouch does not cancel held input unexpectedly.
 
 ## Expected Result
 
@@ -31,5 +35,6 @@ Validate the current mobile HUD on iPhone, iPad simulator in landscape, or deskt
 - In vehicles, `GAS` and `BRK` provide throttle and brake on the right-hand side.
 - `ACT` uses the same interaction behavior as keyboard `E`.
 - The top-right `P` button uses the same pause flow as keyboard `P`.
-- The pause overlay can toggle debug visibility and cycle gameplay HUD opacity.
+- The pause overlay can toggle debug visibility, cycle gameplay HUD opacity, cycle gameplay input scale, toggle impact vibration, and restart the scene.
+- Gameplay input scale changes affect only gameplay touch surfaces and keep each control cluster anchored to its original corner.
 - Overlapping touch input keeps held movement active while `ACT` or `PAUSE` is tapped.
