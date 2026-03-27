@@ -10,6 +10,7 @@ signal impact_vibration_toggled(enabled: bool)
 @onready var toggle_debug_button: Button = %ToggleDebugButton
 @onready var hud_opacity_button: Button = %HudOpacityButton
 @onready var impact_vibration_button: Button = %ImpactVibrationButton
+@onready var restart_button: Button = %RestartButton
 
 var impact_vibration_enabled := false
 
@@ -18,6 +19,7 @@ func _ready() -> void:
 	toggle_debug_button.pressed.connect(_on_toggle_debug_pressed)
 	hud_opacity_button.pressed.connect(_on_hud_opacity_pressed)
 	impact_vibration_button.pressed.connect(_on_impact_vibration_pressed)
+	restart_button.pressed.connect(_on_restart_pressed)
 	_refresh_button_text()
 
 func _on_toggle_debug_pressed() -> void:
@@ -43,6 +45,10 @@ func set_impact_vibration_enabled(enabled: bool) -> void:
 
 func is_impact_vibration_enabled() -> bool:
 	return impact_vibration_enabled
+
+func _on_restart_pressed() -> void:
+	get_tree().paused = false
+	get_tree().reload_current_scene()
 
 func _refresh_button_text() -> void:
 	var debug_active := false

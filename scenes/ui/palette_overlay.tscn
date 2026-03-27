@@ -119,3 +119,17 @@ secondary_color = Color(0.988235, 0.92549, 0.580392, 1)
 
 [node name="Label" type="Label" parent="Panel/Margin/Rows/BarrierRow"]
 text = "Barrier"
+
+[node name="RestartButton" type="Button" parent="."]
+unique_name_in_owner = true
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -96.0
+offset_top = -56.0
+offset_right = 16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Restart"
