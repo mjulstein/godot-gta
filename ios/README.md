@@ -71,3 +71,47 @@ ios/xcode/GodotGTA.xcodeproj
 ```
 
 Then select your iPhone and run the `GodotGTA` scheme.
+
+## CLI Build And Deploy
+
+To rebuild the current Godot project, install it on a connected iPhone, and launch it:
+
+1. Regenerate the Xcode project from the latest Godot files:
+
+```sh
+ios/generate_xcode_project.sh
+```
+
+2. List connected Apple devices and copy your iPhone device ID:
+
+```sh
+xcrun xctrace list devices
+```
+
+3. Build for that device:
+
+```sh
+xcodebuild \
+  -project ios/xcode/GodotGTA.xcodeproj \
+  -scheme GodotGTA \
+  -configuration Debug \
+  -destination 'id=YOUR_DEVICE_ID' \
+  -derivedDataPath /tmp/godot-gta-derived \
+  build
+```
+
+4. Install the built app on the phone:
+
+```sh
+xcrun devicectl device install app \
+  --device YOUR_DEVICE_ID \
+  /tmp/godot-gta-derived/Build/Products/Debug-iphoneos/GodotGTA.app
+```
+
+5. Launch the app on the phone:
+
+```sh
+xcrun devicectl device process launch \
+  --device YOUR_DEVICE_ID \
+  YOUR_BUNDLE_IDENTIFIER
+```

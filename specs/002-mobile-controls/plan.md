@@ -7,12 +7,12 @@
 
 ## Summary
 
-Add a minimal mobile touch HUD that makes the current sandbox loop playable on iPhone by mapping on-screen buttons to the existing action-driven input model. The implementation should stay UI-local, use Godot-native touch controls, and keep desktop keyboard play unchanged.
+Add a minimal mobile touch HUD that makes the current sandbox loop playable on iPhone by mapping a lower-left on-screen joystick, top-right action buttons, and right-hand driving pedals to the existing action-driven input model. The implementation should stay UI-local, use Godot-native touch controls, keep desktop keyboard play unchanged, and avoid automatic platform-based HUD switching.
 
 ## Technical Context
 
 **Language/Version**: GDScript on Godot 4.x  
-**Primary Dependencies**: Godot 4.x UI and input systems, `Control`, `CanvasLayer` or current UI layer pattern, `TouchScreenButton` or equivalent built-in touch control, existing `InputMap` actions  
+**Primary Dependencies**: Godot 4.x UI and input systems, `Control`, `CanvasLayer` or current UI layer pattern, touch drag events, existing `InputMap` actions  
 **Storage**: Scene files and scripts only; no new persistent storage expected  
 **Testing**: Godot headless boot validation plus manual playtest on desktop and iPhone or iOS simulator  
 **Target Platform**: Existing desktop targets plus iPhone/iOS for touch playability  
@@ -70,18 +70,20 @@ tests/
 
 Create a mobile HUD scene under `scenes/ui/` with:
 
-- a bottom-left directional cluster for movement or driving
-- a bottom-right `interact` button
-- a pause button positioned to avoid the main play area and debug overlay
+- a bottom-left joystick for movement and steering
+- top-right `ACT` and `P` buttons
+- right-hand `GAS` and `BRK` buttons while driving
+- pause-overlay buttons for debug visibility and HUD opacity
 
-Prefer `TouchScreenButton` for press and release handling unless another built-in Godot control fits the current UI structure more cleanly.
+Prefer Godot-native touch events for joystick drag handling and action button press or release handling.
 
 ### Phase 2: Action Mapping
 
 Connect HUD button states to the existing gameplay actions instead of calling actor or vehicle methods directly.
 
-- On foot, directional inputs should drive `move_up`, `move_down`, `move_left`, and `move_right`.
-- In vehicles, the same directional cluster should produce `accelerate`, `brake`, `steer_left`, and `steer_right`.
+- On foot, joystick input should drive `move_up`, `move_down`, `move_left`, and `move_right`.
+- In vehicles, the same joystick should drive `steer_left` and `steer_right` only.
+- In vehicles, right-hand `GAS` and `BRK` buttons should drive `accelerate` and `brake`.
 - `interact` and `pause` should always trigger the existing action paths used by desktop play.
 
 The current control state should determine which action set the directional cluster emits, with the state sourced from existing gameplay ownership or actor mode rather than a mobile-only gameplay path.
@@ -90,8 +92,9 @@ The current control state should determine which action set the directional clus
 
 Instance the mobile HUD beneath the main gameplay UI layer in `scenes/main/game.tscn`.
 
-- Show or activate the HUD only on touchscreen or mobile platforms.
+- Keep the HUD available on every platform.
 - Keep desktop keyboard controls unchanged.
+- Let the player fade the HUD to `0%` opacity instead of automatically hiding it by platform.
 - Ensure the HUD supports overlapping touches so movement can continue while `interact` or `pause` is pressed.
 
 ### Phase 4: Validation
@@ -108,16 +111,16 @@ Validate with:
 - Do not add a separate mobile gameplay controller.
 - Keep touch-specific code out of player and vehicle scripts unless a small state exposure is required to choose the current directional mapping.
 - If platform detection is ambiguous during development, prefer a narrow, explicit gating point in the HUD scene or bootstrap layer so desktop behavior stays predictable.
-- Keep art and styling minimal for v1; clarity and reachability matter more than polish.
+- Keep art and styling minimal for v1; clarity, reachability, and safe-area spacing matter more than polish.
 
 ## Risks And Mitigations
 
-- `State mapping risk`: The same directional cluster means different actions on foot and in vehicles. Mitigation: derive mapping from existing player-control state, not duplicated mobile state.
+- `State mapping risk`: The same joystick means full movement on foot and steering-only in vehicles. Mitigation: derive mapping from existing player-control state, not duplicated mobile state.
 - `Multitouch risk`: Button interactions can cancel each other if press and release handling is naive. Mitigation: use Godot-native touch controls and verify overlapping press paths on device.
-- `Desktop regression risk`: UI focus or unconditional HUD loading could affect current play. Mitigation: gate HUD visibility and keep keyboard input untouched.
+- `Desktop regression risk`: UI focus or unconditional HUD loading could affect current play. Mitigation: keep keyboard input untouched and let the player fade the HUD to `0%` opacity.
 - `Layout risk`: Buttons can overlap notches or reduce play-area readability on iPhone. Mitigation: keep v1 layout simple and validate against safe-area constraints during device testing.
 
 ## Open Questions
 
 - Whether the existing UI stack already has a preferred `CanvasLayer` pattern the HUD should attach to directly in `scenes/main/game.tscn`.
-- Whether a development-only override is useful for testing the mobile HUD on desktop without deploying to iOS.
+- Whether the desktop override should support mouse-drag joystick testing without deploying to iOS.

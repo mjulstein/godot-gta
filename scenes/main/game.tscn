@@ -68,6 +68,8 @@ script = ExtResource("4")
 [node name="InteractionPrompt" parent="Ui" unique_id=322975632 instance=ExtResource("9")]
 
 [node name="PaletteOverlay" parent="Ui" unique_id=1240934791 instance=ExtResource("14")]
+debug_overlay_path = NodePath("../DebugOverlay")
+mobile_controls_hud_path = NodePath("../MobileControlsHud")
 
 [node name="PauseController" type="Node" parent="Ui" unique_id=1265303728]
 script = ExtResource("15")

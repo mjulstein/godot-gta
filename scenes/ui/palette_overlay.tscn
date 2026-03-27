@@ -21,7 +21,7 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -108.0
-offset_top = -196.0
+offset_top = -300.0
 offset_right = 108.0
 offset_bottom = -16.0
 grow_horizontal = 2
@@ -34,6 +34,18 @@ theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
 [node name="Rows" type="VBoxContainer" parent="Panel/Margin"]
+
+[node name="Actions" type="VBoxContainer" parent="Panel/Margin/Rows"]
+unique_name_in_owner = true
+theme_override_constants/separation = 8
+
+[node name="ToggleDebugButton" type="Button" parent="Panel/Margin/Rows/Actions"]
+unique_name_in_owner = true
+text = "Toggle Debug"
+
+[node name="HudOpacityButton" type="Button" parent="Panel/Margin/Rows/Actions"]
+unique_name_in_owner = true
+text = "HUD Opacity"
 
 [node name="PlayerRow" type="HBoxContainer" parent="Panel/Margin/Rows"]
 
