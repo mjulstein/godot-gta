@@ -9,6 +9,7 @@ signal impact_vibration_toggled(enabled: bool)
 @onready var mobile_controls_hud: Control = get_node_or_null(mobile_controls_hud_path)
 @onready var toggle_debug_button: Button = %ToggleDebugButton
 @onready var hud_opacity_button: Button = %HudOpacityButton
+@onready var input_scale_button: Button = %InputScaleButton
 @onready var impact_vibration_button: Button = %ImpactVibrationButton
 @onready var restart_button: Button = %RestartButton
 
@@ -18,6 +19,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	toggle_debug_button.pressed.connect(_on_toggle_debug_pressed)
 	hud_opacity_button.pressed.connect(_on_hud_opacity_pressed)
+	input_scale_button.pressed.connect(_on_input_scale_pressed)
 	impact_vibration_button.pressed.connect(_on_impact_vibration_pressed)
 	restart_button.pressed.connect(_on_restart_pressed)
 	_refresh_button_text()
@@ -30,6 +32,11 @@ func _on_toggle_debug_pressed() -> void:
 func _on_hud_opacity_pressed() -> void:
 	if mobile_controls_hud != null and mobile_controls_hud.has_method("cycle_hud_opacity"):
 		mobile_controls_hud.cycle_hud_opacity()
+	_refresh_button_text()
+
+func _on_input_scale_pressed() -> void:
+	if mobile_controls_hud != null and mobile_controls_hud.has_method("cycle_input_surface_scale"):
+		mobile_controls_hud.cycle_input_surface_scale()
 	_refresh_button_text()
 
 func _on_impact_vibration_pressed() -> void:
@@ -60,4 +67,8 @@ func _refresh_button_text() -> void:
 	if mobile_controls_hud != null and mobile_controls_hud.has_method("get_hud_opacity_label"):
 		opacity_label = mobile_controls_hud.get_hud_opacity_label()
 	hud_opacity_button.text = opacity_label
+	var input_scale_label := "Input Scale: 1.00x"
+	if mobile_controls_hud != null and mobile_controls_hud.has_method("get_input_surface_scale_label"):
+		input_scale_label = mobile_controls_hud.get_input_surface_scale_label()
+	input_scale_button.text = input_scale_label
 	impact_vibration_button.text = "Impact Vibration: On" if impact_vibration_enabled else "Impact Vibration: Off"

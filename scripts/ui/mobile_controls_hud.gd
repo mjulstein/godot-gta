@@ -11,6 +11,9 @@ const DRIVING_ACTIONS := {
 	"right": "steer_right",
 }
 const OPACITY_LEVELS := [1.0, 0.8, 0.55, 0.3, 0.0]
+const INPUT_SURFACE_SCALE_LEVELS := [1.0, 1.25, 1.5, 1.75, 2.0]
+const BASE_ACTION_BUTTON_SIZE := Vector2(92.0, 82.0)
+const BASE_JOYSTICK_LABEL_SIZE := 22
 
 @export var player_path: NodePath
 @export var game_root_path: NodePath
@@ -37,6 +40,7 @@ var joystick_center := Vector2.ZERO
 var joystick_value := Vector2.ZERO
 var opacity_level_index := 0
 var last_visible_opacity_index := 0
+var input_surface_scale_index := 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -45,6 +49,7 @@ func _ready() -> void:
 	resized.connect(_layout_hud)
 	visibility_changed.connect(_on_visibility_changed)
 	_apply_opacity_level()
+	_apply_input_surface_scale()
 	_layout_hud()
 	_update_visibility()
 
@@ -126,8 +131,7 @@ func _layout_hud() -> void:
 	var bottom_right := viewport_rect.size - Vector2.ONE * hud_margin
 
 	top_right_buttons.position = Vector2(bottom_right.x - top_right_buttons.size.x, top_left.y)
-	joystick_panel.position = Vector2(top_left.x, bottom_right.y - joystick_size)
-	joystick_panel.size = Vector2(joystick_size, joystick_size)
+	joystick_panel.position = Vector2(top_left.x, bottom_right.y - joystick_panel.size.y)
 	driving_buttons.position = Vector2(bottom_right.x - driving_buttons.size.x, bottom_right.y - driving_buttons.size.y)
 	joystick_center = joystick_panel.position + joystick_panel.size * 0.5
 
@@ -244,6 +248,13 @@ func cycle_hud_opacity() -> void:
 func get_hud_opacity_label() -> String:
 	return "HUD Opacity: %d%%" % int(round(OPACITY_LEVELS[opacity_level_index] * 100.0))
 
+func cycle_input_surface_scale() -> void:
+	input_surface_scale_index = (input_surface_scale_index + 1) % INPUT_SURFACE_SCALE_LEVELS.size()
+	_apply_input_surface_scale()
+
+func get_input_surface_scale_label() -> String:
+	return "Input Scale: %.2fx" % INPUT_SURFACE_SCALE_LEVELS[input_surface_scale_index]
+
 func toggle_hud_opacity() -> void:
 	if OPACITY_LEVELS[opacity_level_index] <= 0.0:
 		opacity_level_index = last_visible_opacity_index
@@ -254,6 +265,16 @@ func toggle_hud_opacity() -> void:
 
 func _apply_opacity_level() -> void:
 	modulate.a = OPACITY_LEVELS[opacity_level_index]
+
+func _apply_input_surface_scale() -> void:
+	var scale_factor: float = INPUT_SURFACE_SCALE_LEVELS[input_surface_scale_index]
+	interact_button.custom_minimum_size = BASE_ACTION_BUTTON_SIZE * scale_factor
+	accelerate_button.custom_minimum_size = BASE_ACTION_BUTTON_SIZE * scale_factor
+	brake_button.custom_minimum_size = BASE_ACTION_BUTTON_SIZE * scale_factor
+	joystick_panel.custom_minimum_size = Vector2.ONE * joystick_size * scale_factor
+	joystick_panel.size = joystick_panel.custom_minimum_size
+	joystick_text.add_theme_font_size_override("font_size", int(round(BASE_JOYSTICK_LABEL_SIZE * scale_factor)))
+	_layout_hud()
 
 func _emit_action_event(action_name: String, pressed: bool) -> void:
 	var event := InputEventAction.new()
