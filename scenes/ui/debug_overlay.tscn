@@ -3,7 +3,6 @@
 [ext_resource type="Script" path="res://scripts/ui/debug_overlay.gd" id="1"]
 
 [node name="DebugOverlay" type="Control"]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,7 +12,16 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1")
 
+[node name="CameraButton" type="Button" parent="."]
+unique_name_in_owner = true
+offset_left = 284.0
+offset_top = 16.0
+offset_right = 316.0
+offset_bottom = 44.0
+text = "C"
+
 [node name="Panel" type="PanelContainer" parent="."]
+visible = false
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 276.0
@@ -34,11 +42,6 @@ text = "Foundation Sandbox"
 
 [node name="HeaderSpacer" type="Control" parent="Panel/Margin/Content/Header"]
 size_flags_horizontal = 3
-
-[node name="TakeoverButton" type="Button" parent="Panel/Margin/Content/Header"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(32, 28)
-text = "C"
 
 [node name="Stats" type="Label" parent="Panel/Margin/Content"]
 unique_name_in_owner = true

@@ -259,6 +259,9 @@ func _get_active_player_vehicle() -> Node2D:
 		return null
 	return player.active_vehicle as Node2D
 
+func is_camera_possession_active() -> bool:
+	return is_instance_valid(possessed_traffic_vehicle) and possessed_traffic_vehicle == traffic_camera_target
+
 func _get_interaction_hint() -> String:
 	if _can_toggle_traffic_possession():
 		return "Press E to return driver" if possessed_traffic_vehicle == traffic_camera_target else "Press E to possess driver"

@@ -60,6 +60,8 @@ Optional overrides:
 
 ```xcconfig
 APP_GROUP_ID = group.no.mju.$(DEVELOPER_TEAM).mju.mju-app-group
+BUNDLE_IDENTIFIER = com.example.godot-gta
+IOS_DEVICE_ID = YOUR_DEVICE_ID
 ```
 
 ## Open In Xcode
@@ -88,30 +90,26 @@ ios/generate_xcode_project.sh
 xcrun xctrace list devices
 ```
 
-3. Build for that device:
+3. Save that device ID in a local override so you do not need to pass it each time:
 
-```sh
-xcodebuild \
-  -project ios/xcode/GodotGTA.xcodeproj \
-  -scheme GodotGTA \
-  -configuration Debug \
-  -destination 'id=YOUR_DEVICE_ID' \
-  -derivedDataPath /tmp/godot-gta-derived \
-  build
+```xcconfig
+IOS_DEVICE_ID = YOUR_DEVICE_ID
 ```
 
-4. Install the built app on the phone:
+4. Build, install, and launch using the helper script:
 
 ```sh
-xcrun devicectl device install app \
-  --device YOUR_DEVICE_ID \
-  /tmp/godot-gta-derived/Build/Products/Debug-iphoneos/GodotGTA.app
+ios/build_and_deploy.sh
 ```
 
-5. Launch the app on the phone:
+5. Or pass the device ID explicitly for a one-off run:
 
 ```sh
-xcrun devicectl device process launch \
-  --device YOUR_DEVICE_ID \
-  YOUR_BUNDLE_IDENTIFIER
+ios/build_and_deploy.sh YOUR_DEVICE_ID
+```
+
+The helper script also accepts shell overrides when needed:
+
+```sh
+IOS_DEVICE_ID=YOUR_DEVICE_ID BUNDLE_IDENTIFIER=com.example.godot-gta ios/build_and_deploy.sh
 ```

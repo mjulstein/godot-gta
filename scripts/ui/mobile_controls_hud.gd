@@ -13,11 +13,13 @@ const DRIVING_ACTIONS := {
 const OPACITY_LEVELS := [1.0, 0.8, 0.55, 0.3, 0.0]
 
 @export var player_path: NodePath
+@export var game_root_path: NodePath
 @export_range(60.0, 180.0, 1.0) var joystick_size := 176.0
 @export_range(0.05, 0.5, 0.01) var joystick_deadzone := 0.18
 @export_range(0.0, 96.0, 1.0) var hud_margin := 20.0
 
 @onready var player: Node = get_node_or_null(player_path)
+@onready var game_root: Node = get_node_or_null(game_root_path)
 @onready var top_right_buttons: HBoxContainer = %TopRightButtons
 @onready var interact_button: Button = %ActButton
 @onready var pause_button: Button = %PauseButton
@@ -211,7 +213,9 @@ func _get_filtered_joystick_value() -> Vector2:
 	return joystick_value.normalized() * normalized_magnitude
 
 func _is_driving() -> bool:
-	return player != null and player.has_method("is_in_vehicle") and player.is_in_vehicle()
+	var player_driving: bool = player != null and player.has_method("is_in_vehicle") and player.is_in_vehicle()
+	var camera_possession_driving: bool = game_root != null and game_root.has_method("is_camera_possession_active") and game_root.is_camera_possession_active()
+	return player_driving or camera_possession_driving
 
 func _release_all_actions() -> void:
 	_reset_joystick()

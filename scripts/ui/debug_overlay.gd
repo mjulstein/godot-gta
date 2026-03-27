@@ -1,14 +1,15 @@
 extends Control
 
+@onready var panel: Control = $Panel
 @onready var stats_label: Label = %Stats
-@onready var takeover_button: Button = %TakeoverButton
+@onready var camera_button: Button = %CameraButton
 var debug_state: Node
-var overlay_active := true
+var overlay_active := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	takeover_button.pressed.connect(_on_takeover_button_pressed)
-	overlay_active = visible
+	visible = true
+	camera_button.pressed.connect(_on_takeover_button_pressed)
 	_sync_overlay_state()
 
 func set_debug_state(state: Node) -> void:
@@ -31,9 +32,10 @@ func is_overlay_active() -> bool:
 	return overlay_active
 
 func _sync_overlay_state() -> void:
-	visible = overlay_active
-	if is_instance_valid(takeover_button):
-		takeover_button.visible = overlay_active
+	if is_instance_valid(panel):
+		panel.visible = overlay_active
+	if is_instance_valid(camera_button):
+		camera_button.visible = true
 
 func _on_takeover_button_pressed() -> void:
 	_emit_action("debug_camera")
