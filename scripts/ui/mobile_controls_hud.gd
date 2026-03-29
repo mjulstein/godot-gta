@@ -13,6 +13,7 @@ const DRIVING_ACTIONS := {
 const OPACITY_LEVELS := [1.0, 0.8, 0.55, 0.3, 0.0]
 const INPUT_SURFACE_SCALE_LEVELS := [1.0, 1.25, 1.5, 1.75, 2.0]
 const BASE_ACTION_BUTTON_SIZE := Vector2(92.0, 82.0)
+const BASE_ACTION_BUTTON_SEPARATION := 12.0
 const BASE_JOYSTICK_LABEL_SIZE := 22
 
 @export var player_path: NodePath
@@ -23,7 +24,7 @@ const BASE_JOYSTICK_LABEL_SIZE := 22
 
 @onready var player: Node = get_node_or_null(player_path)
 @onready var game_root: Node = get_node_or_null(game_root_path)
-@onready var top_right_buttons: HBoxContainer = %TopRightButtons
+@onready var top_right_buttons: BoxContainer = %TopRightButtons
 @onready var interact_button: Button = %ActButton
 @onready var pause_button: Button = %PauseButton
 @onready var joystick_panel: PanelContainer = %JoystickPanel
@@ -38,6 +39,10 @@ var joystick_touch_id := -1
 var joystick_mouse_active := false
 var joystick_center := Vector2.ZERO
 var joystick_value := Vector2.ZERO
+var driving_touch_id := -1
+var driving_mouse_active := false
+var driving_center := Vector2.ZERO
+var driving_value := 0.0
 var opacity_level_index := 0
 var last_visible_opacity_index := 0
 var input_surface_scale_index := 0
@@ -86,15 +91,13 @@ func _configure_controls() -> void:
 	_style_button(pause_button, Color(0.98, 0.96, 0.56, 0.96), Color(0.18, 0.18, 0.04, 0.95))
 	_style_button(accelerate_button, Color(1.0, 0.66, 0.2, 0.96), Color(0.18, 0.1, 0.02, 0.95))
 	_style_button(brake_button, Color(0.86, 0.38, 0.28, 0.96), Color(0.2, 0.04, 0.02, 0.95))
+	accelerate_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	brake_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	interact_button.button_down.connect(_emit_action_event.bind("interact", true))
 	interact_button.button_up.connect(_emit_action_event.bind("interact", false))
 	pause_button.button_down.connect(_emit_action_event.bind("pause", true))
 	pause_button.button_up.connect(_emit_action_event.bind("pause", false))
-	accelerate_button.button_down.connect(_emit_action_event.bind("accelerate", true))
-	accelerate_button.button_up.connect(_emit_action_event.bind("accelerate", false))
-	brake_button.button_down.connect(_emit_action_event.bind("brake", true))
-	brake_button.button_up.connect(_emit_action_event.bind("brake", false))
 
 func _style_button(button: Button, fill_color: Color, text_color: Color) -> void:
 	button.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -131,9 +134,22 @@ func _layout_hud() -> void:
 	var bottom_right := viewport_rect.size - Vector2.ONE * hud_margin
 
 	top_right_buttons.position = Vector2(bottom_right.x - top_right_buttons.size.x, top_left.y)
-	joystick_panel.position = Vector2(top_left.x, bottom_right.y - joystick_panel.size.y)
-	driving_buttons.position = Vector2(bottom_right.x - driving_buttons.size.x, bottom_right.y - driving_buttons.size.y)
+	var joystick_anchor_center := Vector2(
+		top_left.x + joystick_size,
+		bottom_right.y - joystick_size
+	)
+	joystick_panel.position = joystick_anchor_center - joystick_panel.size * 0.5
+	var driving_cluster_base_size := Vector2(
+		BASE_ACTION_BUTTON_SIZE.x,
+		BASE_ACTION_BUTTON_SIZE.y * 2.0 + BASE_ACTION_BUTTON_SEPARATION
+	)
+	var driving_anchor_center := Vector2(
+		bottom_right.x - BASE_ACTION_BUTTON_SIZE.x - driving_cluster_base_size.x * 0.5,
+		bottom_right.y - BASE_ACTION_BUTTON_SIZE.y - driving_cluster_base_size.y * 0.5
+	)
+	driving_buttons.position = driving_anchor_center - driving_buttons.size * 0.5
 	joystick_center = joystick_panel.position + joystick_panel.size * 0.5
+	driving_center = driving_buttons.position + driving_buttons.size * 0.5
 
 func _update_visibility() -> void:
 	visible = true
@@ -145,41 +161,62 @@ func _update_auxiliary_visibility() -> void:
 	var driving := _is_driving()
 	driving_buttons.visible = driving
 	joystick_text.text = "STEER" if driving else "MOVE"
+	_update_driving_visual_state()
 
 func _handle_screen_touch(event: InputEventScreenTouch) -> void:
 	if event.pressed:
+		if _is_driving() and driving_touch_id == -1 and driving_buttons.get_global_rect().has_point(event.position):
+			driving_touch_id = event.index
+			_update_driving_value(event.position)
+			return
 		if joystick_touch_id == -1 and joystick_panel.get_global_rect().has_point(event.position):
 			joystick_touch_id = event.index
 			_update_joystick_value(event.position)
 		return
 	if event.index == joystick_touch_id:
 		_reset_joystick()
+	elif event.index == driving_touch_id:
+		_reset_driving_input()
 
 func _handle_screen_drag(event: InputEventScreenDrag) -> void:
-	if event.index != joystick_touch_id:
-		return
-	_update_joystick_value(event.position)
+	if event.index == joystick_touch_id:
+		_update_joystick_value(event.position)
+	elif event.index == driving_touch_id:
+		_update_driving_value(event.position)
 
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
 	if event.pressed:
+		if _is_driving() and driving_buttons.get_global_rect().has_point(event.position):
+			driving_mouse_active = true
+			_update_driving_value(event.position)
+			return
 		if joystick_panel.get_global_rect().has_point(event.position):
 			joystick_mouse_active = true
 			_update_joystick_value(event.position)
 		return
 	if joystick_mouse_active:
 		_reset_joystick()
+	if driving_mouse_active:
+		_reset_driving_input()
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
-	if not joystick_mouse_active:
-		return
-	_update_joystick_value(event.position)
+	if joystick_mouse_active:
+		_update_joystick_value(event.position)
+	if driving_mouse_active:
+		_update_driving_value(event.position)
 
 func _update_joystick_value(screen_position: Vector2) -> void:
 	var radius := joystick_panel.size.x * 0.5
 	var offset := screen_position - joystick_center
 	joystick_value = offset.limit_length(radius) / maxf(radius, 1.0)
+
+func _update_driving_value(screen_position: Vector2) -> void:
+	var half_height := driving_buttons.size.y * 0.5
+	var offset_y := clampf(screen_position.y - driving_center.y, -half_height, half_height)
+	driving_value = offset_y / maxf(half_height, 1.0)
+	_update_driving_visual_state()
 
 func _sync_direction_actions() -> void:
 	var desired_strengths := {}
@@ -187,11 +224,16 @@ func _sync_direction_actions() -> void:
 		desired_strengths[action_name] = 0.0
 	for action_name in DRIVING_ACTIONS.values():
 		desired_strengths[action_name] = 0.0
+	desired_strengths["accelerate"] = 0.0
+	desired_strengths["brake"] = 0.0
 
 	var filtered_vector := _get_filtered_joystick_value()
 	if _is_driving():
 		desired_strengths[DRIVING_ACTIONS["left"]] = maxf(-filtered_vector.x, 0.0)
 		desired_strengths[DRIVING_ACTIONS["right"]] = maxf(filtered_vector.x, 0.0)
+		var filtered_drive_value := _get_filtered_driving_value()
+		desired_strengths["accelerate"] = maxf(-filtered_drive_value, 0.0)
+		desired_strengths["brake"] = maxf(filtered_drive_value, 0.0)
 	else:
 		desired_strengths[ON_FOOT_ACTIONS["up"]] = maxf(-filtered_vector.y, 0.0)
 		desired_strengths[ON_FOOT_ACTIONS["down"]] = maxf(filtered_vector.y, 0.0)
@@ -216,6 +258,13 @@ func _get_filtered_joystick_value() -> Vector2:
 	var normalized_magnitude := inverse_lerp(joystick_deadzone, 1.0, magnitude)
 	return joystick_value.normalized() * normalized_magnitude
 
+func _get_filtered_driving_value() -> float:
+	var magnitude := absf(driving_value)
+	if magnitude <= joystick_deadzone:
+		return 0.0
+	var normalized_magnitude := inverse_lerp(joystick_deadzone, 1.0, magnitude)
+	return signf(driving_value) * normalized_magnitude
+
 func _is_driving() -> bool:
 	var player_driving: bool = player != null and player.has_method("is_in_vehicle") and player.is_in_vehicle()
 	var camera_possession_driving: bool = game_root != null and game_root.has_method("is_camera_possession_active") and game_root.is_camera_possession_active()
@@ -223,6 +272,7 @@ func _is_driving() -> bool:
 
 func _release_all_actions() -> void:
 	_reset_joystick()
+	_reset_driving_input()
 	for action_name in ON_FOOT_ACTIONS.values():
 		Input.action_release(action_name)
 		action_strengths[action_name] = 0.0
@@ -238,6 +288,18 @@ func _reset_joystick() -> void:
 	joystick_touch_id = -1
 	joystick_mouse_active = false
 	joystick_value = Vector2.ZERO
+
+func _reset_driving_input() -> void:
+	driving_touch_id = -1
+	driving_mouse_active = false
+	driving_value = 0.0
+	_update_driving_visual_state()
+
+func _update_driving_visual_state() -> void:
+	var accelerate_strength := maxf(-_get_filtered_driving_value(), 0.0)
+	var brake_strength := maxf(_get_filtered_driving_value(), 0.0)
+	accelerate_button.modulate = Color(1.0, 1.0, 1.0, 0.72 + accelerate_strength * 0.28)
+	brake_button.modulate = Color(1.0, 1.0, 1.0, 0.72 + brake_strength * 0.28)
 
 func cycle_hud_opacity() -> void:
 	opacity_level_index = (opacity_level_index + 1) % OPACITY_LEVELS.size()
@@ -269,10 +331,17 @@ func _apply_opacity_level() -> void:
 func _apply_input_surface_scale() -> void:
 	var scale_factor: float = INPUT_SURFACE_SCALE_LEVELS[input_surface_scale_index]
 	interact_button.custom_minimum_size = BASE_ACTION_BUTTON_SIZE * scale_factor
+	pause_button.custom_minimum_size = BASE_ACTION_BUTTON_SIZE * scale_factor
 	accelerate_button.custom_minimum_size = BASE_ACTION_BUTTON_SIZE * scale_factor
 	brake_button.custom_minimum_size = BASE_ACTION_BUTTON_SIZE * scale_factor
 	joystick_panel.custom_minimum_size = Vector2.ONE * joystick_size * scale_factor
-	joystick_panel.size = joystick_panel.custom_minimum_size
+	interact_button.reset_size()
+	pause_button.reset_size()
+	accelerate_button.reset_size()
+	brake_button.reset_size()
+	top_right_buttons.reset_size()
+	driving_buttons.reset_size()
+	joystick_panel.reset_size()
 	joystick_text.add_theme_font_size_override("font_size", int(round(BASE_JOYSTICK_LABEL_SIZE * scale_factor)))
 	_layout_hud()
 

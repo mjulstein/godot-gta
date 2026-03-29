@@ -7,7 +7,7 @@
 
 ## Summary
 
-Add a minimal mobile touch HUD that makes the current sandbox loop playable on iPhone by mapping a lower-left on-screen joystick, top-right action buttons, and right-hand driving pedals to the existing action-driven input model. Keep the implementation UI-local, preserve desktop keyboard play, avoid automatic platform-based HUD switching, and expose pause-time HUD controls for opacity, gameplay input scale, impact vibration, and restart.
+Add a minimal mobile touch HUD that makes the current sandbox loop playable on iPhone by mapping an inward-offset lower-left joystick, a stacked top-right action cluster, and a right-hand vertical drive surface to the existing action-driven input model. Keep the implementation UI-local, preserve desktop keyboard play, avoid automatic platform-based HUD switching, and expose pause-time HUD controls for opacity, gameplay input scale, impact vibration, and restart.
 
 ## Technical Context
 
@@ -70,9 +70,9 @@ tests/
 
 Create a mobile HUD scene under `scenes/ui/` with:
 
-- a bottom-left joystick for movement and steering
-- top-right `ACT` and `P` buttons
-- right-hand `GAS` and `BRK` buttons while driving
+- an inward-offset lower-left joystick for movement and steering
+- top-right `P` and `ACT` buttons in a vertical stack
+- a right-hand vertical `GAS` / `BRK` drive surface while driving
 - pause-overlay buttons for debug visibility, HUD opacity, gameplay input scale, impact vibration, and restart
 
 Prefer Godot-native touch events for joystick drag handling and action button press or release handling.
@@ -83,7 +83,7 @@ Connect HUD button states to the existing gameplay actions instead of calling ac
 
 - On foot, joystick input should drive `move_up`, `move_down`, `move_left`, and `move_right`.
 - In vehicles, the same joystick should drive `steer_left` and `steer_right` only.
-- In vehicles, right-hand `GAS` and `BRK` buttons should drive `accelerate` and `brake`.
+- In vehicles, the right-hand vertical `GAS` / `BRK` drive surface should drive `accelerate` and `brake`.
 - `interact` and `pause` should always trigger the existing action paths used by desktop play.
 
 The current control state should determine which action set the directional cluster emits, with the state sourced from existing gameplay ownership or actor mode rather than a mobile-only gameplay path.

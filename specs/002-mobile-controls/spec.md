@@ -9,7 +9,7 @@
 
 ## Feature Summary
 
-Define a first-pass mobile touch control scheme that lets an iPhone player use the current sandbox loop with a lower-left on-screen joystick and simple action buttons mapped to the existing action-driven input model.
+Define a first-pass mobile touch control scheme that lets an iPhone player use the current sandbox loop with an inward-offset lower-left on-screen joystick, a stacked top-right action cluster, and a right-hand vertical drive surface mapped to the existing action-driven input model.
 
 ## Problem Statement
 
@@ -28,8 +28,8 @@ As an iPhone player, I can control the character and vehicles using simple on-sc
 **Acceptance Scenarios**:
 
 1. **Given** the player is on foot on an iPhone, **When** the player drags the lower-left on-screen joystick, **Then** the player actor moves using the existing `move_up`, `move_down`, `move_left`, and `move_right` actions.
-2. **Given** the player is on foot near an interactable vehicle or object, **When** the player presses the top-right `ACT` button beside pause, **Then** the game triggers the existing `interact` action and performs the same enter, exit, or interaction behavior as desktop input.
-3. **Given** the player is driving a vehicle, **When** the player steers with the lower-left joystick and uses right-hand `GAS` or `BRK` buttons, **Then** the game routes that input through the existing driving actions so the vehicle accelerates, brakes, and steers without a separate mobile-only control system.
+2. **Given** the player is on foot near an interactable vehicle or object, **When** the player presses the top-right `ACT` button below pause, **Then** the game triggers the existing `interact` action and performs the same enter, exit, or interaction behavior as desktop input.
+3. **Given** the player is driving a vehicle, **When** the player steers with the lower-left joystick and drags the right-hand vertical `GAS` or `BRK` drive surface, **Then** the game routes that input through the existing driving actions so the vehicle accelerates, brakes, and steers without a separate mobile-only control system.
 4. **Given** the player is in active gameplay on iPhone, **When** the player presses the top-right `P` button, **Then** the game triggers the existing `pause` action and opens the same pause flow used on desktop.
 5. **Given** the player holds a movement control and taps interact or pause, **When** the touches overlap, **Then** both inputs are handled correctly through multitouch without losing the held directional input.
 6. **Given** the player opens the pause overlay, **When** the player cycles gameplay input scale, **Then** the joystick and gameplay action surfaces scale from their existing screen corners without resizing pause-only controls.
@@ -63,11 +63,11 @@ As a desktop player or developer, I can keep using the current keyboard controls
 ### Functional Requirements
 
 - **FR-001**: The game MUST provide an on-screen mobile control HUD for touchscreen play that can be added under the main gameplay UI layer.
-- **FR-002**: The mobile HUD MUST expose a bottom-left on-screen joystick for movement and driving.
-- **FR-003**: The mobile HUD MUST expose a top-right `ACT` button to the left of pause that triggers the existing `interact` action.
+- **FR-002**: The mobile HUD MUST expose a lower-left on-screen joystick for movement and driving, positioned slightly inward from the screen edges for thumb reach.
+- **FR-003**: The mobile HUD MUST expose a top-right `ACT` button below pause that triggers the existing `interact` action.
 - **FR-004**: The mobile HUD MUST expose a top-right `P` pause button that triggers the existing `pause` action.
 - **FR-005**: On foot, the directional controls MUST drive the existing `move_up`, `move_down`, `move_left`, and `move_right` actions rather than bypassing the input map.
-- **FR-006**: In vehicles, the lower-left joystick MUST steer only through the existing `steer_left` and `steer_right` actions, while separate right-hand buttons MUST trigger the existing `accelerate` and `brake` actions.
+- **FR-006**: In vehicles, the lower-left joystick MUST steer only through the existing `steer_left` and `steer_right` actions, while a right-hand vertical drive surface MUST trigger the existing `accelerate` and `brake` actions by dragging up or down.
 - **FR-007**: The `interact` button MUST support the same enter, exit, and contextual interaction behavior already defined for desktop play.
 - **FR-008**: The pause button MUST invoke the same pause behavior already defined for desktop play.
 - **FR-009**: The mobile controls MUST support multitouch so directional input can overlap with `interact` or `pause`.
@@ -75,7 +75,7 @@ As a desktop player or developer, I can keep using the current keyboard controls
 - **FR-011**: The first implementation MUST prefer a simple lower-left virtual joystick plus a small set of action buttons over gestures, tilt controls, or a separate mobile-only gameplay controller.
 - **FR-012**: The pause overlay MUST expose a button to toggle the debug overlay and a button to cycle on-screen HUD opacity for gameplay.
 - **FR-013**: The pause overlay MUST expose a button to cycle gameplay input surface scale from `1.00x` to `2.00x` in `0.25x` steps.
-- **FR-014**: Gameplay input surface scaling MUST affect only gameplay touch surfaces, with each surface growing from its existing screen corner rather than from the pause overlay layout.
+- **FR-014**: Gameplay input surface scaling MUST affect only gameplay touch surfaces, with each surface growing from a stable anchor point rather than drifting across the screen.
 - **FR-015**: The pause overlay MUST expose a vibration toggle for crash feedback, defaulted off.
 - **FR-016**: Crash vibration MUST ignore low-speed bumps and scale duration with impact severity up to `0.25` seconds for strong impacts.
 - **FR-017**: The pause overlay MUST expose a restart control placed away from the main pause actions so it remains available without reading as a common gameplay input.
@@ -108,10 +108,10 @@ As a desktop player or developer, I can keep using the current keyboard controls
 
 - Add a dedicated mobile HUD scene such as `scenes/ui/mobile_controls_hud.tscn`.
 - Keep touch UI logic in a small script such as `scripts/ui/mobile_controls_hud.gd`.
-- Prefer Godot-native touch handling for the joystick drag area and for the action buttons.
+- Prefer Godot-native touch handling for the joystick drag area, the stacked top-right action buttons, and the right-hand vertical drive surface.
 - Bind button press and release behavior to the existing input actions instead of calling gameplay methods directly.
 - Instance the mobile controls scene under the main gameplay UI layer used by `scenes/main/game.tscn`.
-- Keep the first version simple, with a lower-left joystick, top-right `ACT` and `P` buttons, and right-hand `GAS` and `BRK` buttons for driving.
+- Keep the first version simple, with an inward-offset lower-left joystick, top-right `P` and `ACT` buttons in a vertical stack, and a right-hand vertical `GAS` / `BRK` drive surface for driving.
 - Keep debug toggle, HUD opacity, input scale, impact vibration, and restart controls inside the pause overlay rather than in the always-on gameplay HUD.
 - Treat HUD visibility as player-controlled opacity, not as an automatic platform decision.
 - Treat iOS device testing as the main validation target for the first implementation.
@@ -121,8 +121,8 @@ As a desktop player or developer, I can keep using the current keyboard controls
 ### Measurable Outcomes
 
 - **SC-001**: On iPhone, a player can start the main gameplay scene and move on foot using only the lower-left joystick and on-screen action buttons.
-- **SC-002**: On iPhone, a player can enter and exit vehicles using the top-right `ACT` control in repeatable manual tests.
-- **SC-003**: On iPhone, a player can drive vehicles using left-hand steering plus right-hand `GAS` and `BRK` controls in repeatable manual tests.
+- **SC-002**: On iPhone, a player can enter and exit vehicles using the top-right `ACT` control below pause in repeatable manual tests.
+- **SC-003**: On iPhone, a player can drive vehicles using left-hand steering plus the right-hand vertical `GAS` / `BRK` drive surface in repeatable manual tests.
 - **SC-004**: On iPhone, a player can pause gameplay using touch input without losing the ability to resume and continue play.
 - **SC-005**: On iPhone, a player can use the pause overlay to adjust gameplay HUD opacity, gameplay input scale, impact vibration, and restart without affecting the desktop keyboard path.
 - **SC-006**: Desktop keyboard play remains functional after the feature is implemented, with no regression in the current sandbox loop while the HUD remains available.

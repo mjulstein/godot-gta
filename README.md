@@ -83,10 +83,10 @@ HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 
 ## Touch Controls
 
-- lower-left joystick: move on foot or steer while driving
-- top-right `ACT`: trigger the same interaction path as keyboard `E`
+- lower-left joystick: move on foot or steer while driving, positioned slightly inward from the screen edge
 - top-right `P`: trigger the same pause flow as keyboard `P`
-- right-side `GAS` and `BRK`: accelerate and brake while driving
+- top-right `ACT` below `P`: trigger the same interaction path as keyboard `E`
+- right-side vertical `GAS` / `BRK` drive surface: drag up to accelerate and down to brake while driving
 - pause overlay buttons: debug toggle, HUD opacity, input scale, impact vibration, and restart
 
 ## Vehicle Rules
