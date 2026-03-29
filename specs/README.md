@@ -8,6 +8,7 @@ Current feature set:
 
 - [001-foundation-sandbox](./001-foundation-sandbox/spec.md)
 - [002-mobile-controls](./002-mobile-controls/spec.md)
+- [003-web-browser-play](./003-web-browser-play/spec.md)
 
 Idea backlog:
 

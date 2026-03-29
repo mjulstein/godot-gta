@@ -1,0 +1,11 @@
+[root](../../README.md) / [specs](../README.md) / 003-web-browser-play
+
+# 003-web-browser-play
+
+This directory contains the feature specification for first-pass browser play parity and paused fullscreen support.
+
+Artifacts:
+
+- [spec.md](./spec.md)
+- [plan.md](./plan.md)
+- [tasks.md](./tasks.md)
