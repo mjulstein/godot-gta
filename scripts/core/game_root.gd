@@ -14,10 +14,16 @@ const CivilianPedestrianScene = preload("res://scenes/actors/civilians/civilian_
 @onready var interaction_prompt = $Ui/InteractionPrompt
 @onready var interaction_system: Node = $VehicleInteractionSystem
 @onready var pause_controller: Node = $Ui/PauseController
+@onready var palette_overlay: Control = $Ui/PaletteOverlay
 
 var traffic_camera_target: Node2D
 var active_vehicle_source_label := "Parked Vehicle"
 var possessed_traffic_vehicle: Node2D
+var impact_vibration_enabled := false
+
+const IMPACT_VIBRATION_MIN_SPEED_LOSS := 70.0
+const IMPACT_VIBRATION_MAX_SPEED_LOSS := 320.0
+const IMPACT_VIBRATION_MAX_DURATION_MS := 250
 
 func _ready() -> void:
 	var player_spawn := _find_spawn_marker("player_spawn")
@@ -32,6 +38,7 @@ func _ready() -> void:
 	interaction_system.exit_requested.connect(_on_exit_requested)
 	player.vehicle_entry_completed.connect(_on_enter_requested)
 	player.civilian_assaulted.connect(_on_player_civilian_assaulted)
+	_connect_vehicle_signals(player)
 	_connect_vehicle_signals(vehicle)
 	for traffic_vehicle in get_tree().get_nodes_in_group("traffic_vehicle"):
 		_connect_vehicle_signals(traffic_vehicle)
@@ -45,6 +52,11 @@ func _ready() -> void:
 	camera.set_target(player)
 	if pause_controller.has_signal("pause_toggled"):
 		pause_controller.pause_toggled.connect(_on_pause_toggled)
+	if palette_overlay != null:
+		if palette_overlay.has_signal("impact_vibration_toggled"):
+			palette_overlay.impact_vibration_toggled.connect(_on_impact_vibration_toggled)
+		if palette_overlay.has_method("is_impact_vibration_enabled"):
+			impact_vibration_enabled = palette_overlay.is_impact_vibration_enabled()
 
 func _process(_delta: float) -> void:
 	var active_actor: Node2D = _get_active_camera_target()
@@ -196,6 +208,10 @@ func _connect_vehicle_signals(node: Node) -> void:
 		var hit_callable := Callable(self, "_on_connected_vehicle_civilian_hit").bind(node)
 		if not node.is_connected("civilian_hit", hit_callable):
 			node.connect("civilian_hit", hit_callable)
+	if node.has_signal("collision_feedback_requested"):
+		var feedback_callable := Callable(self, "_on_connected_collision_feedback_requested").bind(node)
+		if not node.is_connected("collision_feedback_requested", feedback_callable):
+			node.connect("collision_feedback_requested", feedback_callable)
 	if node.has_signal("incident_driver_requested"):
 		var incident_callable := Callable(self, "_on_connected_vehicle_incident_driver_requested").bind(node)
 		if not node.is_connected("incident_driver_requested", incident_callable):
@@ -204,8 +220,32 @@ func _connect_vehicle_signals(node: Node) -> void:
 func _on_connected_vehicle_civilian_hit(target: Node2D, source: Node2D) -> void:
 	_on_vehicle_civilian_hit(source, target)
 
-func _on_connected_vehicle_incident_driver_requested(target: Node2D, inspect_position: Vector2, source: Node2D) -> void:
-	_maybe_spawn_incident_driver(source, target, inspect_position)
+func _on_connected_vehicle_incident_driver_requested(target: Node, inspect_position: Vector2, source: Node) -> void:
+	var source_vehicle: Node2D = source as Node2D
+	var target_actor: Node2D = target as Node2D
+	_maybe_spawn_incident_driver(source_vehicle, target_actor, inspect_position)
+
+func _on_connected_collision_feedback_requested(speed_loss: float, source: Node) -> void:
+	if not impact_vibration_enabled:
+		return
+	if source == player:
+		_trigger_impact_vibration(speed_loss)
+		return
+	var active_vehicle := _get_active_player_vehicle()
+	if active_vehicle != null and source == active_vehicle:
+		_trigger_impact_vibration(speed_loss)
+
+func _on_impact_vibration_toggled(enabled: bool) -> void:
+	impact_vibration_enabled = enabled
+
+func _trigger_impact_vibration(speed_loss: float) -> void:
+	if speed_loss < IMPACT_VIBRATION_MIN_SPEED_LOSS:
+		return
+	var duration_ratio := inverse_lerp(IMPACT_VIBRATION_MIN_SPEED_LOSS, IMPACT_VIBRATION_MAX_SPEED_LOSS, speed_loss)
+	var duration_ms := int(round(clampf(duration_ratio, 0.0, 1.0) * IMPACT_VIBRATION_MAX_DURATION_MS))
+	if duration_ms <= 0:
+		return
+	Input.vibrate_handheld(duration_ms, 1.0)
 
 func _prepare_vehicle_takeover(target_vehicle: Node2D) -> Node2D:
 	if target_vehicle == vehicle:
@@ -256,6 +296,9 @@ func _get_active_player_vehicle() -> Node2D:
 	if not player.is_in_vehicle():
 		return null
 	return player.active_vehicle as Node2D
+
+func is_camera_possession_active() -> bool:
+	return is_instance_valid(possessed_traffic_vehicle) and possessed_traffic_vehicle == traffic_camera_target
 
 func _get_interaction_hint() -> String:
 	if _can_toggle_traffic_possession():

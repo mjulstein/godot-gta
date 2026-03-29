@@ -1,0 +1,19 @@
+// Some of the items can be modified to match the user's preference
+APP_DISPLAY_NAME = Godot GTA
+APP_ICON = godot-gta
+APP_URL_SCHEME = godot-gta
+
+// DEVELOPER_TEAM should be overridden locally in ConfigOverride.xcconfig
+DEVELOPER_TEAM = ABCDE12345
+
+BUNDLE_IDENTIFIER = no.mju.$(DEVELOPER_TEAM).godot-gta
+APP_GROUP_ID = group.no.mju.$(DEVELOPER_TEAM).mju.mju-app-group
+
+// The developers set the version numbers
+APP_VERSION = 0.6.0
+MIN_IOS_VERSION = 14.0
+
+// Optional overrides
+#include? "../../ConfigOverride.xcconfig"
+#include? "../ConfigOverride.xcconfig"
+#include? "ConfigOverride.xcconfig"

@@ -20,20 +20,44 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -108.0
-offset_top = -196.0
-offset_right = 108.0
+offset_left = -206.0
+offset_top = -520.0
+offset_right = 206.0
 offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 0
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
 [node name="Rows" type="VBoxContainer" parent="Panel/Margin"]
+
+[node name="Actions" type="VBoxContainer" parent="Panel/Margin/Rows"]
+unique_name_in_owner = true
+theme_override_constants/separation = 16
+
+[node name="ToggleDebugButton" type="Button" parent="Panel/Margin/Rows/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 88)
+text = "Toggle Debug"
+
+[node name="HudOpacityButton" type="Button" parent="Panel/Margin/Rows/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 88)
+text = "HUD Opacity"
+
+[node name="InputScaleButton" type="Button" parent="Panel/Margin/Rows/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 88)
+text = "Input Scale: 1.00x"
+
+[node name="ImpactVibrationButton" type="Button" parent="Panel/Margin/Rows/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 88)
+text = "Impact Vibration: Off"
 
 [node name="PlayerRow" type="HBoxContainer" parent="Panel/Margin/Rows"]
 
@@ -103,3 +127,18 @@ secondary_color = Color(0.988235, 0.92549, 0.580392, 1)
 
 [node name="Label" type="Label" parent="Panel/Margin/Rows/BarrierRow"]
 text = "Barrier"
+
+[node name="RestartButton" type="Button" parent="."]
+unique_name_in_owner = true
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -204.0
+offset_top = -104.0
+offset_right = 16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 0
+custom_minimum_size = Vector2(188, 88)
+text = "Restart"

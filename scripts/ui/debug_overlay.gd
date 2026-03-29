@@ -1,14 +1,54 @@
 extends Control
 
+@onready var panel: Control = $Panel
 @onready var stats_label: Label = %Stats
+@onready var camera_button: Button = %CameraButton
 var debug_state: Node
+var overlay_active := false
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	visible = true
+	camera_button.pressed.connect(_on_takeover_button_pressed)
+	_sync_overlay_state()
 
 func set_debug_state(state: Node) -> void:
 	debug_state = state
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_overlay"):
-		visible = not visible
+		toggle_overlay()
+
+func toggle_overlay() -> void:
+	set_overlay_active(not overlay_active)
+
+func set_overlay_active(value: bool) -> void:
+	if overlay_active == value:
+		return
+	overlay_active = value
+	_sync_overlay_state()
+
+func is_overlay_active() -> bool:
+	return overlay_active
+
+func _sync_overlay_state() -> void:
+	if is_instance_valid(panel):
+		panel.visible = overlay_active
+	if is_instance_valid(camera_button):
+		camera_button.visible = true
+
+func _on_takeover_button_pressed() -> void:
+	_emit_action("debug_camera")
+
+func _emit_action(action_name: String) -> void:
+	var pressed_event := InputEventAction.new()
+	pressed_event.action = action_name
+	pressed_event.pressed = true
+	Input.parse_input_event(pressed_event)
+	var released_event := InputEventAction.new()
+	released_event.action = action_name
+	released_event.pressed = false
+	Input.parse_input_event(released_event)
 
 func _process(_delta: float) -> void:
 	if debug_state == null:

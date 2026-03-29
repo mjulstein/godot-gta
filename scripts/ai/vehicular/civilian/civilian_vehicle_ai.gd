@@ -6,6 +6,7 @@ const CivilianPedestrianScene = preload("res://scenes/actors/civilians/civilian_
 signal harmed(source: Node2D)
 signal civilian_hit(target: Node2D)
 signal incident_driver_requested(target: Node2D, inspect_position: Vector2)
+signal collision_feedback_requested(speed_loss: float)
 
 @export var tuning: CivilianVehicleTuning
 @export var is_important := false
@@ -826,10 +827,12 @@ func _drive_player_controlled(delta: float) -> void:
 	velocity = Vector2.RIGHT.rotated(rotation) * longitudinal_speed
 	current_speed = absf(longitudinal_speed)
 	_displace_pedestrians_ahead(velocity.normalized() if velocity != Vector2.ZERO else Vector2.ZERO)
+	var speed_before_move := velocity.length()
 	move_and_slide()
 	_register_pedestrian_body_contacts()
 	if get_slide_collision_count() > 0:
 		collision_flash_remaining = harmed_flash_time
+		collision_feedback_requested.emit(maxf(speed_before_move - velocity.length(), 0.0))
 		_emit_civilian_impacts()
 
 func _displace_pedestrians_ahead(direction_vector: Vector2) -> void:

@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 signal civilian_hit(target: Node2D)
+signal collision_feedback_requested(speed_loss: float)
 
 @export var tuning: Resource
 @export var collision_flash_time := 0.12
@@ -66,9 +67,11 @@ func _physics_process(delta: float) -> void:
 	velocity = Vector2.RIGHT.rotated(rotation) * longitudinal_speed
 	_displace_pedestrians_ahead()
 
+	var speed_before_move := velocity.length()
 	move_and_slide()
 	if get_slide_collision_count() > 0:
 		collision_flash_remaining = collision_flash_time
+		collision_feedback_requested.emit(maxf(speed_before_move - velocity.length(), 0.0))
 		_emit_civilian_impacts()
 
 func can_enter() -> bool:

@@ -4,7 +4,9 @@ Top-down crime sandbox prototype built in Godot 4.x.
 
 ## Status
 
-Active feature branch: `001-foundation-sandbox`
+Current branch: `002-mobile-controls`
+
+Current gameplay slice: `001-foundation-sandbox`
 
 Current implemented baseline:
 
@@ -17,6 +19,9 @@ Current implemented baseline:
 - follow camera with fixed viewport stretch, driving look-ahead, and speed-aware zoom
 - debug overlay
 - pause palette overlay
+- always-on mobile HUD with joystick, action, and driving touch controls
+- pause overlay controls for debug toggle, HUD opacity, input surface scale, impact vibration, and restart
+- local iOS project generation and device deploy helpers
 - first-pass civilian, wanted, and police response loop
 - idea backlog for future features before they become active specs
 
@@ -48,6 +53,7 @@ The in-game palette key is a separate overlay with shaped icons instead of plain
 - [Scripts](./scripts/README.md)
 - [Data](./data/README.md)
 - [Assets](./assets/README.md)
+- [iOS build helpers](./ios/README.md)
 - [Tests](./tests/README.md)
 - [Specs](./specs/README.md)
 
@@ -71,6 +77,17 @@ HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 - `E`: enter or exit vehicle
 - `O`: toggle debug overlay
 - `P`: pause game and toggle palette key
+- `C`: cycle traffic debug camera
+- `E` while traffic camera is active: possess or return the tracked driver
+- `M`: toggle the mobile HUD between hidden and the last visible opacity level
+
+## Touch Controls
+
+- lower-left joystick: move on foot or steer while driving, positioned slightly inward from the screen edge
+- top-right `P`: trigger the same pause flow as keyboard `P`
+- top-right `ACT` below `P`: trigger the same interaction path as keyboard `E`
+- right-side vertical `GAS` / `BRK` drive surface: drag up to accelerate and down to brake while driving
+- pause overlay buttons: debug toggle, HUD opacity, input scale, impact vibration, and restart
 
 ## Vehicle Rules
 
