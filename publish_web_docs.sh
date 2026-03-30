@@ -42,15 +42,19 @@ trap cleanup EXIT
 
 HOME=/tmp/godot-home godot --headless --path . --export-release "$preset_name" "$export_dir/index.html"
 
-git worktree add --detach "$worktree_dir" >/dev/null
+git worktree prune >/dev/null
+
+if git show-ref --verify --quiet "refs/heads/$publish_branch"; then
+	git worktree add "$worktree_dir" "$publish_branch" >/dev/null
+elif git ls-remote --exit-code --heads origin "$publish_branch" >/dev/null 2>&1; then
+	git worktree add -b "$publish_branch" "$worktree_dir" "origin/$publish_branch" >/dev/null
+else
+	git worktree add --detach "$worktree_dir" >/dev/null
+fi
 
 pushd "$worktree_dir" >/dev/null
 
-if git show-ref --verify --quiet "refs/heads/$publish_branch"; then
-	git checkout "$publish_branch" >/dev/null
-elif git ls-remote --exit-code --heads origin "$publish_branch" >/dev/null 2>&1; then
-	git checkout -b "$publish_branch" "origin/$publish_branch" >/dev/null
-else
+if ! git show-ref --verify --quiet "refs/heads/$publish_branch"; then
 	git checkout --orphan "$publish_branch" >/dev/null
 fi
 
