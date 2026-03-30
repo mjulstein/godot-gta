@@ -2,8 +2,6 @@ class_name FullscreenSupport
 extends RefCounted
 
 static func can_toggle_fullscreen() -> bool:
-	if OS.has_feature("mobile"):
-		return false
 	return true
 
 static func is_fullscreen() -> bool:

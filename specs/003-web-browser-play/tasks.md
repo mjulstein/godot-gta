@@ -98,8 +98,8 @@
 
 **Purpose**: Tighten browser support, documentation, and validation across the feature
 
-- [ ] T023 [P] Re-run desktop non-regression checks after browser and publish-path work
-- [ ] T024 [P] Re-run desktop Chrome browser validation and record the result in `tests/manual/`
+- [x] T023 [P] Re-run desktop non-regression checks after browser and publish-path work
+- [x] T024 [P] Re-run desktop Chrome browser validation and record the result in `tests/manual/`
 - [x] T025 Review changed files for repo hygiene, including secrets, tokens, emails, and machine-specific paths before any commit
 
 ---
