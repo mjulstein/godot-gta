@@ -21,7 +21,9 @@ Current implemented baseline:
 - pause palette overlay
 - always-on mobile HUD with joystick, action, and driving touch controls
 - pause overlay controls for debug toggle, HUD opacity, input surface scale, impact vibration, and restart
+- paused fullscreen toggle on `F` and in the pause overlay where fullscreen and windowed modes both make sense
 - local iOS project generation and device deploy helpers
+- first-pass desktop Chrome web export target and manual GitHub Pages publish helper
 - first-pass civilian, wanted, and police response loop
 - idea backlog for future features before they become active specs
 
@@ -44,6 +46,7 @@ The in-game palette key is a separate overlay with shaped icons instead of plain
 - [Feature spec](./specs/001-foundation-sandbox/spec.md)
 - [Implementation plan](./specs/001-foundation-sandbox/plan.md)
 - [Tasks](./specs/001-foundation-sandbox/tasks.md)
+- [Web browser play spec](./specs/003-web-browser-play/spec.md)
 - [Idea backlog](./specs/ideas/README.md)
 
 ## Documentation Map
@@ -71,6 +74,13 @@ Headless validation in this workspace:
 HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 ```
 
+Web export target:
+
+```sh
+mkdir -p build/web
+HOME=/tmp/godot-home godot --headless --path . --export-release Web build/web/index.html
+```
+
 ## Controls
 
 - `WASD`: move or drive
@@ -80,6 +90,7 @@ HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 - `C`: cycle traffic debug camera
 - `E` while traffic camera is active: possess or return the tracked driver
 - `M`: toggle the mobile HUD between hidden and the last visible opacity level
+- `F` while paused: toggle fullscreen without unpausing
 
 ## Touch Controls
 
@@ -88,6 +99,30 @@ HOME=/tmp/godot-home godot --headless --path . --quit-after 1
 - top-right `ACT` below `P`: trigger the same interaction path as keyboard `E`
 - right-side vertical `GAS` / `BRK` drive surface: drag up to accelerate and down to brake while driving
 - pause overlay buttons: debug toggle, HUD opacity, input scale, impact vibration, and restart
+- pause overlay fullscreen button: the same paused-only fullscreen toggle as keyboard `F`, hidden on fullscreen-only contexts
+
+## Browser Target
+
+Initial browser support targets desktop Chrome only.
+
+- Browser play uses the same gameplay actions and pause flow as desktop.
+- Window resize and fullscreen should preserve the fixed framed view instead of revealing extra world.
+- Fullscreen toggling is only supported from the paused flow so the request stays in a live input event path for web exports.
+
+## Publish
+
+Manual GitHub Pages publish helper:
+
+```sh
+./publish_web_docs.sh
+```
+
+Notes:
+
+- The script exports the `Web` preset to a temporary directory.
+- It force-pushes a dedicated publish branch, defaulting to `docs`, with site files under `docs/`.
+- It requires a clean working tree.
+- It leaves generated web artifacts out of feature branches and restores the starting branch if anything changes during publish.
 
 ## Vehicle Rules
 

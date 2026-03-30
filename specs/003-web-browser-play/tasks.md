@@ -19,9 +19,9 @@
 
 **Purpose**: Add the web-export and browser-support scaffolding needed for the feature
 
-- [ ] T001 Create the feature documentation set and keep `specs/README.md` aligned for `003-web-browser-play`
-- [ ] T002 Add a first-pass Godot web export target and any minimal export-side assets needed for desktop Chrome play in `export_presets.cfg` and export-support files
-- [ ] T003 [P] Document the initial browser validation target and limitations for desktop Chrome in `README.md` or `tests/manual/`
+- [x] T001 Create the feature documentation set and keep `specs/README.md` aligned for `003-web-browser-play`
+- [x] T002 Add a first-pass Godot web export target and any minimal export-side assets needed for desktop Chrome play in `export_presets.cfg` and export-support files
+- [x] T003 [P] Document the initial browser validation target and limitations for desktop Chrome in `README.md` or `tests/manual/`
 
 ---
 
@@ -31,9 +31,9 @@
 
 **⚠️ CRITICAL**: No user story work should begin until this phase is complete
 
-- [ ] T004 Add or expose any runtime detection needed to distinguish contexts that support both non-fullscreen and fullscreen display modes from fullscreen-only contexts in the appropriate bootstrap or UI layer
-- [ ] T005 [P] Add or expose any fullscreen state helpers needed by the pause flow while keeping browser-specific logic narrow
-- [ ] T006 [P] Add manual validation notes for browser window resizing, framing parity, and fullscreen state coherence in `tests/manual/`
+- [x] T004 Add or expose any runtime detection needed to distinguish contexts that support both non-fullscreen and fullscreen display modes from fullscreen-only contexts in the appropriate bootstrap or UI layer
+- [x] T005 [P] Add or expose any fullscreen state helpers needed by the pause flow while keeping browser-specific logic narrow
+- [x] T006 [P] Add manual validation notes for browser window resizing, framing parity, and fullscreen state coherence in `tests/manual/`
 
 **Checkpoint**: Browser-specific state and pause integration points are ready
 
@@ -47,10 +47,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Export and load the current playable scene correctly in a desktop Chrome web build
-- [ ] T008 [US1] Preserve the existing gameplay input-action path for browser play without adding a browser-only gameplay controller
-- [ ] T009 [US1] Preserve intended camera framing under browser window resize and fullscreen transitions in the relevant camera or root-scene wiring
-- [ ] T010 [US1] Document repeatable manual Chrome checks for on-foot play, vehicle entry or exit, driving, pause, and resize behavior in `tests/manual/`
+- [x] T007 [P] [US1] Export and load the current playable scene correctly in a desktop Chrome web build
+- [x] T008 [US1] Preserve the existing gameplay input-action path for browser play without adding a browser-only gameplay controller
+- [x] T009 [US1] Preserve intended camera framing under browser window resize and fullscreen transitions in the relevant camera or root-scene wiring
+- [x] T010 [US1] Document repeatable manual Chrome checks for on-foot play, vehicle entry or exit, driving, pause, and resize behavior in `tests/manual/`
 
 **Checkpoint**: The current sandbox loop is playable in desktop Chrome with intended framing preserved
 
@@ -64,12 +64,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [P] [US2] Add a pause-screen fullscreen control and `F` shortcut hint in the pause UI under `scenes/ui/` and `scripts/ui/`
-- [ ] T012 [US2] Implement paused-only fullscreen toggling that does not unpause gameplay and ignores `F` while unpaused
-- [ ] T013 [US2] Hide the pause-screen fullscreen control on platforms or runtime modes where a non-fullscreen display mode is not available
-- [ ] T014 [US2] Reconcile fullscreen state if Chrome exits fullscreen through `Esc` or browser UI instead of the in-game control
+- [x] T011 [P] [US2] Add a pause-screen fullscreen control and `F` shortcut hint in the pause UI under `scenes/ui/` and `scripts/ui/`
+- [x] T012 [US2] Implement paused-only fullscreen toggling that does not unpause gameplay and ignores `F` while unpaused
+- [x] T013 [US2] Hide the pause-screen fullscreen control on platforms or runtime modes where a non-fullscreen display mode is not available
+- [x] T014 [US2] Reconcile fullscreen state if Chrome exits fullscreen through `Esc` or browser UI instead of the in-game control
 - [ ] T015 [US2] Add a custom HTML shell or narrow browser bridge only if Godot-native fullscreen toggling is unreliable in Chrome
-- [ ] T016 [US2] Document repeatable manual Chrome checks for pause-screen fullscreen button entry or exit, paused `F` toggle, and external fullscreen exit in `tests/manual/`
+- [x] T016 [US2] Document repeatable manual Chrome checks for pause-screen fullscreen button entry or exit, paused `F` toggle, and external fullscreen exit in `tests/manual/`
 
 **Checkpoint**: Paused fullscreen entry and exit work in desktop Chrome without breaking pause state
 
@@ -83,12 +83,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T017 [P] [US3] Add a small manual publish helper at the repo root that exports the web build to temporary output rather than the working tree
+- [x] T017 [P] [US3] Add a small manual publish helper at the repo root that exports the web build to temporary output rather than the working tree
 - [ ] T018 [US3] Publish the exported web build to the `docs` branch with site files under `docs/`
-- [ ] T019 [US3] Ensure the publish helper records the starting branch and restores that same branch after publish completes
-- [ ] T020 [US3] Ensure the publish helper does not require generated web artifacts to be committed on feature branches or other working branches
-- [ ] T021 [US3] Document the manual publish flow, GitHub Pages source expectation, and any required repo settings in `README.md` or dedicated publish notes
-- [ ] T022 [US3] Add a manual verification checklist covering online availability after publish, branch restoration, and clean working-tree behavior in `tests/manual/`
+- [x] T019 [US3] Ensure the publish helper records the starting branch and restores that same branch after publish completes
+- [x] T020 [US3] Ensure the publish helper does not require generated web artifacts to be committed on feature branches or other working branches
+- [x] T021 [US3] Document the manual publish flow, GitHub Pages source expectation, and any required repo settings in `README.md` or dedicated publish notes
+- [x] T022 [US3] Add a manual verification checklist covering online availability after publish, branch restoration, and clean working-tree behavior in `tests/manual/`
 
 **Checkpoint**: A manual GitHub Pages publish path exists without tracking generated build files on working branches
 
@@ -100,7 +100,7 @@
 
 - [ ] T023 [P] Re-run desktop non-regression checks after browser and publish-path work
 - [ ] T024 [P] Re-run desktop Chrome browser validation and record the result in `tests/manual/`
-- [ ] T025 Review changed files for repo hygiene, including secrets, tokens, emails, and machine-specific paths before any commit
+- [x] T025 Review changed files for repo hygiene, including secrets, tokens, emails, and machine-specific paths before any commit
 
 ---
 

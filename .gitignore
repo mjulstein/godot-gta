@@ -16,6 +16,7 @@ ios/xcode/
 # Godot generated/editor state
 .godot/
 *.import
+build/
 
 # Codex local runtime artifacts
 .codex/config.toml

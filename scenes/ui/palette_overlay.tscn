@@ -59,6 +59,11 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(380, 88)
 text = "Impact Vibration: Off"
 
+[node name="FullscreenButton" type="Button" parent="Panel/Margin/Rows/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 88)
+text = "Fullscreen: Off (F)"
+
 [node name="PlayerRow" type="HBoxContainer" parent="Panel/Margin/Rows"]
 
 [node name="Icon" type="Control" parent="Panel/Margin/Rows/PlayerRow"]
