@@ -1,5 +1,3 @@
-[root](../../README.md) / [.specify](../README.md) / [templates](./README.md) / constitution-template.md
-
 # [PROJECT_NAME] Constitution
 <!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
 

@@ -1,5 +1,3 @@
-[root](../../README.md) / [.specify](../README.md) / [templates](./README.md) / plan-template.md
-
 # Implementation Plan: [FEATURE]
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
