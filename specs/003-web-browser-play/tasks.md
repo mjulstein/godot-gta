@@ -79,7 +79,7 @@
 
 **Goal**: Ensure browser-support plumbing does not regress the current desktop gameplay path
 
-**Independent Test**: Launch the desktop build after browser changes and verify the current sandbox loop, pause flow, and paused fullscreen behavior still work without browser-specific regressions
+**Independent Test**: Launch the desktop build after browser changes and verify the current sandbox loop and pause flow still work without browser-specific regressions
 
 ### Implementation for User Story 3
 
@@ -96,8 +96,13 @@
 **Purpose**: Tighten docs, validation, and repo hygiene across the whole feature
 
 - [ ] T020 [P] Refresh `specs/003-web-browser-play/quickstart.md` and `README.md` so the documented browser flow matches `FR-006`, `FR-016`, and `SC-002` through `SC-007`
-- [ ] T021 [P] Review changed files for repo hygiene before commit to protect `FR-014` and `SC-007`, and record the hygiene pass in `specs/003-web-browser-play/handoff.md`
-- [ ] T022 Run the complete quickstart and validation flow from `specs/003-web-browser-play/quickstart.md` to satisfy `SC-001` through `SC-007`, and capture final notes in `tests/manual/web_browser_play.md`
+- [ ] T021 Run the complete quickstart and validation flow from `specs/003-web-browser-play/quickstart.md` to satisfy `SC-001` through `SC-007`, and capture final notes in `tests/manual/web_browser_play.md`
+
+## Delivery Checklist (Non-Story)
+
+**Purpose**: Capture repo hygiene and handoff expectations that support delivery quality without acting as traced feature behavior
+
+- [ ] Review changed files for repo hygiene before commit and record the hygiene pass in `specs/003-web-browser-play/handoff.md`
 
 ---
 
@@ -124,7 +129,7 @@
 - T005 and T006 can run in parallel during foundational work
 - T008 and T010 can run in parallel once the web export path exists
 - T012 and T016 can run in parallel around fullscreen UI integration
-- T020 and T021 can run in parallel during polish
+- T020 and the delivery checklist can run in parallel during polish
 
 ---
 

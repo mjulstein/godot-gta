@@ -7,7 +7,7 @@
 
 ## Summary
 
-Add desktop Chrome browser play for the current sandbox while keeping the same gameplay code path used by desktop. Limit runtime-specific work to the fullscreen boundary and related presentation glue, use the simplest reliable browser-friendly fullscreen path, and keep publish workflows out of scope.
+Add desktop Chrome browser play for the current sandbox while keeping the same gameplay code path used by desktop. Prefer Godot-native fullscreen handling first, and only use browser-page UI or a narrow browser bridge when native behavior cannot satisfy the paused-only toggle, fullscreen-state sync, or runtime-visibility requirements. Keep runtime-specific work limited to the fullscreen boundary and related presentation glue, and keep publish workflows out of scope.
 
 ## Technical Context
 
@@ -92,6 +92,7 @@ README.md
 ## Phase 0: Research Outcomes
 
 - Confirm the simplest reliable fullscreen approach for desktop Chrome without assuming a custom shell by default.
+- Prefer Godot-native fullscreen first; use browser-page UI or a narrow browser bridge only if native behavior cannot satisfy paused-only toggle, fullscreen-state sync, or visibility requirements in desktop Chrome.
 - Confirm any browser integration stays limited to fullscreen requests, fullscreen state sync, and related presentation boundaries.
 - Confirm browser validation remains manual and Chrome-specific, with recorded 10-attempt checks for paused fullscreen entry, exit, and `F` toggle behavior.
 - Confirm publish and release automation remain out of scope for `003-web-browser-play`.

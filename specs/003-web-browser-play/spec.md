@@ -76,7 +76,7 @@ As a desktop player or developer, I can keep using the current non-browser build
 
 **Why this priority**: The repository's current active slice is already playable on desktop. Browser work is acceptable only if it preserves the existing baseline and keeps parity as the goal.
 
-**Independent Test**: Launch the desktop build after browser-play implementation work and verify that the current sandbox loop, pause flow, and fullscreen behavior still work as intended for desktop testing.
+**Independent Test**: Launch the desktop build after browser-play implementation work and verify that the current sandbox loop and pause flow still work as intended for desktop testing.
 
 **Acceptance Scenarios**:
 
@@ -115,7 +115,7 @@ As a desktop player or developer, I can keep using the current non-browser build
 ### Non-Functional Requirements
 
 - **NFR-001**: Browser play SHOULD feel functionally equivalent to desktop for the current sandbox slice within normal browser platform limits.
-- **NFR-002**: The browser feature SHOULD be implemented as a narrow export-platform layer or pause-flow extension rather than a separate gameplay fork, with runtime-specific logic isolated to presentation boundaries such as fullscreen.
+- **NFR-002**: The browser feature SHOULD remain a narrow export-platform layer or pause-flow extension so runtime-specific logic stays isolated to presentation boundaries such as fullscreen and remains easy to maintain.
 - **NFR-003**: Browser-specific behavior SHOULD remain easy to validate through one documented manual Chrome test flow plus the existing desktop validation flow.
 
 ### Assumptions
