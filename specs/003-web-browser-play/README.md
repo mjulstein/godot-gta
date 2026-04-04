@@ -6,6 +6,7 @@ This directory contains the feature specification for first-pass browser play pa
 
 Artifacts:
 
+- [handoff.md](./handoff.md)
 - [spec.md](./spec.md)
 - [plan.md](./plan.md)
 - [tasks.md](./tasks.md)
