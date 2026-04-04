@@ -111,7 +111,7 @@ Initial browser support targets desktop Chrome only.
 
 ## Publish
 
-Manual GitHub Pages publish helper:
+Manual GitHub Pages publish helper for testing the current web build online:
 
 ```sh
 ./publish_web_docs.sh
@@ -119,6 +119,7 @@ Manual GitHub Pages publish helper:
 
 Notes:
 
+- The publish helper is a repository utility for publishing the current web build to GitHub Pages so the live browser build can be tested outside the local machine.
 - The script exports the `Web` preset to a temporary directory.
 - It force-pushes a dedicated publish branch, defaulting to `docs`, with site files under `docs/`.
 - It requires a clean working tree.

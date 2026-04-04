@@ -72,3 +72,10 @@ The current bootstrap should provide:
 - a debug overlay
 
 The next implementation target after bootstrap is the rest of User Story 1 in `tasks.md`.
+
+## Active Technologies
+- GDScript on Godot 4.6+ plus narrow browser-side JavaScript in a custom HTML shell + Godot 4.x web export, `JavaScriptBridge`, custom HTML shell support, existing pause flow, existing camera and input actions (003-web-browser-play)
+- Scene files, scripts, export preset configuration, manual validation docs, and web-shell assets only; no new persistent gameplay storage (003-web-browser-play)
+
+## Recent Changes
+- 003-web-browser-play: Added GDScript on Godot 4.6+ plus narrow browser-side JavaScript in a custom HTML shell + Godot 4.x web export, `JavaScriptBridge`, custom HTML shell support, existing pause flow, existing camera and input actions

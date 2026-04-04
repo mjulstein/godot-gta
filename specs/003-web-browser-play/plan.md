@@ -2,36 +2,34 @@
 
 # Implementation Plan: Web Browser Play
 
-**Branch**: `003-web-browser-play` | **Date**: 2026-03-30 | **Spec**: [specs/003-web-browser-play/spec.md](specs/003-web-browser-play/spec.md)
+**Branch**: `003-web-browser-play` | **Date**: 2026-04-03 | **Spec**: [specs/003-web-browser-play/spec.md](specs/003-web-browser-play/spec.md)
 **Input**: Feature specification from `/specs/003-web-browser-play/spec.md`
 
 ## Summary
 
-Add first-pass desktop Chrome support for the current sandbox so the browser build preserves the desktop gameplay loop, pause behavior, and intended framing. Add a pause-screen fullscreen button plus a paused-only `F` shortcut, using Godot-native fullscreen control when it works reliably in the active input event path and a custom HTML shell workaround when the browser fullscreen boundary requires JavaScript ownership.
-
-If distribution on GitHub Pages is desired, support a simple manual publish helper that exports the current web build into temporary output and pushes it to a dedicated publish branch with site files under `docs/`, keeping built artifacts out of the working branch.
+Add desktop Chrome browser play for the current sandbox with runtime behavior that stays close to desktop, while moving paused fullscreen toggling onto a custom HTML shell plus narrow JavaScript bridge so fullscreen requests remain in the browser-owned input path. Keep gameplay, pause state, and camera rules inside Godot, validate parity against desktop behavior, and leave browser publishing workflows out of this feature.
 
 ## Technical Context
 
-**Language/Version**: GDScript on Godot 4.x plus minimal browser-side JavaScript in a custom web shell if needed  
-**Primary Dependencies**: Godot 4.x web export, existing input actions, pause overlay flow, `DisplayServer` window APIs, custom HTML shell support for web export  
-**Storage**: Scene files, scripts, export template assets, optional publish helper scripts, and web shell files only; no new persistent gameplay storage expected  
-**Testing**: Godot headless boot validation, manual desktop validation, and manual browser validation in desktop Chrome  
-**Target Platform**: Desktop Chrome plus existing desktop builds for non-regression  
+**Language/Version**: GDScript on Godot 4.6+ plus narrow browser-side JavaScript in a custom HTML shell  
+**Primary Dependencies**: Godot 4.x web export, `JavaScriptBridge`, custom HTML shell support, existing pause flow, existing camera and input actions  
+**Storage**: Scene files, scripts, export preset configuration, manual validation docs, and web-shell assets only; no new persistent gameplay storage  
+**Testing**: Godot headless boot validation, manual desktop regression checks, manual desktop Chrome browser validation  
+**Target Platform**: Desktop Chrome for the browser build plus existing desktop Godot runtime for regression checks  
 **Project Type**: Single Godot game project  
-**Performance Goals**: Preserve readable sandbox play and camera framing in browser builds without introducing a browser-only gameplay fork  
-**Constraints**: Browser fullscreen requests must stay tied to the active user input event; browser play should stay as close to desktop as practical; fullscreen controls must only operate while paused; the pause-screen fullscreen control must be hidden where a non-fullscreen display mode is not available  
-**Scale/Scope**: One export-facing browser support slice, one paused fullscreen path, one manual browser validation flow
+**Performance Goals**: Preserve browser responsiveness as close to desktop as practical for the current sandbox slice while keeping framing fixed and pause/fullscreen coherent  
+**Constraints**: Fullscreen must only toggle while paused, `F` remains active while paused regardless of current pause-menu focus, fullscreen-denial keeps the game paused without extra failure messaging, browser-specific code must stay narrow, publish helper is out of scope  
+**Scale/Scope**: One browser-export slice, one custom fullscreen shell bridge, one manual Chrome validation flow, no publish or release pipeline work in this feature
 
 ## Constitution Check
 
-*GATE: Must pass before implementation starts.*
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- `Feel-First Top-Down Gameplay`: Pass. The work protects the existing sandbox feel in browser play rather than redefining it.
-- `Original World, Not Asset-Level Imitation`: Pass. The feature is platform support and fullscreen behavior only.
-- `Small Vertical Slices Over Broad Scope`: Pass. Scope is limited to current-slice browser parity and paused fullscreen.
-- `Data-Driven Systems Where It Matters`: Pass. The work can reuse the existing input and pause flow, with minimal export-layer additions.
-- `Playtestable, Debuggable, Maintainable`: Pass. Browser support can be validated through a focused manual browser checklist plus current desktop checks.
+- `Feel-First Top-Down Gameplay`: Pass. The work preserves player feel, pause behavior, and framing rather than adding a new gameplay fork.
+- `Original World, Not Asset-Level Imitation`: Pass. The feature is platform and runtime support only.
+- `Small Vertical Slices Over Broad Scope`: Pass. Scope is limited to browser runtime parity and paused fullscreen behavior.
+- `Data-Driven Systems Where It Matters`: Pass. No new gameplay data model is required; the new bridge is configuration and runtime glue, not a hardcoded gameplay expansion.
+- `Playtestable, Debuggable, Maintainable`: Pass. Manual Chrome validation, desktop regression checks, and explicit fullscreen-state plumbing keep the work observable and testable.
 
 No constitution violations are expected.
 
@@ -42,8 +40,14 @@ No constitution violations are expected.
 ```text
 specs/003-web-browser-play/
 ├── README.md
+├── spec.md
 ├── plan.md
-└── spec.md
+├── research.md
+├── data-model.md
+├── quickstart.md
+├── contracts/
+│   └── browser_fullscreen_bridge.md
+└── tasks.md
 ```
 
 ### Source Code (repository root)
@@ -53,120 +57,62 @@ scenes/
 ├── main/
 │   └── game.tscn
 └── ui/
-    └── ...
+    ├── debug_overlay.tscn
+    ├── mobile_controls_hud.tscn
+    └── palette_overlay.tscn
 
 scripts/
 ├── core/
-│   └── ...
-└── ui/
-    └── ...
-
-export/
-└── web/
-    └── ...
-
-scripts/
-└── ...
+│   ├── follow_camera.gd
+│   ├── fullscreen_support.gd
+│   └── game_root.gd
+├── ui/
+│   ├── palette_overlay.gd
+│   └── pause_controller.gd
+├── actors/
+│   └── player/
+└── vehicles/
+    └── vehicle_controller.gd
 
 tests/
 └── manual/
+    ├── us1_playable_core.md
+    └── web_browser_play.md
+
+build/
+└── web/
+
+export_presets.cfg
+project.godot
+README.md
 ```
 
-**Structure Decision**: Keep browser support centered in existing pause and bootstrap code where possible. If fullscreen needs browser-owned control, isolate that boundary in a custom web shell and a narrow bridge instead of scattering browser-specific behavior through gameplay scripts. If a publish helper is added, keep it as a small repo-level script that writes only to temporary output locally.
+**Structure Decision**: Keep the feature inside the existing single Godot project. Runtime browser integration belongs in `scripts/core/` and `scripts/ui/`; the custom shell and bridge contract are isolated to export-facing browser support so gameplay scripts remain shared with desktop.
 
-## Implementation Approach
+## Phase 0: Research Outcomes
 
-### Phase 1: Define Browser Parity Boundaries
+- Confirm Godot 4.6 custom HTML shell support is the correct foundation for browser-owned fullscreen handling.
+- Confirm `JavaScriptBridge` is the narrow Godot-side mechanism for browser fullscreen requests and state callbacks.
+- Confirm browser parity validation should remain manual and Chrome-specific for this slice.
+- Confirm browser publish workflows stay out of scope for `003-web-browser-play`.
 
-Confirm the exact behaviors that must remain aligned with desktop:
+## Phase 1: Design Outputs
 
-- same playable scene and sandbox loop
-- same input-action model
-- same pause or resume flow
-- same framed view expectations when resizing or entering fullscreen
-- no browser-only gameplay controller or browser-only actor rules
-- Chrome is the only supported browser target for v1
+- `research.md`: decisions and alternatives for fullscreen architecture, browser target, validation, and scope limits
+- `data-model.md`: runtime state model for browser capabilities, fullscreen state, and pause-overlay integration
+- `contracts/browser_fullscreen_bridge.md`: Godot↔browser shell interface for fullscreen requests and state reporting
+- `quickstart.md`: plan-level validation flow for headless boot, browser export, local serving, and manual checks
 
-### Phase 2: Add Paused Fullscreen Toggle
+## Post-Design Constitution Check
 
-Integrate a pause-screen fullscreen control and paused-only `F` handling through the existing pause flow.
+- `Feel-First Top-Down Gameplay`: Pass. The custom shell stays at the fullscreen boundary and does not fork movement, camera, or vehicle behavior.
+- `Original World, Not Asset-Level Imitation`: Pass. No content borrowing or thematic scope expansion is introduced.
+- `Small Vertical Slices Over Broad Scope`: Pass. Design artifacts stay constrained to runtime parity and exclude publish automation.
+- `Data-Driven Systems Where It Matters`: Pass. The design adds state definitions and a bridge contract without expanding hardcoded gameplay systems.
+- `Playtestable, Debuggable, Maintainable`: Pass. The design introduces explicit fullscreen-state ownership and validation checkpoints that are easy to inspect and test manually.
 
-- add a clickable fullscreen control to the pause UI
-- detect `F` in the active input event path
-- only act when the game is paused
-- toggle fullscreen without unpausing
-- keep paused state coherent if fullscreen is exited externally
-- show the `F` shortcut alongside the fullscreen control
-- hide the fullscreen control on platforms or runtime modes where a non-fullscreen display mode is not available
+## Complexity Tracking
 
-Prefer `DisplayServer.window_set_mode()` for the first pass if it works reliably in browser builds from the active input callback.
+> **Fill ONLY if Constitution Check has violations that must be justified**
 
-### Phase 3: Add Custom Shell Fallback
-
-If browser fullscreen cannot be triggered reliably from Godot alone, add a custom HTML shell for web export.
-
-- use Godot's custom HTML shell support
-- keep the fullscreen API boundary in JavaScript
-- let JavaScript own `requestFullscreen()` or `exitFullscreen()` when browser policy requires it
-- call into that boundary only from the same browser-owned input event chain needed for fullscreen compliance
-- keep game pause state and gameplay behavior inside Godot
-
-This phase is a workaround layer, not a second gameplay path.
-
-### Phase 4: Browser Validation
-
-Validate with:
-
-- `HOME=/tmp/godot-home godot --headless --path . --quit-after 1`
-- desktop validation for current sandbox non-regression
-- manual Chrome validation for:
-  - windowed play
-  - resize behavior
-  - pause and resume
-  - paused fullscreen-button entry
-  - paused fullscreen-button exit
-  - paused `F` fullscreen entry
-  - paused `F` fullscreen exit
-  - external fullscreen exit through browser UI or `Esc`
-  - hidden-control behavior on platforms or runtime modes where a non-fullscreen display mode is not available
-  - desktop parity for the current playable loop
-
-### Phase 5: Optional GitHub Pages Publish Path
-
-If a manual publish path is wanted:
-
-- capture the currently checked out branch before any publish branch switching
-- export the web build to a temporary directory
-- publish from a dedicated branch rather than the working branch
-- keep hosted files under `docs/` on that publish branch
-- avoid tracking exported build artifacts in the main working branch
-- restore the originally checked out branch after publish completes
-- keep the publish helper manual and explicit rather than automatic
-
-## Implementation Notes
-
-- Prefer Godot-native handling first, because it keeps the platform code surface smaller.
-- Use the custom shell only at the fullscreen boundary if browser restrictions force it.
-- Keep browser-specific conditionals narrow and explicit.
-- Avoid embedding gameplay decisions in JavaScript.
-- Keep the pause overlay fullscreen control and `F` hint simple and discoverable.
-- Preserve the existing fixed framing intent across browser resize and fullscreen changes.
-- If a GitHub Pages publish helper is added, prefer a branch-local publish flow that does not leave build products in the local working tree.
-- If a GitHub Pages publish helper is added, never assume the user's base branch is `main`; restore whichever branch was active when publish started.
-
-## Risks And Mitigations
-
-- `Fullscreen policy risk`: Browsers can reject fullscreen if the request is no longer tied to the live input event. Mitigation: issue the request in the active input callback, and keep a custom-shell fallback available.
-- `Visibility risk`: The fullscreen button could appear where it makes no sense. Mitigation: gate visibility on whether the runtime exposes both non-fullscreen and fullscreen display modes.
-- `Parity drift risk`: Browser support can turn into a second gameplay path. Mitigation: reuse existing actions, pause state, and gameplay logic.
-- `Framing regression risk`: Browser resize or fullscreen can reveal more world than intended. Mitigation: validate framing explicitly against the current fixed-view expectation.
-- `Desktop regression risk`: Export-specific hooks can leak into desktop play. Mitigation: isolate browser code behind explicit web checks and re-run desktop validation.
-- `External exit risk`: Browser `Esc` or chrome exits can desync UI and window state. Mitigation: reconcile paused state and fullscreen state after external exits.
-- `Publish hygiene risk`: A deploy helper can accidentally dirty the working branch with generated files. Mitigation: export to temporary directories and publish from a dedicated branch.
-- `Wrong branch return risk`: A deploy helper can switch the repo back to the wrong branch after publishing. Mitigation: record the starting branch explicitly and restore it at the end.
-
-## Open Questions
-
-- Whether the current pause overlay already has a clean location for the fullscreen button and `F` hint without adding clutter.
-- Whether Godot-only fullscreen toggling is reliable enough in the target browsers, or whether the custom-shell workaround should be treated as the default implementation.
-- Whether the publish branch should be named `docs` or `gh-pages` if a GitHub Pages helper is added.
+No constitution exceptions are required for this plan.
