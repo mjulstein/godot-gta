@@ -2,21 +2,22 @@
 
 # Research: Web Browser Play
 
-## Decision 1: Use a custom HTML shell as the default fullscreen path
+## Decision 1: Use the simplest reliable browser-friendly fullscreen path
 
-- **Decision**: Browser fullscreen will be routed through a custom HTML shell plus narrow JavaScript bridge instead of relying on `DisplayServer.window_set_mode()` as the primary browser path.
-- **Rationale**: The clarified spec now requires the browser-owned input path to be the default fullscreen mechanism. Godot 4.6 supports custom HTML shell templates for web export, and browser-facing JavaScript integration can stay narrow while preserving Godot authority over gameplay and pause state.
+- **Decision**: Fullscreen for the browser build should use the most obvious common browser approach that works reliably, whether that is in-game UI, browser-page UI outside the game, or a small shell helper.
+- **Rationale**: The feature should not force shell-first architecture if a simpler common browser approach is clearer. The important outcome is understandable fullscreen behavior without adding unnecessary browser-specific complexity.
 - **Alternatives considered**:
-  - Godot-native fullscreen first with shell fallback: rejected because the spec now explicitly prefers the shell as the default path.
-  - Godot-native fullscreen only: rejected because browser fullscreen restrictions can require direct browser-event ownership.
+  - Custom HTML shell as the default path: rejected as a mandatory default because it is too prescriptive.
+  - Godot-native fullscreen only: rejected because browser-facing UI outside the game may be the clearest option in some builds.
 
-## Decision 2: Keep the bridge limited to fullscreen requests and state sync
+## Decision 2: Keep gameplay shared and limit runtime glue to the fullscreen boundary
 
-- **Decision**: The browser bridge will expose fullscreen request, fullscreen exit, fullscreen-state query, and fullscreen-change notification only.
-- **Rationale**: This matches the constitution requirement to keep platform glue narrow and maintainable. Gameplay, pause state, camera ownership, and actor control remain in Godot.
+- **Decision**: Desktop, browser, and mobile must keep the same gameplay code path. If browser-specific glue is needed, it should expose fullscreen request, fullscreen exit, fullscreen-state query, and fullscreen-change notification only.
+- **Rationale**: This matches the clarified spec and constitution requirement to keep platform glue narrow and maintainable. Gameplay, pause state, camera ownership, and actor control remain in Godot.
 - **Alternatives considered**:
   - Rich browser bridge with gameplay input routing: rejected because it would create a browser-only gameplay path.
-  - No state callback from browser to Godot: rejected because external fullscreen exit through `Esc` or browser UI must keep paused state coherent.
+  - Runtime-specific gameplay branches: rejected because they break parity across desktop, browser, and mobile.
+  - No browser glue at all: acceptable only if the chosen fullscreen approach does not need it.
 
 ## Decision 3: Target desktop Chrome only for this slice
 
@@ -26,13 +27,14 @@
   - Multi-browser support in the first pass: rejected because it expands validation and compatibility scope too early.
   - Progressive-web-app packaging: rejected because browser distribution and packaging are out of scope.
 
-## Decision 4: Treat browser responsiveness as a parity concern, but not a hard identical-performance promise
+## Decision 4: Keep browser validation focused on normal playability with recorded fullscreen reliability checks
 
-- **Decision**: Manual validation should assess whether browser input feel and responsiveness remain close enough to desktop that testers do not need compensating behavior, while accepting unavoidable browser-platform differences.
-- **Rationale**: The clarified spec asks for desktop-like responsiveness, but the feature still cannot guarantee identical browser and desktop performance across machines. Manual acceptance should focus on meaningful input feel rather than exact telemetry parity.
+- **Decision**: Manual validation should confirm that the sandbox plays normally in Chrome without adding a separate browser-only responsiveness acceptance burden, and should record 10 paused attempts each for fullscreen enter, exit, and `F` toggle.
+- **Rationale**: Browser support should behave like the rest of the game, while the fullscreen-specific success criteria still need deterministic evidence.
 - **Alternatives considered**:
-  - Qualitative parity only: rejected because it is too soft for validation.
   - Hard FPS equivalence target: rejected because browser runtime variance makes it brittle for this slice.
+  - Browser-specific input-feel instrumentation: rejected because it adds complexity without clear value for this feature.
+  - Qualitative fullscreen checks only: rejected because they leave `SC-002` to `SC-004` untestable.
 
 ## Decision 5: Exclude publish workflows from this feature
 

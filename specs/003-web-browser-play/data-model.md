@@ -2,7 +2,7 @@
 
 # Data Model: Web Browser Play
 
-This feature does not add persistent gameplay data. The relevant model is transient runtime state shared between Godot pause logic, browser fullscreen capabilities, and the custom HTML shell bridge.
+This feature does not add persistent gameplay data. The relevant model is transient runtime state shared between Godot pause logic, browser fullscreen capabilities, and an optional browser fullscreen bridge.
 
 ## Entity: BrowserRuntimeCapability
 
@@ -15,6 +15,7 @@ This feature does not add persistent gameplay data. The relevant model is transi
 - **Validation rules**:
   - `supports_windowed_and_fullscreen` must be false on fullscreen-only contexts
   - Browser-specific UI affordances must key off capability state rather than platform name alone
+  - Capability state must not change the gameplay code path
 
 ## Entity: FullscreenSessionState
 
@@ -51,10 +52,11 @@ This feature does not add persistent gameplay data. The relevant model is transi
 - **Validation rules**:
   - `visible` must be false when `supports_windowed_and_fullscreen` is false
   - `label` must stay synchronized with `FullscreenSessionState.is_fullscreen`
+  - When `visible` is true in a keyboard-capable runtime, `label` or an adjacent hint must include `F`
 
 ## Relationships
 
 - `BrowserRuntimeCapability` controls visibility and availability of `PauseOverlayFullscreenControl`.
 - `FullscreenBridgeRequest` mutates `FullscreenSessionState`.
 - `FullscreenSessionState` feeds back into `PauseOverlayFullscreenControl` label and state.
-- Godot pause flow owns when requests are allowed; the browser shell owns only the fullscreen boundary.
+- Godot pause flow owns when requests are allowed; any browser bridge owns only the fullscreen boundary.

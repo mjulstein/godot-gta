@@ -2,34 +2,34 @@
 
 # Implementation Plan: Web Browser Play
 
-**Branch**: `003-web-browser-play` | **Date**: 2026-04-03 | **Spec**: [specs/003-web-browser-play/spec.md](specs/003-web-browser-play/spec.md)
+**Branch**: `003-web-browser-play` | **Date**: 2026-04-05 | **Spec**: [specs/003-web-browser-play/spec.md](specs/003-web-browser-play/spec.md)
 **Input**: Feature specification from `/specs/003-web-browser-play/spec.md`
 
 ## Summary
 
-Add desktop Chrome browser play for the current sandbox with runtime behavior that stays close to desktop, while moving paused fullscreen toggling onto a custom HTML shell plus narrow JavaScript bridge so fullscreen requests remain in the browser-owned input path. Keep gameplay, pause state, and camera rules inside Godot, validate parity against desktop behavior, and leave browser publishing workflows out of this feature.
+Add desktop Chrome browser play for the current sandbox while keeping the same gameplay code path used by desktop. Limit runtime-specific work to the fullscreen boundary and related presentation glue, use the simplest reliable browser-friendly fullscreen path, and keep publish workflows out of scope.
 
 ## Technical Context
 
-**Language/Version**: GDScript on Godot 4.6+ plus narrow browser-side JavaScript in a custom HTML shell  
-**Primary Dependencies**: Godot 4.x web export, `JavaScriptBridge`, custom HTML shell support, existing pause flow, existing camera and input actions  
-**Storage**: Scene files, scripts, export preset configuration, manual validation docs, and web-shell assets only; no new persistent gameplay storage  
-**Testing**: Godot headless boot validation, manual desktop regression checks, manual desktop Chrome browser validation  
-**Target Platform**: Desktop Chrome for the browser build plus existing desktop Godot runtime for regression checks  
+**Language/Version**: GDScript on Godot 4.6+ plus optional narrow browser-side JavaScript when a web fullscreen bridge is needed  
+**Primary Dependencies**: Godot 4.x web export, optional `JavaScriptBridge`, existing pause flow, existing camera framing logic, existing input actions  
+**Storage**: Scene files, scripts, export preset configuration, manual validation docs, and optional web-shell assets only; no new persistent gameplay storage  
+**Testing**: Godot headless boot validation, manual desktop regression checks, manual desktop Chrome browser validation with recorded fullscreen attempts  
+**Target Platform**: Desktop Chrome for the browser build plus the existing desktop Godot runtime for shared gameplay-path parity  
 **Project Type**: Single Godot game project  
-**Performance Goals**: Preserve browser responsiveness as close to desktop as practical for the current sandbox slice while keeping framing fixed and pause/fullscreen coherent  
-**Constraints**: Fullscreen must only toggle while paused, `F` remains active while paused regardless of current pause-menu focus, fullscreen-denial keeps the game paused without extra failure messaging, browser-specific code must stay narrow, publish helper is out of scope  
-**Scale/Scope**: One browser-export slice, one custom fullscreen shell bridge, one manual Chrome validation flow, no publish or release pipeline work in this feature
+**Performance Goals**: Preserve normal playable browser behavior for the current sandbox slice while keeping framing fixed and pause/fullscreen behavior coherent  
+**Constraints**: Gameplay code paths must remain shared across desktop and browser; fullscreen must only toggle while paused; `F` remains a simple paused-only toggle attempt; fullscreen denial keeps the game paused without extra failure messaging; runtime-specific glue must stay narrow and limited to presentation boundaries; publish helpers remain out of scope  
+**Scale/Scope**: One browser-export slice, one browser-friendly fullscreen path, one documented manual Chrome flow with 10-attempt fullscreen checks, no release pipeline work in this feature
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- `Feel-First Top-Down Gameplay`: Pass. The work preserves player feel, pause behavior, and framing rather than adding a new gameplay fork.
-- `Original World, Not Asset-Level Imitation`: Pass. The feature is platform and runtime support only.
-- `Small Vertical Slices Over Broad Scope`: Pass. Scope is limited to browser runtime parity and paused fullscreen behavior.
-- `Data-Driven Systems Where It Matters`: Pass. No new gameplay data model is required; the new bridge is configuration and runtime glue, not a hardcoded gameplay expansion.
-- `Playtestable, Debuggable, Maintainable`: Pass. Manual Chrome validation, desktop regression checks, and explicit fullscreen-state plumbing keep the work observable and testable.
+- `Feel-First Top-Down Gameplay`: Pass. The feature preserves current movement, vehicle, pause, and camera behavior instead of inventing a browser-specific gameplay mode.
+- `Original World, Not Asset-Level Imitation`: Pass. The slice changes runtime support only and introduces no borrowed content.
+- `Small Vertical Slices Over Broad Scope`: Pass. Scope is limited to browser runtime parity and paused fullscreen behavior for the existing playable slice.
+- `Data-Driven Systems Where It Matters`: Pass. No new gameplay data system is added; any bridge logic is narrow platform glue rather than a hardcoded gameplay expansion.
+- `Playtestable, Debuggable, Maintainable`: Pass. Manual Chrome validation, desktop regression checks, and pause-overlay state keep the work observable and reproducible.
 
 No constitution violations are expected.
 
@@ -87,29 +87,29 @@ project.godot
 README.md
 ```
 
-**Structure Decision**: Keep the feature inside the existing single Godot project. Runtime browser integration belongs in `scripts/core/` and `scripts/ui/`; the custom shell and bridge contract are isolated to export-facing browser support so gameplay scripts remain shared with desktop.
+**Structure Decision**: Keep the feature inside the existing single Godot project. Shared gameplay stays in the current scripts and scenes, while any browser-specific fullscreen bridge or web shell customization remains isolated to the export-facing boundary so desktop continues to use the same gameplay path.
 
 ## Phase 0: Research Outcomes
 
-- Confirm Godot 4.6 custom HTML shell support is the correct foundation for browser-owned fullscreen handling.
-- Confirm `JavaScriptBridge` is the narrow Godot-side mechanism for browser fullscreen requests and state callbacks.
-- Confirm browser parity validation should remain manual and Chrome-specific for this slice.
-- Confirm browser publish workflows stay out of scope for `003-web-browser-play`.
+- Confirm the simplest reliable fullscreen approach for desktop Chrome without assuming a custom shell by default.
+- Confirm any browser integration stays limited to fullscreen requests, fullscreen state sync, and related presentation boundaries.
+- Confirm browser validation remains manual and Chrome-specific, with recorded 10-attempt checks for paused fullscreen entry, exit, and `F` toggle behavior.
+- Confirm publish and release automation remain out of scope for `003-web-browser-play`.
 
 ## Phase 1: Design Outputs
 
-- `research.md`: decisions and alternatives for fullscreen architecture, browser target, validation, and scope limits
-- `data-model.md`: runtime state model for browser capabilities, fullscreen state, and pause-overlay integration
-- `contracts/browser_fullscreen_bridge.md`: Godot↔browser shell interface for fullscreen requests and state reporting
-- `quickstart.md`: plan-level validation flow for headless boot, browser export, local serving, and manual checks
+- `research.md`: decisions and alternatives for fullscreen approach, shared gameplay-path constraints, browser target, validation method, and scope limits
+- `data-model.md`: runtime state model for browser fullscreen capabilities, fullscreen session state, and pause-overlay fullscreen control
+- `contracts/browser_fullscreen_bridge.md`: optional Godot↔browser fullscreen contract if a browser bridge is needed for the chosen path
+- `quickstart.md`: validation flow for headless boot, web export, local serving, manual browser checks, and desktop regression checks
 
 ## Post-Design Constitution Check
 
-- `Feel-First Top-Down Gameplay`: Pass. The custom shell stays at the fullscreen boundary and does not fork movement, camera, or vehicle behavior.
-- `Original World, Not Asset-Level Imitation`: Pass. No content borrowing or thematic scope expansion is introduced.
-- `Small Vertical Slices Over Broad Scope`: Pass. Design artifacts stay constrained to runtime parity and exclude publish automation.
-- `Data-Driven Systems Where It Matters`: Pass. The design adds state definitions and a bridge contract without expanding hardcoded gameplay systems.
-- `Playtestable, Debuggable, Maintainable`: Pass. The design introduces explicit fullscreen-state ownership and validation checkpoints that are easy to inspect and test manually.
+- `Feel-First Top-Down Gameplay`: Pass. The design keeps gameplay logic in Godot and restricts platform-specific work to fullscreen presentation.
+- `Original World, Not Asset-Level Imitation`: Pass. No content scope changes are introduced.
+- `Small Vertical Slices Over Broad Scope`: Pass. Design artifacts stay constrained to runtime parity and omit publish automation.
+- `Data-Driven Systems Where It Matters`: Pass. The design documents transient runtime state only and does not expand hardcoded gameplay systems.
+- `Playtestable, Debuggable, Maintainable`: Pass. The plan uses explicit manual validation and a narrow, inspectable fullscreen state boundary.
 
 ## Complexity Tracking
 

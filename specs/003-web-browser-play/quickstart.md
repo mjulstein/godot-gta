@@ -33,8 +33,9 @@ Use [web_browser_play.md](../../tests/manual/web_browser_play.md) and verify:
 - same playable scene and sandbox loop as desktop
 - browser window resize preserves fixed framing
 - paused fullscreen button and paused `F` both toggle fullscreen
+- record 10 paused attempts each for fullscreen entry, fullscreen exit, and paused `F` toggle, with at least 9 successes in each set
 - external fullscreen exit through `Esc` or browser UI does not break pause state
-- browser responsiveness remains close enough to desktop that input feel does not require compensating behavior
+- gameplay behavior remains on the shared desktop/mobile code path without browser-specific conditionals
 
 ## 5. Run desktop regression checks
 
@@ -47,4 +48,4 @@ After browser changes, re-run:
 
 - This feature targets desktop Chrome only.
 - Browser publish helpers are out of scope for `003-web-browser-play`.
-- The custom HTML shell is the default fullscreen path, but gameplay and pause state remain in Godot.
+- A custom HTML shell or browser bridge is optional and should be used only if it is the simplest reliable fullscreen path.

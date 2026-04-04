@@ -4,14 +4,14 @@
 
 ## Purpose
 
-Define the narrow interface between Godot and the custom HTML shell used by `003-web-browser-play` for paused fullscreen behavior in desktop Chrome.
+Define the narrow optional interface between Godot and browser-side fullscreen integration used by `003-web-browser-play` for paused fullscreen behavior in desktop Chrome.
 
 ## Ownership
 
 - **Godot owns**: pause state, gameplay state, whether a fullscreen request is allowed, pause overlay content, and interpretation of fullscreen state inside the game.
-- **Browser shell owns**: calling the browser fullscreen API and reporting resulting fullscreen state back to Godot.
+- **Browser-side integration owns**: calling the browser fullscreen API and reporting resulting fullscreen state back to Godot.
 
-## Godot → Browser Shell
+## Godot → Browser Integration
 
 ### Request: `toggleFullscreenFromPausedFlow`
 
@@ -30,7 +30,7 @@ Define the narrow interface between Godot and the custom HTML shell used by `003
 - **Returns**:
   - `is_fullscreen`: boolean
 
-## Browser Shell → Godot
+## Browser Integration → Godot
 
 ### Callback: `onFullscreenStateChanged`
 
