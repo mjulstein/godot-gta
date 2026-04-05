@@ -19,9 +19,9 @@
 
 **Purpose**: Refresh browser-export scaffolding and feature-facing docs for the clarified slice
 
-- [ ] T001 Align `specs/003-web-browser-play/README.md`, `research.md`, `data-model.md`, `contracts/browser_fullscreen_bridge.md`, and `quickstart.md` with the chosen fullscreen-path rules, Chrome-only scope, and `SC-002` through `SC-007`
-- [ ] T002 Add or refresh the desktop Chrome web export preset in `export_presets.cfg` and confirm the export target paths used by `build/web/`
-- [ ] T003 [P] Update browser-target, local-serve, and validation entry-point notes in `README.md` and `tests/manual/web_browser_play.md`
+- [X] T001 Align `specs/003-web-browser-play/README.md`, `research.md`, `data-model.md`, `contracts/browser_fullscreen_bridge.md`, and `quickstart.md` with the chosen fullscreen-path rules, Chrome-only scope, and `SC-002` through `SC-007`
+- [X] T002 Add or refresh the desktop Chrome web export preset in `export_presets.cfg` and confirm the export target paths used by `build/web/`
+- [X] T003 [P] Update browser-target, local-serve, and validation entry-point notes in `README.md` and `tests/manual/web_browser_play.md`
 
 ---
 
@@ -31,10 +31,10 @@
 
 **⚠️ CRITICAL**: No user story work should begin until this phase is complete
 
-- [ ] T004 Implement browser runtime capability detection and fullscreen availability state in `scripts/core/fullscreen_support.gd` using the `BrowserRuntimeCapability` model from `specs/003-web-browser-play/data-model.md`
-- [ ] T005 [P] Implement the chosen browser-friendly fullscreen boundary, using browser-page UI or narrow browser glue only if needed, in `scripts/core/fullscreen_support.gd`, `export_presets.cfg`, and browser export assets under `build/web/`
-- [ ] T006 [P] Reconcile pause-overlay fullscreen state, visible `F` labeling, and external fullscreen exits in `scripts/ui/pause_controller.gd` and `scripts/ui/palette_overlay.gd`, ensuring any external fullscreen exit syncs state immediately and activates pause if the game is not already paused
-- [ ] T007 Add foundational manual validation notes for fullscreen capability detection, denial handling, external exit handling, fullscreen-only contexts, and recorded fullscreen attempts in `tests/manual/web_browser_play.md`
+- [X] T004 Implement browser runtime capability detection and fullscreen availability state in `scripts/core/fullscreen_support.gd` using the `BrowserRuntimeCapability` model from `specs/003-web-browser-play/data-model.md`
+- [X] T005 [P] Implement the chosen browser-friendly fullscreen boundary, using browser-page UI or narrow browser glue only if needed, in `scripts/core/fullscreen_support.gd`, `export_presets.cfg`, and browser export assets under `build/web/`
+- [X] T006 [P] Reconcile pause-overlay fullscreen state, visible `F` labeling, and external fullscreen exits in `scripts/ui/pause_controller.gd` and `scripts/ui/palette_overlay.gd`, ensuring any external fullscreen exit syncs state immediately and activates pause if the game is not already paused
+- [X] T007 Add foundational manual validation notes for fullscreen capability detection, denial handling, external exit handling, fullscreen-only contexts, and recorded fullscreen attempts in `tests/manual/web_browser_play.md`
 
 **Checkpoint**: Browser capability state and pause/fullscreen synchronization are ready
 
@@ -48,10 +48,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Export and load the current playable scene correctly in a desktop Chrome web build using `scenes/main/game.tscn`, `project.godot`, and `export_presets.cfg`
-- [ ] T009 [US1] Keep the existing gameplay input-action path, vehicle takeover flow, and displaced-occupant behavior shared between desktop and browser in `project.godot`, `scripts/actors/player/player_controller.gd`, and `scripts/vehicles/vehicle_controller.gd`
-- [ ] T010 [US1] Preserve fixed framed-view behavior under browser resize and fullscreen transitions in `scripts/core/follow_camera.gd` and `scripts/core/game_root.gd`
-- [ ] T011 [US1] Record repeatable browser parity checks for on-foot play, vehicle entry, displaced-occupant behavior, driving, exit, pause, resume, and resize behavior in `tests/manual/web_browser_play.md`
+- [X] T008 [P] [US1] Export and load the current playable scene correctly in a desktop Chrome web build using `scenes/main/game.tscn`, `project.godot`, and `export_presets.cfg`
+- [X] T009 [US1] Keep the existing gameplay input-action path, vehicle takeover flow, and displaced-occupant behavior shared between desktop and browser in `project.godot`, `scripts/actors/player/player_controller.gd`, and `scripts/vehicles/vehicle_controller.gd`
+- [X] T010 [US1] Preserve fixed framed-view behavior under browser resize and fullscreen transitions in `scripts/core/follow_camera.gd` and `scripts/core/game_root.gd`
+- [X] T011 [US1] Record repeatable browser parity checks for on-foot play, vehicle entry, displaced-occupant behavior, driving, exit, pause, resume, and resize behavior in `tests/manual/web_browser_play.md`
 
 **Checkpoint**: The current sandbox loop is playable in desktop Chrome without a browser-only gameplay fork
 
@@ -65,11 +65,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T012 [P] [US2] Add the chosen in-game fullscreen control only if the selected browser approach needs one, keep state label updates coherent, and show the visible `F` shortcut hint whenever the toggle is visible in a keyboard-capable runtime in `scenes/ui/palette_overlay.tscn` and `scripts/ui/palette_overlay.gd`
-- [ ] T013 [US2] Implement paused `F` as a simple paused-only fullscreen toggle attempt in `scripts/ui/pause_controller.gd` and `scripts/core/fullscreen_support.gd`
-- [ ] T014 [US2] Keep fullscreen denial silent but coherent by maintaining paused state and overlay availability in `scripts/core/fullscreen_support.gd` and `scripts/ui/palette_overlay.gd`
-- [ ] T015 [US2] Hide any in-game fullscreen control when the runtime has no meaningful windowed/fullscreen choice or when browser-page UI is the selected fullscreen approach in `scripts/core/fullscreen_support.gd` and `scripts/ui/palette_overlay.gd`
-- [ ] T016 [US2] Add manual validation coverage for the chosen fullscreen control, visible `F` shortcut hint behavior, paused `F`, denial handling, external fullscreen exit while paused, external fullscreen exit while unpaused triggering pause, hidden-control cases, and recorded 10-attempt fullscreen results in `tests/manual/web_browser_play.md`
+- [X] T012 [P] [US2] Add the chosen in-game fullscreen control only if the selected browser approach needs one, keep state label updates coherent, and show the visible `F` shortcut hint whenever the toggle is visible in a keyboard-capable runtime in `scenes/ui/palette_overlay.tscn` and `scripts/ui/palette_overlay.gd`
+- [X] T013 [US2] Implement paused `F` as a simple paused-only fullscreen toggle attempt in `scripts/ui/pause_controller.gd` and `scripts/core/fullscreen_support.gd`
+- [X] T014 [US2] Keep fullscreen denial silent but coherent by maintaining paused state and overlay availability in `scripts/core/fullscreen_support.gd` and `scripts/ui/palette_overlay.gd`
+- [X] T015 [US2] Hide any in-game fullscreen control when the runtime has no meaningful windowed/fullscreen choice or when browser-page UI is the selected fullscreen approach in `scripts/core/fullscreen_support.gd` and `scripts/ui/palette_overlay.gd`
+- [X] T016 [US2] Add manual validation coverage for the chosen fullscreen control, visible `F` shortcut hint behavior, paused `F`, denial handling, external fullscreen exit while paused, external fullscreen exit while unpaused triggering pause, hidden-control cases, and recorded 10-attempt fullscreen results in `tests/manual/web_browser_play.md`
 
 **Checkpoint**: Paused fullscreen entry and exit work through the chosen browser-friendly path without breaking pause state
 
@@ -84,7 +84,7 @@
 ### Implementation for User Story 3
 
 - [ ] T017 [P] [US3] Re-run headless boot and desktop gameplay regression validation after browser changes using the current desktop flow and `tests/manual/us1_playable_core.md`
-- [ ] T018 [US3] Verify browser-specific fullscreen handling remains isolated from the shared gameplay path in `scripts/core/fullscreen_support.gd`, `scripts/ui/pause_controller.gd`, `scripts/ui/palette_overlay.gd`, and `project.godot`
+- [X] T018 [US3] Verify browser-specific fullscreen handling remains isolated from the shared gameplay path in `scripts/core/fullscreen_support.gd`, `scripts/ui/pause_controller.gd`, `scripts/ui/palette_overlay.gd`, and `project.godot`
 - [ ] T019 [US3] Record desktop regression coverage and outcomes in `tests/manual/web_browser_play.md`
 
 **Checkpoint**: Desktop behavior remains aligned after browser runtime changes
@@ -95,7 +95,7 @@
 
 **Purpose**: Tighten docs and final validation across the whole feature
 
-- [ ] T020 [P] Refresh `specs/003-web-browser-play/quickstart.md`, `README.md`, and `tests/manual/web_browser_play.md` so the documented browser flow matches the chosen fullscreen path, Chrome-only scope, and `SC-001` through `SC-007`
+- [X] T020 [P] Refresh `specs/003-web-browser-play/quickstart.md`, `README.md`, and `tests/manual/web_browser_play.md` so the documented browser flow matches the chosen fullscreen path, Chrome-only scope, and `SC-001` through `SC-007`
 - [ ] T021 Run the complete quickstart and validation flow from `specs/003-web-browser-play/quickstart.md` to satisfy `SC-001` through `SC-007`, and capture final notes in `tests/manual/web_browser_play.md`
 
 ---

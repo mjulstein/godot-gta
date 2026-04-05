@@ -4,9 +4,9 @@ Top-down crime sandbox prototype built in Godot 4.x.
 
 ## Status
 
-Current branch: `002-mobile-controls`
+Current branch: `003-web-browser-play`
 
-Current gameplay slice: `001-foundation-sandbox`
+Current gameplay slice: `003-web-browser-play`
 
 Current implemented baseline:
 
@@ -21,9 +21,9 @@ Current implemented baseline:
 - pause palette overlay
 - always-on mobile HUD with joystick, action, and driving touch controls
 - pause overlay controls for debug toggle, HUD opacity, input surface scale, impact vibration, and restart
-- paused fullscreen toggle on `F` and in the pause overlay where fullscreen and windowed modes both make sense
+- paused fullscreen toggle on `F` and in the pause overlay where fullscreen and windowed modes both make sense, including desktop Chrome web export
 - local iOS project generation and device deploy helpers
-- first-pass desktop Chrome web export target and manual GitHub Pages publish helper
+- first-pass desktop Chrome web export target
 - first-pass civilian, wanted, and police response loop
 - idea backlog for future features before they become active specs
 
@@ -43,9 +43,9 @@ The in-game palette key is a separate overlay with shaped icons instead of plain
 ## Specs
 
 - [Constitution](./.specify/memory/constitution.md)
-- [Feature spec](./specs/001-foundation-sandbox/spec.md)
-- [Implementation plan](./specs/001-foundation-sandbox/plan.md)
-- [Tasks](./specs/001-foundation-sandbox/tasks.md)
+- [Feature spec](./specs/003-web-browser-play/spec.md)
+- [Implementation plan](./specs/003-web-browser-play/plan.md)
+- [Tasks](./specs/003-web-browser-play/tasks.md)
 - [Web browser play spec](./specs/003-web-browser-play/spec.md)
 - [Idea backlog](./specs/ideas/README.md)
 
@@ -107,6 +107,7 @@ Initial browser support targets desktop Chrome only.
 
 - Browser play uses the same gameplay actions and pause flow as desktop.
 - Window resize and fullscreen should preserve the fixed framed view instead of revealing extra world.
+- The documented browser fullscreen path is the in-game pause overlay button, with paused `F` as the matching shortcut.
 - Fullscreen toggling is only supported from the paused flow so the request stays in a live input event path for web exports.
 
 ## Publish
@@ -119,6 +120,7 @@ Manual GitHub Pages publish helper for testing the current web build online:
 
 Notes:
 
+- The publish helper is a repository utility, not part of `003-web-browser-play`.
 - The publish helper is a repository utility for publishing the current web build to GitHub Pages so the live browser build can be tested outside the local machine.
 - The script exports the `Web` preset to a temporary directory.
 - It force-pushes a dedicated publish branch, defaulting to `docs`, with site files under `docs/`.

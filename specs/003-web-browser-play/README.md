@@ -2,7 +2,7 @@
 
 # 003-web-browser-play
 
-This directory contains the feature specification for first-pass browser play parity and paused fullscreen support.
+This directory contains the feature specification for first-pass browser play parity and the documented desktop Chrome paused-fullscreen path.
 
 Artifacts:
 
