@@ -30,6 +30,7 @@ Then open `http://localhost:8000` in desktop Chrome.
 
 Use [web_browser_play.md](../../tests/manual/web_browser_play.md) and verify:
 
+- use the documented fullscreen path for this slice in desktop Chrome: the in-game pause fullscreen control, with paused `F` as the matching keyboard shortcut
 - same playable scene and sandbox loop as desktop
 - browser window resize preserves fixed framing
 - paused fullscreen button and paused `F` both toggle fullscreen
@@ -48,4 +49,4 @@ After browser changes, re-run:
 
 - This feature targets desktop Chrome only.
 - Browser publish helpers are out of scope for `003-web-browser-play`.
-- A custom HTML shell or browser bridge is optional and should be used only if it is the simplest reliable fullscreen path.
+- A custom HTML shell or browser bridge is optional and should be used only if it is the simplest reliable way to support the chosen in-game paused fullscreen path.

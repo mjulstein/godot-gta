@@ -2,13 +2,14 @@
 
 # Research: Web Browser Play
 
-## Decision 1: Use the simplest reliable browser-friendly fullscreen path
+## Decision 1: Use an in-game paused fullscreen control as the documented Chrome path
 
-- **Decision**: Fullscreen for the browser build should use the most obvious common browser approach that works reliably, whether that is in-game UI, browser-page UI outside the game, or a small shell helper.
-- **Rationale**: The feature should not force shell-first architecture if a simpler common browser approach is clearer. The important outcome is understandable fullscreen behavior without adding unnecessary browser-specific complexity.
+- **Decision**: The documented fullscreen path for the desktop Chrome build is an in-game pause control paired with paused `F`, using narrow browser glue only if needed to make that path reliable.
+- **Rationale**: The spec requires one documented fullscreen path for desktop Chrome, and the existing validation flow already depends on a paused in-game control plus the paused `F` shortcut. This keeps the player-facing path explicit while still allowing the implementation to use a small browser bridge behind the scenes if Godot-native behavior alone is not sufficient.
 - **Alternatives considered**:
+  - Browser-page UI outside the game as the primary documented path: rejected because it weakens the paused-flow requirement and makes the player-facing path less explicit inside the game.
   - Custom HTML shell as the default path: rejected as a mandatory default because it is too prescriptive.
-  - Godot-native fullscreen only: rejected because browser-facing UI outside the game may be the clearest option in some builds.
+  - Godot-native fullscreen only: acceptable only if it satisfies the chosen paused-control flow without extra glue.
 
 ## Decision 2: Keep gameplay shared and limit runtime glue to the fullscreen boundary
 

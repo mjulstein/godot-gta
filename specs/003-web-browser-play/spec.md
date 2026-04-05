@@ -96,10 +96,10 @@ As a desktop player or developer, I can keep using the current non-browser build
 
 - **FR-001**: The project MUST define a supported web-browser play mode for the existing sandbox loop.
 - **FR-002**: Browser play MUST preserve the same core gameplay loop available on desktop, including on-foot movement, vehicle entry or exit, pause, and resume.
-- **FR-003**: Browser play MUST reuse the same gameplay input actions and gameplay rules as desktop rather than introducing a browser-only control model or browser-specific gameplay conditional path.
+- **FR-003**: Browser play MUST reuse the same gameplay input actions as desktop rather than introducing a browser-only control model.
 - **FR-004**: Browser play MUST preserve the same intended camera framing rules as desktop so browser window size alone does not reveal extra world outside the intended frame.
 - **FR-005**: The web build MUST be playable inside a browser window without requiring fullscreen.
-- **FR-006**: The browser build MUST provide an obvious fullscreen path that fits common browser usage, either inside the game or via browser-page UI outside the game.
+- **FR-006**: The browser build MUST provide one documented fullscreen path for desktop Chrome, either through an in-game pause control or through browser-page UI outside the game.
 - **FR-007**: If fullscreen is provided by browser-page UI outside the game, the pause overlay MUST NOT duplicate that control.
 - **FR-008**: While the game is paused in the browser build, pressing `F` MUST also toggle fullscreen on or off.
 - **FR-009**: Activating the pause-screen fullscreen control or pressing `F` for this feature MUST NOT unpause the game.
@@ -114,7 +114,7 @@ As a desktop player or developer, I can keep using the current non-browser build
 - **FR-018**: If a browser fullscreen request is denied, the game MUST remain paused and keep the pause overlay coherent without requiring explicit failure messaging in the pause UI.
 ### Non-Functional Requirements
 
-- **NFR-001**: Browser play SHOULD feel functionally equivalent to desktop for the current sandbox slice within normal browser platform limits.
+- **NFR-001**: Browser play SHOULD feel like the same current sandbox slice as desktop within normal browser platform limits.
 - **NFR-002**: The browser feature SHOULD remain a narrow export-platform layer or pause-flow extension so runtime-specific logic stays isolated to presentation boundaries such as fullscreen and remains easy to maintain.
 - **NFR-003**: Browser-specific behavior SHOULD remain easy to validate through one documented manual Chrome test flow plus the existing desktop validation flow.
 
