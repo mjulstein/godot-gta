@@ -45,24 +45,27 @@ func get_police_count() -> int:
 	return get_tree().get_nodes_in_group("police_unit").size()
 
 func _sync_police_presence() -> void:
-	if police_scene == null or player == null:
+	if police_scene == null or player == null or not is_instance_valid(player):
 		return
 
 	var desired_units := mini(wanted_level, tuning.max_police_units)
 	while get_police_count() < desired_units:
-		_spawn_police_unit()
+		if not _spawn_police_unit():
+			break
 
 	if wanted_level == 0:
 		for unit in get_tree().get_nodes_in_group("police_unit"):
 			unit.queue_free()
 
-func _spawn_police_unit() -> void:
-	if spawn_markers.is_empty():
-		return
+func _spawn_police_unit() -> bool:
+	if not _refresh_spawn_markers():
+		return false
 
 	var best_marker := spawn_markers[0]
 	var best_distance := -1.0
 	for marker in spawn_markers:
+		if not is_instance_valid(marker):
+			continue
 		var distance_to_player := marker.global_position.distance_to(player.global_position)
 		if distance_to_player > best_distance:
 			best_distance = distance_to_player
@@ -72,6 +75,7 @@ func _spawn_police_unit() -> void:
 	add_child(police_unit)
 	police_unit.global_position = best_marker.global_position
 	police_unit.configure(player)
+	return true
 
 func _has_active_pressure() -> bool:
 	for unit in get_tree().get_nodes_in_group("police_unit"):
@@ -91,3 +95,21 @@ func _collect_police_spawn_markers(node: Node) -> void:
 		if child is Marker2D and child.has_method("get") and child.get("marker_kind") == "police_spawn":
 			spawn_markers.append(child)
 		_collect_police_spawn_markers(child)
+
+func _refresh_spawn_markers() -> bool:
+	var valid_markers: Array[Marker2D] = []
+	for marker in spawn_markers:
+		if is_instance_valid(marker):
+			valid_markers.append(marker)
+	spawn_markers = valid_markers
+	if not spawn_markers.is_empty():
+		return true
+	if district == null or not is_instance_valid(district):
+		return false
+	_collect_police_spawn_markers(district)
+	valid_markers = []
+	for marker in spawn_markers:
+		if is_instance_valid(marker):
+			valid_markers.append(marker)
+	spawn_markers = valid_markers
+	return not spawn_markers.is_empty()

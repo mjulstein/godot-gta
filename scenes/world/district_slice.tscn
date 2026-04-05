@@ -1,16 +1,6 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=10 format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/world/props/spawn_marker.tscn" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/world/props/traffic_barrier.tscn" id="2"]
-[ext_resource type="PackedScene" path="res://scenes/actors/civilians/civilian_pedestrian.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://scenes/vehicles/civilian/civilian_vehicle_actor.tscn" id="4"]
 [ext_resource type="Script" path="res://scripts/world/district_slice.gd" id="5"]
-
-[sub_resource type="RectangleShape2D" id="1"]
-size = Vector2(248, 156)
-
-[sub_resource type="RectangleShape2D" id="2"]
-size = Vector2(216, 124)
 
 [node name="District" type="Node2D"]
 script = ExtResource("5")
@@ -272,73 +262,3 @@ color = Color(0.564706, 0.576471, 0.592157, 1)
 [node name="SidewalkEastSouth" type="Polygon2D" parent="Ground"]
 polygon = PackedVector2Array(96, 96, 140, 96, 140, 640, 96, 640)
 color = Color(0.564706, 0.576471, 0.592157, 1)
-
-[node name="Buildings" type="Node2D" parent="."]
-
-[node name="Building" type="StaticBody2D" parent="Buildings"]
-position = Vector2(320, -240)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/Building"]
-shape = SubResource("1")
-
-[node name="BuildingVisual" type="Polygon2D" parent="Buildings/Building"]
-polygon = PackedVector2Array(-140, -90, 140, -90, 140, 90, -140, 90)
-color = Color(0.372549, 0.356863, 0.333333, 1)
-
-[node name="BuildingWest" type="StaticBody2D" parent="Buildings"]
-position = Vector2(-286, 222)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Buildings/BuildingWest"]
-shape = SubResource("2")
-
-[node name="BuildingVisualWest" type="Polygon2D" parent="Buildings/BuildingWest"]
-polygon = PackedVector2Array(-120, -70, 120, -70, 120, 70, -120, 70)
-color = Color(0.337255, 0.392157, 0.333333, 1)
-
-[node name="Spawns" type="Node2D" parent="."]
-
-[node name="PlayerSpawn" parent="Spawns" instance=ExtResource("1")]
-position = Vector2(-260, -24)
-marker_kind = "player_spawn"
-
-[node name="VehicleSpawn" parent="Spawns" instance=ExtResource("1")]
-position = Vector2(-120, 36)
-marker_kind = "vehicle_spawn"
-
-[node name="PoliceSpawnNorth" parent="Spawns" instance=ExtResource("1")]
-position = Vector2(0, -248)
-marker_kind = "police_spawn"
-
-[node name="PoliceSpawnSouth" parent="Spawns" instance=ExtResource("1")]
-position = Vector2(0, 248)
-marker_kind = "police_spawn"
-
-[node name="Props" type="Node2D" parent="."]
-
-[node name="BarrierNorth" parent="Props" instance=ExtResource("2")]
-position = Vector2(48, -132)
-
-[node name="BarrierSouth" parent="Props" instance=ExtResource("2")]
-position = Vector2(210, 126)
-rotation = 0.18
-
-[node name="BarrierWest" parent="Props" instance=ExtResource("2")]
-position = Vector2(-182, 112)
-rotation = -0.16
-
-[node name="Ambient" type="Node2D" parent="."]
-
-[node name="CivilianNorth" parent="Ambient" instance=ExtResource("3")]
-position = Vector2(-42, -118)
-movement_axis = Vector2(1, 0)
-patrol_distance = 110.0
-
-[node name="CivilianEast" parent="Ambient" instance=ExtResource("3")]
-position = Vector2(118, 24)
-movement_axis = Vector2(0, 1)
-patrol_distance = 120.0
-
-[node name="TrafficLoop" parent="Ambient" instance=ExtResource("4")]
-position = Vector2(0, 58)
-movement_axis = Vector2(1, 0)
-patrol_distance = 280.0

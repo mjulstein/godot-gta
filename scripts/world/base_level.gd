@@ -49,6 +49,11 @@ const TILE_DISTRICT := "D"
 		activity_overlay_scene = value
 		_rebuild_if_ready()
 
+@export var runtime_overlay_scene: PackedScene:
+	set(value):
+		runtime_overlay_scene = value
+		_rebuild_if_ready()
+
 @export var tile_size := Vector2(1280, 1280):
 	set(value):
 		tile_size = value
@@ -81,6 +86,7 @@ func _rebuild_tiles() -> void:
 	var district_tiles: Array[Node2D] = []
 	var building_layers: Array[Node] = []
 	var activity_layers: Array[Node] = []
+	var runtime_layers: Array[Node] = []
 	for row_index in range(rows.size()):
 		var row: String = rows[row_index]
 		for column_index in range(row.length()):
@@ -115,6 +121,9 @@ func _rebuild_tiles() -> void:
 						activity_overlay.set("pedestrian_density", pedestrian_density)
 						activity_overlay.set("traffic_density", traffic_density)
 						activity_layers.append(activity_overlay)
+				var runtime_overlay := _build_overlay(runtime_overlay_scene, "Runtime", rows, row_index, column_index)
+				if runtime_overlay != null:
+					runtime_layers.append(runtime_overlay)
 
 	for tile in district_tiles:
 		if tile.has_method("refresh_tile_profile"):
@@ -125,6 +134,10 @@ func _rebuild_tiles() -> void:
 		if layer.has_method("refresh_overlay"):
 			layer.refresh_overlay()
 	for layer in activity_layers:
+		add_child(layer)
+		if layer.has_method("refresh_overlay"):
+			layer.refresh_overlay()
+	for layer in runtime_layers:
 		add_child(layer)
 		if layer.has_method("refresh_overlay"):
 			layer.refresh_overlay()
