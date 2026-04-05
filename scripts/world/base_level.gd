@@ -120,11 +120,11 @@ func _rebuild_tiles() -> void:
 		if tile.has_method("refresh_tile_profile"):
 			tile.refresh_tile_profile()
 
-	for layer in activity_layers:
+	for layer in building_layers:
 		add_child(layer)
 		if layer.has_method("refresh_overlay"):
 			layer.refresh_overlay()
-	for layer in building_layers:
+	for layer in activity_layers:
 		add_child(layer)
 		if layer.has_method("refresh_overlay"):
 			layer.refresh_overlay()
