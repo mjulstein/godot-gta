@@ -4,9 +4,9 @@ Top-down crime sandbox prototype built in Godot 4.x.
 
 ## Status
 
-Current branch: `003-web-browser-play`
+Current branch: `001-foundation-sandbox`
 
-Current gameplay slice: `003-web-browser-play`
+Current gameplay slice: `001-foundation-sandbox`
 
 Current implemented baseline:
 
@@ -43,9 +43,10 @@ The in-game palette key is a separate overlay with shaped icons instead of plain
 ## Specs
 
 - [Constitution](./.specify/memory/constitution.md)
-- [Feature spec](./specs/003-web-browser-play/spec.md)
-- [Implementation plan](./specs/003-web-browser-play/plan.md)
-- [Tasks](./specs/003-web-browser-play/tasks.md)
+- [Feature spec](./specs/001-foundation-sandbox/spec.md)
+- [Implementation plan](./specs/001-foundation-sandbox/plan.md)
+- [Tasks](./specs/001-foundation-sandbox/tasks.md)
+- [Current handoff](./specs/001-foundation-sandbox/handoff.md)
 - [Web browser play spec](./specs/003-web-browser-play/spec.md)
 - [Idea backlog](./specs/ideas/README.md)
 
@@ -120,7 +121,7 @@ Manual GitHub Pages publish helper for testing the current web build online:
 
 Notes:
 
-- The publish helper is a repository utility, not part of `003-web-browser-play`.
+- The publish helper is a repository utility, not part of `001-foundation-sandbox`.
 - The publish helper is a repository utility for publishing the current web build to GitHub Pages so the live browser build can be tested outside the local machine.
 - The script exports the `Web` preset to a temporary directory.
 - It force-pushes a dedicated publish branch, defaulting to `docs`, with site files under `docs/`.

@@ -4,9 +4,9 @@
 
 ## Project Context
 
-This repository is a Godot 4.x project for a top-down crime sandbox inspired by GTA 2. The current active slice is `003-web-browser-play`.
+This repository is a Godot 4.x project for a top-down crime sandbox inspired by GTA 2. The current active slice is `001-foundation-sandbox`.
 
-Active feature directory (`$FEATURE_DIR`): `specs/003-web-browser-play/`
+Active feature directory (`$FEATURE_DIR`): `specs/001-foundation-sandbox/`
 
 ## Source Of Truth
 
@@ -74,13 +74,11 @@ The current bootstrap should provide:
 - a follow camera
 - a debug overlay
 
-The next implementation target is `003-web-browser-play`, starting with the shared browser-export and fullscreen foundations, then User Story 1 browser parity work in `tasks.md`.
+The next implementation target is `001-foundation-sandbox`, focusing on sandbox feel, pedestrian sidewalk and crosswalk behavior, traffic yielding, and final baseline sign-off in `tasks.md` and `handoff.md`.
 
 ## Active Technologies
-- GDScript on Godot 4.6+ plus narrow browser-side JavaScript in a custom HTML shell + Godot 4.x web export, `JavaScriptBridge`, custom HTML shell support, existing pause flow, existing camera and input actions (003-web-browser-play)
-- Scene files, scripts, export preset configuration, manual validation docs, and web-shell assets only; no new persistent gameplay storage (003-web-browser-play)
-- GDScript on Godot 4.6+ plus optional narrow browser-side JavaScript when a web fullscreen bridge is needed + Godot 4.x web export, optional `JavaScriptBridge`, existing pause flow, existing camera framing logic, existing input actions (003-web-browser-play)
-- Scene files, scripts, export preset configuration, manual validation docs, and optional web-shell assets only; no new persistent gameplay storage (003-web-browser-play)
+- GDScript on Godot 4.6+ with layered ASCII-tiled world composition, shared player and civilian vehicle motion rules, pedestrian and traffic AI, pause flow, debug overlay, and mobile HUD support (001-foundation-sandbox)
+- Scene files, scripts, tuning resources, manual validation docs, and lightweight export configuration; no persistent gameplay storage (001-foundation-sandbox)
 
 ## Recent Changes
-- 003-web-browser-play: Added GDScript on Godot 4.6+ plus narrow browser-side JavaScript in a custom HTML shell + Godot 4.x web export, `JavaScriptBridge`, custom HTML shell support, existing pause flow, existing camera and input actions
+- 003-web-browser-play merged into `001-foundation-sandbox`: browser export support, paused fullscreen flow, spec cleanup, and updated handoff docs are now part of the baseline branch.
