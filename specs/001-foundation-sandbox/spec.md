@@ -21,8 +21,10 @@ As a player, I can move through a compact top-down tile-based city where pedestr
 
 1. **Given** the player starts in the district on foot, **When** the player uses movement input, **Then** the character moves responsively relative to the top-down camera, collides correctly with world geometry, and remains readable as a pedestrian rather than feeling vehicle-like.
 2. **Given** civilian pedestrians are active, **When** they navigate the district, **Then** they remain on curb-adjacent sidewalks and crosswalks except when valid crossing behavior says otherwise.
-3. **Given** civilian vehicles are active, **When** they drive the district, **Then** they stay on valid lanes, follow western traffic flow, and slow to reasonable speeds near crossings and turns.
-4. **Given** a civilian driver reaches a dead-end parking-lot tile, **When** the route resolves at the lot, **Then** the driver either makes a U-turn or parks, exits the car, and becomes a roaming pedestrian on the curb-side sidewalk.
+3. **Given** civilian pedestrians share a sidewalk direction, **When** they move through the district, **Then** they may form readable social pairs or join a nearby flow, but SHOULD avoid expanding beyond two abreast in ways that block crossings or vehicle readability.
+4. **Given** a civilian pedestrian reaches a crosswalk edge, **When** traffic is still approaching without slowing sufficiently, **Then** the pedestrian waits at the curb instead of stepping into the road.
+5. **Given** civilian vehicles are active, **When** they drive the district, **Then** they stay on valid lanes, follow western traffic flow, and slow to reasonable speeds near crossings and turns.
+6. **Given** a civilian driver reaches a dead-end parking-lot tile, **When** the route resolves at the lot, **Then** the driver either makes a U-turn or parks, exits the car, and becomes a roaming pedestrian on the curb-side sidewalk.
 
 ---
 
@@ -66,6 +68,10 @@ As a player, I can walk to a civilian car, enter it, leave a pedestrian behind i
 - **FR-006b**: Pedestrian and traffic spawn density MUST be independently tunable by district so one area can skew toward foot traffic while another skews toward vehicle flow.
 - **FR-006c**: Civilian pedestrian spawn points MUST stay on curb-adjacent sidewalk space rather than grass or open road space.
 - **FR-006a**: Civilian traffic and pedestrians MUST follow readable western traffic rules, including lane usage, direction of travel, and crossing behavior appropriate to the tile-based district layout.
+- **FR-006e**: Civilian pedestrians MUST prefer sidewalk travel over grass or open road space, and SHOULD only enter the road through valid crossing behavior.
+- **FR-006f**: Civilian pedestrians MAY form social walking pairs or join nearby pedestrian flow when routes align, but SHOULD avoid stable formations wider than two abreast.
+- **FR-006g**: Civilian pedestrians MUST wait at crosswalk or curb edges when approaching vehicles are not yielding clearly enough for a safe crossing.
+- **FR-006h**: Civilian traffic MUST yield to pedestrians at crossings with enough stopping distance to keep the crossing behavior readable.
 - **FR-006d**: Civilian drivers reaching dead-end parking-lot tiles MUST either perform a valid turnaround or park, leave the vehicle, and continue as a civilian pedestrian on nearby curb-adjacent sidewalk space.
 - **FR-007**: Vehicle-to-pedestrian collisions MUST transfer momentum to the pedestrian and MUST NOT allow pedestrians to meaningfully push vehicles.
 - **FR-008**: The game MUST expose debugging aids for at least actor state and shared vehicle-motion state during development builds.
