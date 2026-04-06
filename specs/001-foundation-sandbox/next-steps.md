@@ -60,6 +60,28 @@ Stabilize and tune the revised sandbox scope before promoting any new feature id
 5. Verify takeover, incident, and post-impact behavior under repeated sandbox runs
 6. Expand debug state only where tuning is still hard to compare during play
 
+## Current Follow-Up
+
+Recent validation on `003-web-browser-play` re-exposed baseline sandbox issues that belong here rather than in the browser slice:
+
+- pedestrians wander onto grass and road instead of holding curb-adjacent sidewalk and crosswalk space
+- pedestrians can swirl, reverse, or stall near corners instead of making readable sidewalk progress
+- traffic does not reliably yield to pedestrians at crossings
+
+Working constraints for the next pedestrian or traffic pass:
+
+- keep `district_activity_overlay.gd` tile-local and data-oriented
+- let AI consume tile activity data instead of moving cross-tile ownership into the overlay
+- keep sidewalk travel as the default pedestrian mode
+- enter the road only through explicit crossing logic
+- keep social walking subordinate to sidewalk and crossing safety
+
+Recommended implementation direction:
+
+- move toward clearer pedestrian states such as `sidewalk_walk`, `curb_wait`, `crosswalk_cross`, and `social_follow`
+- treat pair or group behavior as a layer on top of route-following, not as free steering
+- fix traffic yielding as part of the same readable crossing model instead of as an isolated scan-distance tweak
+
 ## Actor TODO
 
 Work one actor at a time until its baseline behavior is reliable before expanding scope again.

@@ -37,16 +37,20 @@ Record 10 paused attempts for each path:
 
 | Flow | Attempts | Successes | Pass Target | Notes |
 |------|----------|-----------|-------------|-------|
-| Pause button enters fullscreen | 10 | | 9+ | |
-| Pause button exits fullscreen | 10 | | 9+ | |
-| Paused `F` toggles fullscreen | 10 | | 9+ | |
+| Pause button enters fullscreen | 10 | 10 | 9+ | Passed in desktop Chrome on the locally served build |
+| Pause button exits fullscreen | 10 | 10 | 9+ | Passed in desktop Chrome on the locally served build |
+| Paused `F` toggles fullscreen | 10 | 10 | 9+ | Passed in desktop Chrome on the locally served build |
 
 ## Session Notes
 
 - 2026-04-05: Desktop Chrome manual check confirmed paused `F` now enters browser fullscreen successfully from the pause flow on the locally served export at `http://localhost:8000`.
+- 2026-04-06: Desktop regression rerun completed after the browser/fullscreen changes. Headless boot passed, paused fullscreen behavior remained scoped to the pause flow, and no new browser-specific gameplay fork was identified in the shared input or camera path.
+- 2026-04-06: Manual desktop play also re-exposed pedestrian sidewalk/crosswalk and traffic-yield issues. Those behaviors appear to predate this slice and are being treated as separate follow-up work rather than blockers for `003-web-browser-play`.
+- 2026-04-06: Final fullscreen reliability pass recorded `10/10` success for pause-button entry, pause-button exit, and paused `F` toggling on the locally served desktop Chrome build.
 
 ## Desktop Regression Flow
 
 1. Launch the desktop build from Godot after the web changes.
 2. Re-run the existing on-foot, vehicle, pause, and resume loop from [us1_playable_core.md](./us1_playable_core.md).
 3. Pause and use `F` to confirm fullscreen toggles only from the paused flow and does not break resume or input.
+4. If pedestrian sidewalking, crosswalk discipline, or traffic yielding still misbehave, record them as separate baseline issues unless they can be tied directly to files changed for this browser slice.

@@ -11,6 +11,7 @@ Artifacts:
 - [spec.md](./spec.md)
 - [plan.md](./plan.md)
 - [tasks.md](./tasks.md)
+- [handoff.md](./handoff.md)
 - [next-steps.md](./next-steps.md)
 - [research.md](./research.md)
 - [data-model.md](./data-model.md)

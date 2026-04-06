@@ -83,9 +83,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T017 [P] [US3] Re-run headless boot and desktop gameplay regression validation after browser changes using the current desktop flow and `tests/manual/us1_playable_core.md`
+- [X] T017 [P] [US3] Re-run headless boot and desktop gameplay regression validation after browser changes using the current desktop flow and `tests/manual/us1_playable_core.md`, recording browser-slice regressions separately from pre-existing pedestrian or traffic behavior
 - [X] T018 [US3] Verify browser-specific fullscreen handling remains isolated from the shared gameplay path in `scripts/core/fullscreen_support.gd`, `scripts/ui/pause_controller.gd`, `scripts/ui/palette_overlay.gd`, and `project.godot`
-- [ ] T019 [US3] Record desktop regression coverage and outcomes in `tests/manual/web_browser_play.md`
+- [X] T019 [US3] Record desktop regression coverage and outcomes in `tests/manual/web_browser_play.md`, noting any pre-existing pedestrian or traffic issues outside this slice as follow-up work rather than blockers for `003-web-browser-play`
 
 **Checkpoint**: Desktop behavior remains aligned after browser runtime changes
 
@@ -96,7 +96,7 @@
 **Purpose**: Tighten docs and final validation across the whole feature
 
 - [X] T020 [P] Refresh `specs/003-web-browser-play/quickstart.md`, `README.md`, and `tests/manual/web_browser_play.md` so the documented browser flow matches the chosen fullscreen path, Chrome-only scope, and `SC-001` through `SC-007`
-- [ ] T021 Run the complete quickstart and validation flow from `specs/003-web-browser-play/quickstart.md` to satisfy `SC-001` through `SC-007`, and capture final notes in `tests/manual/web_browser_play.md`
+- [X] T021 Run the complete quickstart and validation flow from `specs/003-web-browser-play/quickstart.md` to satisfy `SC-001` through `SC-007`, and capture final notes in `tests/manual/web_browser_play.md`, keeping pre-existing pedestrian or traffic AI issues tracked separately from this slice
 
 ---
 
