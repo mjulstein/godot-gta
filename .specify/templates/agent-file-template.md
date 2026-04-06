@@ -1,5 +1,3 @@
-[root](../../README.md) / [.specify](../README.md) / [templates](./README.md) / agent-file-template.md
-
 # [PROJECT NAME] Development Guidelines
 
 Auto-generated from all feature plans. Last updated: [DATE]

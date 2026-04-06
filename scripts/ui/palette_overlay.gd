@@ -2,6 +2,8 @@ extends Control
 
 signal impact_vibration_toggled(enabled: bool)
 
+const FullscreenSupport = preload("res://scripts/core/fullscreen_support.gd")
+
 @export var debug_overlay_path: NodePath
 @export var mobile_controls_hud_path: NodePath
 
@@ -11,9 +13,11 @@ signal impact_vibration_toggled(enabled: bool)
 @onready var hud_opacity_button: Button = %HudOpacityButton
 @onready var input_scale_button: Button = %InputScaleButton
 @onready var impact_vibration_button: Button = %ImpactVibrationButton
+@onready var fullscreen_button: Button = %FullscreenButton
 @onready var restart_button: Button = %RestartButton
 
 var impact_vibration_enabled := false
+var cached_fullscreen_state := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -21,7 +25,15 @@ func _ready() -> void:
 	hud_opacity_button.pressed.connect(_on_hud_opacity_pressed)
 	input_scale_button.pressed.connect(_on_input_scale_pressed)
 	impact_vibration_button.pressed.connect(_on_impact_vibration_pressed)
+	fullscreen_button.pressed.connect(_on_fullscreen_pressed)
 	restart_button.pressed.connect(_on_restart_pressed)
+	refresh_fullscreen_state()
+
+func _process(_delta: float) -> void:
+	var fullscreen_state := FullscreenSupport.is_fullscreen()
+	if fullscreen_state == cached_fullscreen_state:
+		return
+	cached_fullscreen_state = fullscreen_state
 	_refresh_button_text()
 
 func _on_toggle_debug_pressed() -> void:
@@ -42,6 +54,9 @@ func _on_input_scale_pressed() -> void:
 func _on_impact_vibration_pressed() -> void:
 	set_impact_vibration_enabled(not impact_vibration_enabled)
 
+func _on_fullscreen_pressed() -> void:
+	toggle_fullscreen()
+
 func set_impact_vibration_enabled(enabled: bool) -> void:
 	if impact_vibration_enabled == enabled:
 		_refresh_button_text()
@@ -52,6 +67,15 @@ func set_impact_vibration_enabled(enabled: bool) -> void:
 
 func is_impact_vibration_enabled() -> bool:
 	return impact_vibration_enabled
+
+func refresh_fullscreen_state() -> void:
+	cached_fullscreen_state = FullscreenSupport.is_fullscreen()
+	_refresh_button_text()
+
+func toggle_fullscreen(request_source: String = "pause_button") -> void:
+	if not FullscreenSupport.toggle_fullscreen(request_source):
+		return
+	refresh_fullscreen_state()
 
 func _on_restart_pressed() -> void:
 	get_tree().paused = false
@@ -72,3 +96,7 @@ func _refresh_button_text() -> void:
 		input_scale_label = mobile_controls_hud.get_input_surface_scale_label()
 	input_scale_button.text = input_scale_label
 	impact_vibration_button.text = "Impact Vibration: On" if impact_vibration_enabled else "Impact Vibration: Off"
+	var can_toggle_fullscreen := FullscreenSupport.can_toggle_fullscreen()
+	fullscreen_button.visible = can_toggle_fullscreen
+	fullscreen_button.disabled = not can_toggle_fullscreen
+	fullscreen_button.text = FullscreenSupport.get_button_label()

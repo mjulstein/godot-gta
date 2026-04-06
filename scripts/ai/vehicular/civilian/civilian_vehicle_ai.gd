@@ -5,7 +5,7 @@ const CivilianPedestrianScene = preload("res://scenes/actors/civilians/civilian_
 
 signal harmed(source: Node2D)
 signal civilian_hit(target: Node2D)
-signal incident_driver_requested(target: Node2D, inspect_position: Vector2)
+signal incident_driver_requested(target, inspect_position: Vector2)
 signal collision_feedback_requested(speed_loss: float)
 
 @export var tuning: CivilianVehicleTuning
@@ -918,7 +918,8 @@ func _update_incident_state(delta: float) -> void:
 		if incident_target.is_in_group("pedestrian_actor") and incident_victim_still_elapsed < _incident_victim_still_time():
 			return
 	incident_driver_deployed = true
-	incident_driver_requested.emit(incident_target, incident_inspect_position)
+	var incident_target_payload = incident_target if incident_target != null and is_instance_valid(incident_target) else null
+	incident_driver_requested.emit(incident_target_payload, incident_inspect_position)
 
 func _record_collision_incident(collider: Object) -> void:
 	if incident_stop_active or driver != null or not occupant_present:

@@ -4,14 +4,16 @@
 
 ## Project Context
 
-This repository is a Godot 4.x project for a top-down crime sandbox inspired by GTA 2. The current active slice is `001-foundation-sandbox`.
+This repository is a Godot 4.x project for a top-down crime sandbox inspired by GTA 2. The current active slice is `003-web-browser-play`.
+
+Active feature directory (`$FEATURE_DIR`): `specs/003-web-browser-play/`
 
 ## Source Of Truth
 
 - Constitution: `.specify/memory/constitution.md`
-- Feature spec: `specs/001-foundation-sandbox/spec.md`
-- Implementation plan: `specs/001-foundation-sandbox/plan.md`
-- Task list: `specs/001-foundation-sandbox/tasks.md`
+- Feature spec: `$FEATURE_DIR/spec.md`
+- Implementation plan: `$FEATURE_DIR/plan.md`
+- Task list: `$FEATURE_DIR/tasks.md`
 
 If implementation diverges from these files, update the spec artifacts first or in the same change.
 
@@ -23,6 +25,8 @@ If implementation diverges from these files, update the spec artifacts first or 
 - Prefer `git mv` over plain `mv` when relocating tracked files so history stays easier to follow.
 - Avoid mixing world composition with gameplay logic when a separate script can own the behavior.
 - Do not introduce copied GTA assets, names, UI, or story content.
+- Keep `$FEATURE_DIR/handoff.md` current whenever the active scope, current checkpoint, next target, or other takeover-critical context changes.
+- Treat `$FEATURE_DIR/handoff.md` as the first continuity document for the active slice; keep it brief, practical, and easy for another agent to resume from.
 
 ## Privacy And Repo Hygiene
 
@@ -33,10 +37,9 @@ If implementation diverges from these files, update the spec artifacts first or 
 
 ## Read Order
 
-- Start with `AGENTS.md`.
-- Then read the active feature handoff at `specs/001-foundation-sandbox/next-steps.md`.
-- Then read `specs/001-foundation-sandbox/tasks.md`.
-- Read `spec.md` and `plan.md` only if the task requires deeper product or design context.
+- Read the active feature handoff at `$FEATURE_DIR/handoff.md`.
+- Then read `$FEATURE_DIR/tasks.md`.
+- Read `$FEATURE_DIR/spec.md` and `$FEATURE_DIR/plan.md` only if the task requires deeper product or design context.
 - Read module `README.md` files only for the part of the codebase you are changing.
 
 ## Directory Guidance
@@ -71,4 +74,13 @@ The current bootstrap should provide:
 - a follow camera
 - a debug overlay
 
-The next implementation target after bootstrap is the rest of User Story 1 in `tasks.md`.
+The next implementation target is `003-web-browser-play`, starting with the shared browser-export and fullscreen foundations, then User Story 1 browser parity work in `tasks.md`.
+
+## Active Technologies
+- GDScript on Godot 4.6+ plus narrow browser-side JavaScript in a custom HTML shell + Godot 4.x web export, `JavaScriptBridge`, custom HTML shell support, existing pause flow, existing camera and input actions (003-web-browser-play)
+- Scene files, scripts, export preset configuration, manual validation docs, and web-shell assets only; no new persistent gameplay storage (003-web-browser-play)
+- GDScript on Godot 4.6+ plus optional narrow browser-side JavaScript when a web fullscreen bridge is needed + Godot 4.x web export, optional `JavaScriptBridge`, existing pause flow, existing camera framing logic, existing input actions (003-web-browser-play)
+- Scene files, scripts, export preset configuration, manual validation docs, and optional web-shell assets only; no new persistent gameplay storage (003-web-browser-play)
+
+## Recent Changes
+- 003-web-browser-play: Added GDScript on Godot 4.6+ plus narrow browser-side JavaScript in a custom HTML shell + Godot 4.x web export, `JavaScriptBridge`, custom HTML shell support, existing pause flow, existing camera and input actions

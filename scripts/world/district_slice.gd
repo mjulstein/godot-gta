@@ -71,7 +71,6 @@ func _get_configuration_warnings() -> PackedStringArray:
 	return warnings
 
 func refresh_tile_profile() -> void:
-	_disable_embedded_layers()
 	_update_exit_visibility()
 	_update_ground_profile()
 
@@ -247,20 +246,3 @@ func _get_tile_profile() -> String:
 	if open_east and open_west and not open_north and not open_south:
 		return PROFILE_STRAIGHT_HORIZONTAL
 	return PROFILE_DEFAULT
-
-func _disable_embedded_layers() -> void:
-	var buildings = get_node_or_null("Buildings")
-	if buildings != null:
-		buildings.visible = false
-		for child in buildings.get_children():
-			if child is CollisionObject2D:
-				child.process_mode = Node.PROCESS_MODE_DISABLED
-				for nested in child.get_children():
-					if nested is CollisionShape2D:
-						nested.disabled = true
-	var ambient = get_node_or_null("Ambient")
-	if ambient != null:
-		ambient.visible = false
-		for child in ambient.get_children():
-			if child.has_method("set_path_active"):
-				child.call("set_path_active", false)
