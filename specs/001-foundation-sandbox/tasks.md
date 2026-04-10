@@ -3,11 +3,11 @@
 # Tasks: Foundation Sandbox
 
 **Input**: Design documents from `/specs/001-foundation-sandbox/`
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
 
-**Tests**: This feature relies primarily on playable manual validation in Godot. Tasks below include manual verification checkpoints and development debug support rather than a large automated test suite.
+**Tests**: This slice uses headless boot and reproducible manual playtests in Godot rather than a broad automated suite. Tasks below include validation and debug-support work where the spec requires it.
 
-**Organization**: Tasks are grouped by user story to preserve independently playable slices.
+**Organization**: Tasks are grouped by user story so each story remains independently playable and reviewable.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -17,19 +17,19 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Initialize the Godot project and create the agreed repo structure
+**Purpose**: Establish the project shell, runtime entry points, and top-level tooling the slice depends on
 
 - [x] T001 Create the baseline Godot project files at `project.godot` and `icon.svg`
 - [x] T002 Create the directory structure from the plan under `scenes/`, `scripts/`, `data/`, `assets/`, and `tests/`
-- [x] T003 [P] Configure project input actions in `project.godot` for movement, interact, vehicle entry-exit, driving, pause, and debug overlay toggle
-- [x] T004 [P] Create the root scene `scenes/main/game.tscn` and bootstrap script `scripts/core/game_root.gd`
-- [x] T005 [P] Create a basic debug overlay scene at `scenes/ui/debug_overlay.tscn` and controller script `scripts/ui/debug_overlay.gd`
+- [x] T003 [P] Configure project input actions in `project.godot` for movement, interact, vehicle entry or exit, driving, pause, and debug toggles
+- [x] T004 [P] Create the root playable scene in `scenes/main/game.tscn` and bootstrap orchestration in `scripts/core/game_root.gd`
+- [x] T005 [P] Create the baseline debug overlay scene in `scenes/ui/debug_overlay.tscn` and controller logic in `scripts/ui/debug_overlay.gd`
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core systems required before any user story can be implemented cleanly
+**Purpose**: Build core systems that every story depends on
 
 **⚠️ CRITICAL**: No user story work should begin until this phase is complete
 
@@ -47,64 +47,69 @@
 
 ## Phase 3: User Story 1 - Move through a living tile-based city (Priority: P1) 🎯 MVP
 
-**Goal**: Deliver a playable top-down tile-based district where the player can move on foot through readable sidewalks, crossings, and traffic lanes
+**Goal**: Deliver a readable top-down district where on-foot movement, pedestrians, and civilian traffic all support a believable sandbox baseline
 
-**Independent Test**: Launch the main scene, walk around the district, and verify that the player can navigate the city while civilian pedestrians and cars follow readable western traffic rules
+**Independent Test**: Launch the main scene, walk the district, and verify that on-foot control stays direct while pedestrians stay on valid walk space, crossings remain readable, and civilian traffic follows lanes and yields cleanly
 
 ### Implementation for User Story 1
 
-- [x] T013 [P] [US1] Build the first pass of roads, sidewalks, and blocking geometry in `scenes/world/district_slice.tscn`
+- [x] T013 [P] [US1] Build the first pass of roads, sidewalks, crossings, and blocking geometry in `scenes/world/district_slice.tscn`
 - [x] T014 [P] [US1] Create the player scene at `scenes/actors/player/player.tscn`
 - [x] T015 [US1] Implement top-down player movement and interaction logic in `scripts/actors/player/player_controller.gd`
-- [x] T016 [P] [US1] Create the base vehicle scene at `scenes/vehicles/civilian/civilian_vehicle.tscn`
-- [x] T017 [US1] Implement base vehicle handling and occupancy hooks in `scripts/vehicles/vehicle_controller.gd`
-- [x] T018 [US1] Connect camera ownership switching between player and active vehicle in `scripts/core/follow_camera.gd`
+- [x] T016 [P] [US1] Create the base civilian vehicle scene at `scenes/vehicles/civilian/civilian_vehicle.tscn`
+- [x] T017 [US1] Implement shared vehicle handling and occupancy hooks in `scripts/vehicles/vehicle_controller.gd`
+- [x] T018 [US1] Connect camera ownership switching between the player and active vehicle in `scripts/core/follow_camera.gd`
 - [x] T019 [US1] Wire the district, player, vehicle, camera, and debug overlay together in `scenes/main/game.tscn`
-- [x] T020 [US1] Tune civilian pedestrians and traffic so sidewalks, crossings, lane usage, and western traffic flow stay readable in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [x] T021 [US1] Add validation notes for readable city movement, crossings, and traffic flow in `tests/manual/us1_playable_core.md`
-- [x] T022 [US1] Document the manual MVP validation flow in `tests/manual/us1_playable_core.md`
+- [ ] T020 [US1] Refactor civilian pedestrian states to enforce `sidewalk_walk`, `curb_wait`, `crosswalk_cross`, and `social_follow` behavior in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
+- [ ] T021 [US1] Add local terrain assessment, sidewalk-side preference, and short sidestep or wait recovery for pedestrians in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
+- [ ] T022 [US1] Tighten civilian pedestrian spawn placement to curb-adjacent sidewalk space using tile-local activity data in `scripts/world/district_activity_overlay.gd` and `scenes/world/district_slice.tscn`
+- [ ] T023 [US1] Rework civilian traffic lane following to use local sensing plus next-crossing decisions instead of route ownership in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [ ] T024 [US1] Improve crossing approach and pedestrian yield timing so traffic stops with readable distance in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `data/tuning/civilian_vehicle_tuning.tres`
+- [ ] T025 [US1] Add dead-end parking lot resolution so civilian drivers either park and convert to pedestrians or perform a U-turn in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`, `scripts/world/district_activity_overlay.gd`, and `scenes/world/district_slice.tscn`
+- [ ] T026 [US1] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
+- [ ] T027 [US1] Update the readable city movement and crossing validation checklist in `tests/manual/us1_playable_core.md`
 
-**Checkpoint**: User Story 1 is playable and validates the city-navigation baseline
+**Checkpoint**: User Story 1 is playable and validates the readable city-navigation loop on its own
 
 ---
 
 ## Phase 4: User Story 2 - Take over traffic and hit with momentum (Priority: P2)
 
-**Goal**: Add civilian vehicle takeover, displaced occupants, and momentum-based pedestrian impacts
+**Goal**: Support civilian vehicle takeover, blocked-entry handling, unusable-vehicle exits, and momentum-based impacts without breaking the readable sandbox loop
 
-**Independent Test**: Start on foot, enter a civilian vehicle, verify a pedestrian remains behind as the displaced occupant, drive through the district, and confirm pedestrians are displaced by vehicle momentum without pushing the vehicle back
+**Independent Test**: Start on foot, approach an enterable civilian vehicle, take it over, confirm a displaced occupant remains in the world, drive into pedestrians with momentum-based impacts, and verify entry or exit edge cases fail cleanly
 
 ### Implementation for User Story 2
 
-- [x] T023 [P] [US2] Create civilian pedestrian and traffic placeholder scenes in `scenes/actors/civilians/` and `scenes/vehicles/civilian/`
-- [x] T024 [US2] Implement simple civilian movement or traffic behavior in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [x] T025 [US2] Upgrade civilian pedestrian movement so crossings and sidewalk use stay aligned with western traffic expectations in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
-- [x] T026 [US2] Upgrade civilian vehicle behavior so lane usage, direction of travel, and crossing approach stay aligned with western traffic expectations in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [x] T027 [US2] Implement player takeover of civilian vehicles while leaving a displaced pedestrian occupant in `scripts/systems/vehicle_interaction_system.gd` and `scripts/actors/player/player_controller.gd`
-- [x] T028 [US2] Add momentum-based vehicle-to-pedestrian collision response so pedestrians are displaced by vehicle motion and cannot push vehicles in `scripts/vehicles/vehicle_controller.gd` and pedestrian scripts
-- [x] T029 [US2] Expose debug state for takeover and collision momentum through `scripts/ui/debug_overlay.gd`
-- [x] T030 [US2] Wire civilian spawns and takeover-ready occupied vehicles into `scenes/world/district_slice.tscn`
-- [x] T031 [US2] Document repeatable traffic, takeover, and impact validation steps in `tests/manual/`
+- [x] T028 [P] [US2] Create civilian pedestrian and traffic placeholder scenes in `scenes/actors/civilians/` and `scenes/vehicles/civilian/`
+- [x] T029 [US2] Implement the baseline civilian pedestrian and traffic behavior in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [x] T030 [US2] Implement player takeover of civilian vehicles while leaving a displaced pedestrian occupant in `scripts/systems/vehicle_interaction_system.gd` and `scripts/actors/player/player_controller.gd`
+- [x] T031 [US2] Add momentum-based vehicle-to-pedestrian collision response in `scripts/vehicles/vehicle_controller.gd` and `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
+- [x] T032 [US2] Expose debug state for takeover and collision momentum through `scripts/ui/debug_overlay.gd`
+- [x] T033 [US2] Wire civilian spawns and takeover-ready occupied vehicles into `scenes/world/district_slice.tscn`
+- [ ] T034 [US2] Reject entry attempts for destroyed vehicles or blocked entry sides in `scripts/systems/vehicle_interaction_system.gd` and `scripts/vehicles/vehicle_controller.gd`
+- [ ] T035 [US2] Enforce unusable-vehicle state transitions for flipped, trapped, submerged, or critically damaged vehicles in `scripts/vehicles/vehicle_controller.gd`
+- [ ] T036 [US2] Keep the player inside unusable vehicles until a valid exit space exists and cancel blocked exits or displaced spawns cleanly in `scripts/systems/vehicle_interaction_system.gd`, `scripts/vehicles/vehicle_controller.gd`, and `scripts/actors/player/player_controller.gd`
+- [ ] T037 [US2] Update debug outputs so inspected civilian vehicles expose the same motion metrics as the player vehicle in `scripts/core/debug_state.gd` and `scripts/ui/debug_overlay.gd`
+- [ ] T038 [US2] Document repeatable takeover, blocked-entry, unusable-vehicle, and impact validation steps in `tests/manual/us2_takeover_impacts.md`
 
-**Checkpoint**: User Stories 1 and 2 work together, and the city now supports the baseline sandbox loop
+**Checkpoint**: User Stories 1 and 2 work together, including takeover and impact edge cases
 
 ---
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-**Purpose**: Improve feel, readability, and handoff quality across the entire slice
+**Purpose**: Finish tuning, recovery behavior, validation, and handoff for the full sandbox baseline
 
-- [ ] T041 [P] Tune player movement, vehicle handling, traffic response, and collision response values in `data/tuning/`
-- [ ] T042 [P] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
+- [ ] T039 [P] Tune player movement so on-foot control stays direct, human-scale, and only lightly carries momentum in `scripts/actors/player/player_controller.gd` and `data/tuning/player_tuning.tres`
+- [ ] T040 [P] Tune civilian traffic cruise speed, turn braking, and shared vehicle handling values in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`, `scripts/vehicles/vehicle_controller.gd`, and `data/tuning/civilian_vehicle_tuning.tres`
+- [ ] T041 Add civilian traffic obstruction recovery with lane change, turn, or left-lane U-turn behavior in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `scripts/world/district_activity_overlay.gd`
+- [x] T042 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [x] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
 - [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
-- [ ] T045 Run full manual validation for US1 and US2 and record results in `tests/manual/`
-- [x] T046 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [ ] T047 Tune civilian traffic speed targets so cars cruise faster than the player on long straights and brake for turns in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `data/tuning/`
-- [ ] T048 Improve civilian traffic stopping distance so cars hold at least half a car length before pedestrians, vehicles, and other forward obstacles in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [ ] T049 Add civilian traffic obstruction recovery so blocked cars can change lane, turn, or make a left-lane u-turn instead of stalling into collisions in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [ ] T050 Tune pedestrian movement so on-foot control stays direct, human-scale, and distinct from vehicle handling, with only light carry on abrupt direction changes in `scripts/actors/player/player_controller.gd` and `data/tuning/`
-- [ ] T051 Verify and document sandbox baseline sign-off for on-foot feel, vehicle feel, collision behavior, and civilian traffic behavior in `tests/manual/`
+- [ ] T045 Run the headless boot gate and full manual validation for US1 and US2, then record results in `tests/manual/us1_playable_core.md` and `tests/manual/us2_takeover_impacts.md`
+- [ ] T046 Update the active checkpoint, remaining risks, and next target in `specs/001-foundation-sandbox/handoff.md`
+- [ ] T047 Verify and document slice sign-off for on-foot feel, vehicle feel, collision behavior, pedestrian readability, and civilian traffic behavior in `specs/001-foundation-sandbox/handoff.md` and `tests/manual/README.md`
 
 ---
 
@@ -115,38 +120,70 @@
 - **Setup (Phase 1)**: Starts immediately
 - **Foundational (Phase 2)**: Depends on Setup and blocks all story work
 - **User Story 1 (Phase 3)**: Starts after Foundational and defines the MVP
-- **User Story 2 (Phase 4)**: Starts after Foundational, but integrates best once US1 is playable
+- **User Story 2 (Phase 4)**: Starts after Foundational, but integrates best once US1 is readable
 - **Polish (Phase 5)**: Starts after desired user stories are implemented
 
 ### User Story Dependencies
 
-- **US1**: No dependency on other stories after foundational work
-- **US2**: Depends on shared actor and vehicle systems; should build on US1 scenes and control flow
+- **US1**: No dependency on other stories after Foundational
+- **US2**: Depends on shared actor, vehicle, and district systems from Foundational and should be validated against the readable US1 baseline
+
 ### Parallel Opportunities
 
 - T003, T004, and T005 can run in parallel after project initialization
-- T007, T008, T010, and T011 can run in parallel in the foundational phase
-- T013, T014, and T016 can run in parallel for US1
-- T023 and T028 can run in parallel for US2
-- Polish tuning and documentation tasks can be split once the slice is playable
+- T007, T008, T010, and T011 can run in parallel in the Foundational phase
+- T020 and T023 can run in parallel once the current US1 baseline is stable enough for focused pedestrian and traffic refactors
+- T022 and T026 can run in parallel because spawn placement and district readability touch different primary files
+- T034 and T037 can run in parallel in US2 because entry validation and debug exposure have separate primary write scopes
+- T039 and T040 can run in parallel during Polish after behavior correctness is back under control
+
+---
+
+## Parallel Example: User Story 1
+
+```bash
+Task: "Refactor civilian pedestrian states to enforce sidewalk_walk, curb_wait, crosswalk_cross, and social_follow behavior in scripts/ai/pedestrian/civilian/pedestrian_ai.gd"
+Task: "Rework civilian traffic lane following to use local sensing plus next-crossing decisions instead of route ownership in scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd"
+
+Task: "Tighten civilian pedestrian spawn placement to curb-adjacent sidewalk space using tile-local activity data in scripts/world/district_activity_overlay.gd and scenes/world/district_slice.tscn"
+Task: "Improve district readability with placeholder signage, landmarks, and collision cleanup in scenes/world/district_slice.tscn"
+```
+
+---
+
+## Parallel Example: User Story 2
+
+```bash
+Task: "Reject entry attempts for destroyed vehicles or blocked entry sides in scripts/systems/vehicle_interaction_system.gd and scripts/vehicles/vehicle_controller.gd"
+Task: "Update debug outputs so inspected civilian vehicles expose the same motion metrics as the player vehicle in scripts/core/debug_state.gd and scripts/ui/debug_overlay.gd"
+```
+
+---
 
 ## Implementation Strategy
 
-### MVP First
+### MVP First (User Story 1 Only)
 
-1. Finish Setup
-2. Finish Foundational work
-3. Complete User Story 1
-4. Validate the readable city-navigation loop before expanding scope
+1. Complete Phase 1: Setup
+2. Complete Phase 2: Foundational
+3. Complete the remaining US1 tasks
+4. Stop and validate `tests/manual/us1_playable_core.md`
 
 ### Incremental Delivery
 
-1. Deliver US1 as the first playable prototype
-2. Layer in US2 to add takeover, momentum impacts, and stronger city interaction
-3. Stabilize and tune the sandbox loop before promoting additional feature ideas into active scope
+1. Finish the readable city baseline in US1
+2. Add US2 edge-case completion for takeover and vehicle usability
+3. Finish tuning, recovery behavior, validation, and handoff in Polish
+
+### Suggested MVP Scope
+
+The current MVP scope remains **User Story 1**. The shortest path is T020 through T027, with T024 and T025 carrying the highest risk for sandbox readability.
+
+---
 
 ## Notes
 
-- Prefer original placeholder art and names at every stage
-- Keep debug visibility high while systems are still forming
-- Resist adding police escalation, extra districts, weapons, factions, or mission systems before US1 and US2 are validated
+- All tasks use the required checklist format with IDs, optional `[P]` markers, story labels where needed, and exact file paths
+- Manual validation is part of the feature contract and should not be deferred past T045
+- Keep district activity data limited to spawn placement and cadence rather than runtime route ownership
+- Avoid adding police, mission, or progression scope before the slice passes sign-off
