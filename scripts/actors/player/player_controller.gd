@@ -92,6 +92,9 @@ func _physics_process(delta: float) -> void:
 	var carry_factor: float = 0.08 if tuning == null else tuning.direction_carry
 	if input_vector != Vector2.ZERO:
 		var carry_velocity := velocity * carry_factor
+		if velocity.length() > 1.0:
+			var carry_alignment := maxf(input_vector.normalized().dot(velocity.normalized()), 0.0)
+			carry_velocity *= carry_alignment
 		var blended_target := target_velocity + carry_velocity
 		if blended_target.length() > target_speed:
 			blended_target = blended_target.normalized() * target_speed

@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1")
 move_speed = 220.0
-acceleration = 1320.0
-deceleration = 1460.0
-direction_carry = 0.08
+acceleration = 1460.0
+deceleration = 1720.0
+direction_carry = 0.04

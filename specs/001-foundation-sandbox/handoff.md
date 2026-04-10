@@ -43,6 +43,11 @@ Implemented and available in the baseline:
 - interaction and vehicle controllers now surface blocked-entry and blocked-exit reasons instead of silently failing
 - debug overlay now shows tracked vehicle metrics plus pedestrian and traffic state counts for live inspection
 - civilian traffic now keeps explicit next-crossing context and yields from crossing-aware local sensing instead of generic-only pedestrian checks
+- dead-end parking-lot resolution now uses tile-aligned parking spots and curb-side pedestrian handoff points instead of mirrored parking metadata
+- district tiles now include simple landmark blocks and dead-end markers to improve road and lot readability without affecting runtime walk or drive surfaces
+- the shared player vehicle controller now treats trapped cars as unusable and removes drive control while the vehicle remains unusable or destroyed
+- player and vehicle tuning values were tightened on 2026-04-11 so on-foot carry is lighter and civilian traffic or shared driving slows earlier into turns and crossings
+- civilian traffic obstruction recovery is now considered implemented through timed local reroute choices for lane change, turn, and left-lane U-turn before off-screen recycle
 
 Current status:
 
@@ -51,13 +56,16 @@ Current status:
 - `003`-specific pedestrian experiments were rolled back; do not assume there is pending uncommitted AI work
 - headless boot passed again on 2026-04-10 after the pedestrian state and vehicle-usability patch set
 - headless boot still passes after the crossing-aware traffic patch set on 2026-04-10
+- dead-end parking metadata was corrected on 2026-04-11 so dead-end `park` actions resolve onto the visible lot and sidewalk geometry
+- district readability polish landed on 2026-04-11 with dead-end markers and corner landmarks in the shared tile scene
+- unusable shared vehicles now cover trapped-state transitions on 2026-04-11 in addition to flipped, submerged, and critical-damage cases
+- the current tuning baseline on 2026-04-11 is intentionally more conservative on on-foot carry, civilian cruise speed, and turn-entry speed pending manual sign-off
+- remaining open work is now almost entirely manual validation and sign-off rather than missing core traffic or pedestrian features
 
 Known baseline issues to address here:
 
 - traffic yield distance and approach timing still need manual tuning confirmation
-- unusable-vehicle transitions beyond blocked entry and blocked exit still need broader gameplay coverage
 - final sign-off playtests for US1 and US2 are still outstanding
-- dead-end parking/U-turn behavior and district readability polish remain open implementation tasks
 
 ## Known Coordination Notes
 
@@ -93,9 +101,8 @@ Validation references:
 Work in this order unless redirected:
 
 1. manually verify and tune traffic yielding and stopping distance around crossings
-2. finish dead-end parking/U-turn coverage and district readability polish
-3. finish unusable-vehicle transitions for broader edge cases such as critical damage coverage
-4. tune player and vehicle feel only after the baseline pedestrian and traffic readability is confirmed in play
+2. finish district readability polish
+3. run the manual validation pass for US1 and US2, then capture any tuning fallout before sign-off
 
 Recommended implementation direction:
 

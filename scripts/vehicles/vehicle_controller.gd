@@ -11,6 +11,7 @@ signal collision_feedback_requested(speed_loss: float)
 @export var debug_force_blocked_exit := false
 @export var debug_force_flipped := false
 @export var debug_force_submerged := false
+@export var debug_force_trapped := false
 @export var debug_force_destroyed := false
 
 var driver: Node = null
@@ -42,6 +43,12 @@ func _physics_process(delta: float) -> void:
 	var steering_speed: float = 2.8 if tuning == null else tuning.steering_speed
 	var friction: float = 220.0 if tuning == null else tuning.friction
 	var min_steer_speed: float = 18.0 if tuning == null else tuning.min_steer_speed
+
+	if usability_state == "unusable" or usability_state == "destroyed":
+		longitudinal_speed = move_toward(longitudinal_speed, 0.0, brake_power * delta)
+		velocity = Vector2.RIGHT.rotated(rotation) * longitudinal_speed
+		move_and_slide()
+		return
 
 	if driver == null:
 		longitudinal_speed = move_toward(longitudinal_speed, 0.0, _driverless_stop_rate(friction) * delta)
@@ -225,7 +232,7 @@ func _update_usability_state() -> void:
 		usability_state = "destroyed"
 		damage_state = "critical"
 		return
-	if debug_force_flipped or debug_force_submerged or damage_state == "critical":
+	if debug_force_flipped or debug_force_submerged or debug_force_trapped or damage_state == "critical" or _is_vehicle_trapped():
 		usability_state = "unusable"
 		return
 	if _is_driver_entry_blocked():
@@ -277,3 +284,14 @@ func _driverless_stop_rate(base_friction: float) -> float:
 	var reference_mass := 2000.0
 	var mass_scale := clampf(reference_mass / maxf(mass_kg, 1.0), 0.35, 2.0)
 	return base_friction * mass_scale
+
+func _is_vehicle_trapped() -> bool:
+	if can_exit():
+		return false
+	var sample_distance := 20.0
+	var forward := Vector2.RIGHT.rotated(rotation)
+	var side := forward.orthogonal()
+	for direction in [forward, -forward, side, -side]:
+		if not test_move(global_transform, direction * sample_distance):
+			return false
+	return true

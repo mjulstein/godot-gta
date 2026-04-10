@@ -4,11 +4,11 @@
 
 [resource]
 script = ExtResource("1")
-acceleration = 380.0
+acceleration = 360.0
 reverse_acceleration = 280.0
-brake_power = 440.0
-max_speed = 320.0
+brake_power = 470.0
+max_speed = 300.0
 reverse_speed = 140.0
-steering_speed = 2.8
-friction = 220.0
-min_steer_speed = 18.0
+steering_speed = 2.6
+friction = 250.0
+min_steer_speed = 22.0

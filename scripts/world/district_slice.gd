@@ -134,6 +134,10 @@ func _update_ground_profile() -> void:
 	_set_node_visible("Ground/ParkingLotSidewalkWestRight", profile == PROFILE_DEAD_END_WEST)
 	_set_node_visible("Ground/ParkingLotSidewalkWestEntryTop", profile == PROFILE_DEAD_END_WEST)
 	_set_node_visible("Ground/ParkingLotSidewalkWestEntryBottom", profile == PROFILE_DEAD_END_WEST)
+	_set_node_visible("Ground/DeadEndMarkerNorth", profile == PROFILE_DEAD_END_NORTH)
+	_set_node_visible("Ground/DeadEndMarkerSouth", profile == PROFILE_DEAD_END_SOUTH)
+	_set_node_visible("Ground/DeadEndMarkerEast", profile == PROFILE_DEAD_END_EAST)
+	_set_node_visible("Ground/DeadEndMarkerWest", profile == PROFILE_DEAD_END_WEST)
 
 	_set_node_visible("Ground/RoadIntersection", profile == PROFILE_DEFAULT or is_vertical_straight or is_horizontal_straight)
 	if is_horizontal_straight:
@@ -228,32 +232,40 @@ func get_dead_end_parking_data(entry_heading: String) -> Dictionary:
 	var profile := _get_tile_profile()
 	match profile:
 		PROFILE_DEAD_END_NORTH:
+			if entry_heading != "south":
+				return {}
 			return {
-				"spot": global_position + Vector2(-36, -236),
-				"sidewalk": global_position + Vector2(-118, -118),
+				"spot": global_position + Vector2(-36, 236),
+				"sidewalk": global_position + Vector2(-118, 242),
 				"roam_axis": Vector2.RIGHT,
-				"facing": Vector2.UP,
-			}
-		PROFILE_DEAD_END_SOUTH:
-			return {
-				"spot": global_position + Vector2(36, 236),
-				"sidewalk": global_position + Vector2(118, 118),
-				"roam_axis": Vector2.LEFT,
 				"facing": Vector2.DOWN,
 			}
-		PROFILE_DEAD_END_EAST:
+		PROFILE_DEAD_END_SOUTH:
+			if entry_heading != "north":
+				return {}
 			return {
-				"spot": global_position + Vector2(236, 36),
-				"sidewalk": global_position + Vector2(118, -118),
+				"spot": global_position + Vector2(36, -236),
+				"sidewalk": global_position + Vector2(118, -242),
+				"roam_axis": Vector2.LEFT,
+				"facing": Vector2.UP,
+			}
+		PROFILE_DEAD_END_EAST:
+			if entry_heading != "west":
+				return {}
+			return {
+				"spot": global_position + Vector2(-236, 36),
+				"sidewalk": global_position + Vector2(-242, 118),
 				"roam_axis": Vector2.DOWN,
-				"facing": Vector2.RIGHT,
+				"facing": Vector2.LEFT,
 			}
 		PROFILE_DEAD_END_WEST:
+			if entry_heading != "east":
+				return {}
 			return {
-				"spot": global_position + Vector2(-236, -36),
-				"sidewalk": global_position + Vector2(-118, 118),
+				"spot": global_position + Vector2(236, -36),
+				"sidewalk": global_position + Vector2(242, -118),
 				"roam_axis": Vector2.UP,
-				"facing": Vector2.LEFT,
+				"facing": Vector2.RIGHT,
 			}
 		_:
 			return {}

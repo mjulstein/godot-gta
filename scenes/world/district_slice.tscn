@@ -262,3 +262,55 @@ color = Color(0.564706, 0.576471, 0.592157, 1)
 [node name="SidewalkEastSouth" type="Polygon2D" parent="Ground"]
 polygon = PackedVector2Array(96, 96, 140, 96, 140, 640, 96, 640)
 color = Color(0.564706, 0.576471, 0.592157, 1)
+
+[node name="LandmarkNorthWest" type="Polygon2D" parent="Ground"]
+polygon = PackedVector2Array(-448, -448, -304, -448, -304, -304, -448, -304)
+color = Color(0.317647, 0.447059, 0.341176, 1)
+
+[node name="LandmarkNorthEast" type="Polygon2D" parent="Ground"]
+polygon = PackedVector2Array(304, -448, 448, -448, 448, -304, 304, -304)
+color = Color(0.360784, 0.411765, 0.286275, 1)
+
+[node name="LandmarkSouthWest" type="Polygon2D" parent="Ground"]
+polygon = PackedVector2Array(-448, 304, -304, 304, -304, 448, -448, 448)
+color = Color(0.286275, 0.396078, 0.439216, 1)
+
+[node name="LandmarkSouthEast" type="Polygon2D" parent="Ground"]
+polygon = PackedVector2Array(304, 304, 448, 304, 448, 448, 304, 448)
+color = Color(0.411765, 0.333333, 0.286275, 1)
+
+[node name="LandmarkNorthWestAccent" type="Polygon2D" parent="Ground"]
+polygon = PackedVector2Array(-420, -420, -332, -420, -332, -332, -420, -332)
+color = Color(0.647059, 0.760784, 0.545098, 1)
+
+[node name="LandmarkNorthEastAccent" type="Polygon2D" parent="Ground"]
+polygon = PackedVector2Array(332, -420, 420, -420, 420, -332, 332, -332)
+color = Color(0.776471, 0.705882, 0.505882, 1)
+
+[node name="LandmarkSouthWestAccent" type="Polygon2D" parent="Ground"]
+polygon = PackedVector2Array(-420, 332, -332, 332, -332, 420, -420, 420)
+color = Color(0.521569, 0.705882, 0.756863, 1)
+
+[node name="LandmarkSouthEastAccent" type="Polygon2D" parent="Ground"]
+polygon = PackedVector2Array(332, 332, 420, 332, 420, 420, 332, 420)
+color = Color(0.760784, 0.623529, 0.521569, 1)
+
+[node name="DeadEndMarkerNorth" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-72, 172, 72, 172, 72, 204, -72, 204)
+color = Color(0.839216, 0.458824, 0.192157, 1)
+
+[node name="DeadEndMarkerSouth" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-72, -204, 72, -204, 72, -172, -72, -172)
+color = Color(0.839216, 0.458824, 0.192157, 1)
+
+[node name="DeadEndMarkerEast" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(-204, -72, -172, -72, -172, 72, -204, 72)
+color = Color(0.839216, 0.458824, 0.192157, 1)
+
+[node name="DeadEndMarkerWest" type="Polygon2D" parent="Ground"]
+visible = false
+polygon = PackedVector2Array(172, -72, 204, -72, 204, 72, 172, 72)
+color = Color(0.839216, 0.458824, 0.192157, 1)

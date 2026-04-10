@@ -4,20 +4,20 @@
 
 [resource]
 script = ExtResource("1")
-cruise_speed = 240.0
-turn_speed = 120.0
-lane_change_speed = 150.0
-u_turn_speed = 100.0
-acceleration = 220.0
-brake_power = 360.0
-turn_approach_speed = 92.0
-lane_change_approach_speed = 118.0
-u_turn_approach_speed = 84.0
-turn_slowdown_distance = 92.0
-lane_change_slowdown_distance = 72.0
-u_turn_slowdown_distance = 108.0
-follow_distance_scale = 1.15
-pedestrian_stop_distance_scale = 1.1
+cruise_speed = 220.0
+turn_speed = 104.0
+lane_change_speed = 140.0
+u_turn_speed = 92.0
+acceleration = 200.0
+brake_power = 420.0
+turn_approach_speed = 78.0
+lane_change_approach_speed = 104.0
+u_turn_approach_speed = 72.0
+turn_slowdown_distance = 112.0
+lane_change_slowdown_distance = 88.0
+u_turn_slowdown_distance = 128.0
+follow_distance_scale = 1.25
+pedestrian_stop_distance_scale = 1.2
 crossing_entry_buffer = 24.0
 crossing_curb_buffer = 32.0
 crossing_lateral_clearance = 90.0

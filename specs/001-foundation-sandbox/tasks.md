@@ -65,8 +65,8 @@
 - [x] T022 [US1] Tighten civilian pedestrian spawn placement to curb-adjacent sidewalk space using tile-local activity data in `scripts/world/district_activity_overlay.gd` and `scenes/world/district_slice.tscn`
 - [x] T023 [US1] Rework civilian traffic lane following to use local sensing plus next-crossing decisions instead of route ownership in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [x] T024 [US1] Improve crossing approach and pedestrian yield timing so traffic stops with readable distance in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `data/tuning/civilian_vehicle_tuning.tres`
-- [ ] T025 [US1] Add dead-end parking lot resolution so civilian drivers either park and convert to pedestrians or perform a U-turn in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`, `scripts/world/district_activity_overlay.gd`, and `scenes/world/district_slice.tscn`
-- [ ] T026 [US1] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
+- [x] T025 [US1] Add dead-end parking lot resolution so civilian drivers either park and convert to pedestrians or perform a U-turn in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`, `scripts/world/district_activity_overlay.gd`, and `scenes/world/district_slice.tscn`
+- [x] T026 [US1] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
 - [x] T027 [US1] Update the readable city movement and crossing validation checklist in `tests/manual/us1_playable_core.md`
 
 **Checkpoint**: User Story 1 is playable and validates the readable city-navigation loop on its own
@@ -88,7 +88,7 @@
 - [x] T032 [US2] Expose debug state for takeover and collision momentum through `scripts/ui/debug_overlay.gd`
 - [x] T033 [US2] Wire civilian spawns and takeover-ready occupied vehicles into `scenes/world/district_slice.tscn`
 - [x] T034 [US2] Reject entry attempts for destroyed vehicles or blocked entry sides in `scripts/systems/vehicle_interaction_system.gd` and `scripts/vehicles/vehicle_controller.gd`
-- [ ] T035 [US2] Enforce unusable-vehicle state transitions for flipped, trapped, submerged, or critically damaged vehicles in `scripts/vehicles/vehicle_controller.gd`
+- [x] T035 [US2] Enforce unusable-vehicle state transitions for flipped, trapped, submerged, or critically damaged vehicles in `scripts/vehicles/vehicle_controller.gd`
 - [x] T036 [US2] Keep the player inside unusable vehicles until a valid exit space exists and cancel blocked exits or displaced spawns cleanly in `scripts/systems/vehicle_interaction_system.gd`, `scripts/vehicles/vehicle_controller.gd`, and `scripts/actors/player/player_controller.gd`
 - [x] T037 [US2] Update debug outputs so inspected civilian vehicles expose the same motion metrics as the player vehicle in `scripts/core/debug_state.gd` and `scripts/ui/debug_overlay.gd`
 - [x] T038 [US2] Document repeatable takeover, blocked-entry, unusable-vehicle, and impact validation steps in `tests/manual/us2_takeover_impacts.md`
@@ -101,9 +101,9 @@
 
 **Purpose**: Finish tuning, recovery behavior, validation, and handoff for the full sandbox baseline
 
-- [ ] T039 [P] Tune player movement so on-foot control stays direct, human-scale, and only lightly carries momentum in `scripts/actors/player/player_controller.gd` and `data/tuning/player_tuning.tres`
-- [ ] T040 [P] Tune civilian traffic cruise speed, turn braking, and shared vehicle handling values in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`, `scripts/vehicles/vehicle_controller.gd`, and `data/tuning/civilian_vehicle_tuning.tres`
-- [ ] T041 Add civilian traffic obstruction recovery with lane change, turn, or left-lane U-turn behavior in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `scripts/world/district_activity_overlay.gd`
+- [x] T039 [P] Tune player movement so on-foot control stays direct, human-scale, and only lightly carries momentum in `scripts/actors/player/player_controller.gd` and `data/tuning/player_tuning.tres`
+- [x] T040 [P] Tune civilian traffic cruise speed, turn braking, and shared vehicle handling values in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`, `scripts/vehicles/vehicle_controller.gd`, and `data/tuning/civilian_vehicle_tuning.tres`
+- [x] T041 Add civilian traffic obstruction recovery with lane change, turn, or left-lane U-turn behavior in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `scripts/world/district_activity_overlay.gd`
 - [x] T042 [P] Keep civilian traffic spawn and despawn transitions off-screen in `scripts/world/district_activity_overlay.gd` and `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
 - [x] T043 Improve debug overlay clarity and add missing state outputs in `scripts/ui/debug_overlay.gd`
 - [x] T044 [P] Update the project quickstart and workflow notes in `specs/001-foundation-sandbox/quickstart.md`
