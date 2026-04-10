@@ -20,6 +20,11 @@
 
 - Q: What happens when the active vehicle is flipped, trapped, submerged, or critically damaged? → A: The vehicle becomes unusable and the player must exit if possible.
 
+### Session 2026-04-10
+
+- Q: What happens when the player tries to enter a vehicle that is destroyed or blocked by level geometry? → A: Reject the entry attempt if the vehicle is destroyed or no valid entry side is reachable.
+- Q: What happens if an unusable vehicle has no valid exit space? → A: The player remains in the unusable vehicle until a valid exit space becomes available.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Move through a living tile-based city (Priority: P1)
@@ -60,8 +65,9 @@ As a player, I can walk to a civilian car, enter it, leave a pedestrian behind i
 ### Edge Cases
 
 - The player cannot take over civilian vehicles that are moving faster than walking pace; those entry attempts are rejected without transferring control.
-- What happens when the player tries to enter a vehicle that is destroyed or blocked by level geometry?
+- Entry attempts fail when the target vehicle is destroyed or when no valid entry side is reachable because geometry blocks access.
 - Flipped, trapped, submerged, or critically damaged vehicles become unusable; the player must exit if a clear exit space is available.
+- If an unusable vehicle has no valid exit space, the player remains inside it until a valid exit space becomes available.
 - If no clear nearby spot exists for a vehicle exit or displaced-occupant spawn, the action is canceled instead of teleporting the actor to a fallback location.
 
 ## Requirements *(mandatory)*
@@ -77,9 +83,11 @@ As a player, I can walk to a civilian car, enter it, leave a pedestrian behind i
 - **FR-003a**: The player MUST be able to enter civilian vehicles from the world and leave a displaced pedestrian occupant behind when takeover rules say the car was occupied.
 - **FR-003b**: The player MUST only be able to take over civilian vehicles when they are stopped or moving no faster than walking pace.
 - **FR-003c**: Vehicle exit and displaced-occupant spawn actions MUST fail cleanly when no clear nearby placement space exists, rather than forcing a fallback teleport.
+- **FR-003d**: Vehicle entry attempts MUST fail cleanly when the target vehicle is destroyed or when no valid entry side is reachable because of blocking geometry.
 - **FR-004**: The driving model MUST support acceleration, braking, steering, collision response, and distinct handling from on-foot movement.
 - **FR-004a**: All drivable vehicles MUST follow the same core motion rule-set, including throttle or brake driven longitudinal movement, steering-based heading change, and no self-driven rotation while effectively stationary.
 - **FR-004b**: Vehicles that are flipped, trapped, submerged, or critically damaged MUST become unusable until the player exits, rather than auto-resetting or remaining controllable.
+- **FR-004c**: If an unusable vehicle has no valid exit space, the player MUST remain in the vehicle until a valid exit space becomes available rather than being teleported to a fallback position.
 - **FR-005**: The camera MUST keep the active player-controlled actor readable during on-foot and vehicle gameplay.
 - **FR-006**: The district MUST contain civilian traffic and pedestrians sufficient to create believable street activity in the playable area.
 - **FR-006b**: Pedestrian and traffic spawn density MUST be independently tunable by district so one area can skew toward foot traffic while another skews toward vehicle flow.
