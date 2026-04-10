@@ -72,6 +72,9 @@ func _process(_delta: float) -> void:
 	var collision_active: bool = active_vehicle.has_recent_collision() if active_vehicle != null else player.has_recent_collision()
 	debug_state.set_collision_state("Impact" if collision_active else "Clear")
 	debug_state.set_motion_debug_lines(_get_motion_debug_lines())
+	debug_state.set_tracked_vehicle_metrics(_get_tracked_vehicle_metrics())
+	debug_state.set_pedestrian_state_counts(_count_group_states("civilian_pedestrian", "get_state_name"))
+	debug_state.set_traffic_state_counts(_count_group_states("traffic_vehicle", "get_traffic_state_name"))
 	if debug_state.impact_state != "None" and (active_vehicle == null or not collision_active):
 		debug_state.set_impact_state("None")
 
@@ -87,6 +90,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_enter_requested(target_vehicle: Node2D) -> void:
 	if not target_vehicle.can_enter():
+		debug_state.set_takeover_state(target_vehicle.get_entry_block_reason() if target_vehicle.has_method("get_entry_block_reason") else "Entry blocked")
 		return
 	var vehicle_to_drive := _prepare_vehicle_takeover(target_vehicle)
 	vehicle_to_drive.set_driver(player)
@@ -98,6 +102,11 @@ func _on_enter_requested(target_vehicle: Node2D) -> void:
 				vehicle_to_drive.mark_theft_reported()
 
 func _on_exit_requested(target_vehicle: Node2D) -> void:
+	if target_vehicle == null:
+		return
+	if target_vehicle.has_method("can_exit") and not target_vehicle.can_exit():
+		debug_state.set_takeover_state(target_vehicle.get_exit_block_reason() if target_vehicle.has_method("get_exit_block_reason") else "Exit blocked")
+		return
 	target_vehicle.clear_driver()
 	player.exit_vehicle(target_vehicle.get_exit_position())
 
@@ -364,3 +373,24 @@ func _get_motion_debug_lines() -> PackedStringArray:
 				lines.insert(0, "Inspecting player car")
 				return lines
 	return player.get_motion_debug_lines()
+
+func _get_tracked_vehicle_metrics() -> Dictionary:
+	if is_instance_valid(traffic_camera_target) and traffic_camera_target.has_method("get_debug_metrics"):
+		var metrics = traffic_camera_target.call("get_debug_metrics")
+		return metrics if metrics is Dictionary else {}
+	var active_vehicle := _get_active_player_vehicle()
+	if active_vehicle != null and active_vehicle.has_method("get_debug_metrics"):
+		var metrics = active_vehicle.call("get_debug_metrics")
+		return metrics if metrics is Dictionary else {}
+	return {}
+
+func _count_group_states(group_name: String, method_name: String) -> Dictionary:
+	var counts := {}
+	for candidate in get_tree().get_nodes_in_group(group_name):
+		if candidate == null or not is_instance_valid(candidate):
+			continue
+		if not candidate.has_method(method_name):
+			continue
+		var state_name = str(candidate.call(method_name))
+		counts[state_name] = int(counts.get(state_name, 0)) + 1
+	return counts

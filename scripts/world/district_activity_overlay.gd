@@ -433,12 +433,15 @@ func _build_intersection_pedestrian_network(half_width: float, half_height: floa
 
 func _build_pedestrian_start_nodes(network: Array) -> PackedInt32Array:
 	var starts := PackedInt32Array()
+	var curb_adjacent := PackedInt32Array()
 	for index in range(network.size()):
 		var node: Dictionary = network[index]
 		var crosswalk_neighbors: PackedInt32Array = node.get("crosswalk_neighbors", PackedInt32Array())
-		if crosswalk_neighbors.is_empty():
+		if not crosswalk_neighbors.is_empty():
+			curb_adjacent.append(index)
+		else:
 			starts.append(index)
-	return starts
+	return curb_adjacent if not curb_adjacent.is_empty() else starts
 
 func _build_pedestrian_group_sizes(spawn_count: int) -> PackedInt32Array:
 	match spawn_count:

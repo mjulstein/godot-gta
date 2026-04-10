@@ -11,6 +11,9 @@ var active_vehicle_label := "Parked Vehicle"
 var takeover_state := "Walk to the yellow car"
 var impact_state := "None"
 var motion_debug_lines := PackedStringArray()
+var tracked_vehicle_metrics := {}
+var pedestrian_state_counts := {}
+var traffic_state_counts := {}
 
 func set_player_mode(value: String) -> void:
 	player_mode = value
@@ -35,6 +38,15 @@ func set_impact_state(value: String) -> void:
 
 func set_motion_debug_lines(value: PackedStringArray) -> void:
 	motion_debug_lines = value
+
+func set_tracked_vehicle_metrics(value: Dictionary) -> void:
+	tracked_vehicle_metrics = value
+
+func set_pedestrian_state_counts(value: Dictionary) -> void:
+	pedestrian_state_counts = value
+
+func set_traffic_state_counts(value: Dictionary) -> void:
+	traffic_state_counts = value
 
 func set_wanted_level(value: int) -> void:
 	wanted_level = value

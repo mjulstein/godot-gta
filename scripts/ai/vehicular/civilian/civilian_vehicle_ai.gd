@@ -29,6 +29,12 @@ signal collision_feedback_requested(speed_loss: float)
 @export_range(0.0, 4.0, 0.05) var recycle_check_interval := 0.5
 @export_range(0.0, 3.0, 0.05) var incident_exit_delay := 0.6
 @export_range(0.0, 10.0, 0.1) var driver_exit_after_stop_time := 5.0
+@export_enum("intact", "damaged", "critical") var damage_state := "intact"
+@export var debug_force_blocked_entry := false
+@export var debug_force_blocked_exit := false
+@export var debug_force_flipped := false
+@export var debug_force_submerged := false
+@export var debug_force_destroyed := false
 
 var harmed_flash_remaining := 0.0
 var pause_remaining := 0.0
@@ -69,6 +75,8 @@ var incident_inspect_position := Vector2.ZERO
 var incident_elapsed := 0.0
 var incident_victim_still_elapsed := 0.0
 var stopped_duration := 0.0
+var usability_state := "usable"
+var last_valid_exit_positions: Array[Vector2] = []
 
 const ROAD_HALF_WIDTH := 96.0
 const INNER_LANE_OFFSET := 28.0
@@ -113,6 +121,7 @@ func _physics_process(delta: float) -> void:
 	_update_stopped_duration(delta)
 	_tick_impact_cooldowns(delta)
 	body_polygon.color = _get_body_color()
+	_update_usability_state()
 
 	if driver != null:
 		_drive_player_controlled(delta)
@@ -122,9 +131,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if abandoned_after_theft:
-		current_speed = 0.0
-		longitudinal_speed = 0.0
-		velocity = Vector2.ZERO
+		_update_driverless_coast(delta)
 		move_and_slide()
 		return
 	if parked_after_arrival:
@@ -205,7 +212,24 @@ func register_harm(source: Node2D) -> void:
 	harmed.emit(source)
 
 func can_enter() -> bool:
-	return driver == null
+	return driver == null and usability_state != "destroyed" and usability_state != "unusable" and not _is_driver_entry_blocked()
+
+func can_exit() -> bool:
+	return _find_clear_exit_position() != Vector2.INF
+
+func get_entry_block_reason() -> String:
+	if driver != null:
+		return "Vehicle occupied"
+	if usability_state == "destroyed":
+		return "Vehicle destroyed"
+	if usability_state == "unusable":
+		return "Vehicle unusable"
+	if _is_driver_entry_blocked():
+		return "Driver side blocked"
+	return ""
+
+func get_exit_block_reason() -> String:
+	return "Exit blocked" if not can_exit() else ""
 
 func has_civilian_occupant() -> bool:
 	return occupant_present
@@ -221,9 +245,8 @@ func set_driver(value: Node) -> void:
 
 func clear_driver() -> void:
 	driver = null
-	longitudinal_speed = 0.0
-	current_speed = 0.0
-	velocity = Vector2.ZERO
+	longitudinal_speed = Vector2.RIGHT.rotated(rotation).dot(velocity)
+	current_speed = absf(longitudinal_speed)
 	stopped_duration = 0.0
 
 func resume_civilian_control() -> void:
@@ -243,6 +266,12 @@ func has_recent_collision() -> bool:
 	return collision_flash_remaining > 0.0 or harmed_flash_remaining > 0.0
 
 func get_exit_position() -> Vector2:
+	var exit_position := _find_clear_exit_position()
+	if exit_position != Vector2.INF:
+		_remember_exit_position(exit_position)
+		return exit_position
+	if not last_valid_exit_positions.is_empty():
+		return last_valid_exit_positions[last_valid_exit_positions.size() - 1]
 	return global_position + Vector2.DOWN.rotated(rotation) * 28.0
 
 func get_driver_entry_position() -> Vector2:
@@ -329,11 +358,47 @@ func get_motion_debug_lines() -> PackedStringArray:
 		blocker = "car %.0f" % last_vehicle_ahead_distance
 	return PackedStringArray([
 		"%s lane %s" % [heading, lane],
-		"Action %s%s" % [active_action, " reroute" if is_rerouting() else ""],
+		"Action %s%s" % [get_traffic_state_name(), " reroute" if is_rerouting() else ""],
 		"Speed %.1f / %.1f kph" % [current_speed * 0.18, target_speed * 0.18],
 		"Blocker: %s" % blocker,
 		"Driver: %s" % ("player" if driver != null else "ai"),
+		"Usability: %s / %s" % [usability_state, damage_state],
 	])
+
+func get_usability_state() -> String:
+	return usability_state
+
+func get_damage_state() -> String:
+	return damage_state
+
+func get_traffic_state_name() -> String:
+	if parked_after_arrival:
+		return "park"
+	if incident_stop_active:
+		return "stopped"
+	if current_speed <= 2.0 and _nearest_non_traffic_blocking_distance() >= 0.0:
+		return "yield"
+	if current_speed <= 2.0:
+		return "stopped"
+	if blockage_time > 0.0 or is_rerouting():
+		return "recover"
+	if last_player_ahead_distance >= 0.0:
+		return "approach_crossing"
+	if active_action == "park":
+		return "park"
+	if active_action == "uturn" or active_action == "merge_left_uturn":
+		return "u_turn"
+	return "cruise"
+
+func get_debug_metrics() -> Dictionary:
+	return {
+		"state": get_traffic_state_name(),
+		"usability": usability_state,
+		"damage": damage_state,
+		"speed_kph": snappedf(current_speed * 0.18, 0.1),
+		"heading": heading,
+		"lane": lane,
+	}
 
 func set_camera_tracked(is_tracked: bool) -> void:
 	camera_tracking_count += 1 if is_tracked else -1
@@ -861,6 +926,22 @@ func _register_pedestrian_impact(collider: Node) -> void:
 		longitudinal_speed = 0.0
 		velocity = Vector2.ZERO
 	civilian_hit.emit(collider)
+
+func _update_usability_state() -> void:
+	if debug_force_destroyed:
+		usability_state = "destroyed"
+		damage_state = "critical"
+		return
+	if debug_force_flipped or debug_force_submerged or damage_state == "critical":
+		usability_state = "unusable"
+		return
+	if _is_driver_entry_blocked():
+		usability_state = "blocked_entry"
+		return
+	if not can_exit():
+		usability_state = "blocked_exit"
+		return
+	usability_state = "usable"
 
 func _register_pedestrian_body_contacts() -> void:
 	for pedestrian in _impact_candidates():
@@ -1411,6 +1492,67 @@ func _complete_parking_arrival() -> void:
 	get_parent().add_child(pedestrian)
 	if pedestrian.has_method("place_parking_lot_driver"):
 		pedestrian.place_parking_lot_driver(spawn_position, sidewalk_position, facing_direction, roam_axis)
+
+func _find_clear_exit_position() -> Vector2:
+	if debug_force_blocked_exit:
+		return Vector2.INF
+	var side_offsets := [
+		Vector2.DOWN.rotated(rotation) * 28.0,
+		Vector2.UP.rotated(rotation) * 28.0,
+		-Vector2.RIGHT.rotated(rotation).orthogonal() * 20.0,
+		Vector2.RIGHT.rotated(rotation).orthogonal() * 20.0,
+	]
+	for offset in side_offsets:
+		var candidate: Vector2 = global_position + offset
+		if _point_is_clear(candidate, 18.0):
+			return candidate
+	return Vector2.INF
+
+func _is_driver_entry_blocked() -> bool:
+	return debug_force_blocked_entry
+
+func _point_is_clear(point: Vector2, radius: float) -> bool:
+	for group_name in ["traffic_vehicle", "traffic_obstacle", "traffic_dynamic_obstacle", "pedestrian_actor"]:
+		for candidate in get_tree().get_nodes_in_group(group_name):
+			if candidate == self or candidate == driver or not (candidate is Node2D):
+				continue
+			var node := candidate as Node2D
+			if not node.visible:
+				continue
+			if node.global_position.distance_to(point) <= radius:
+				return false
+	return true
+
+func _remember_exit_position(position: Vector2) -> void:
+	if not last_valid_exit_positions.is_empty() and last_valid_exit_positions[last_valid_exit_positions.size() - 1].distance_to(position) <= 2.0:
+		return
+	last_valid_exit_positions.append(position)
+	while last_valid_exit_positions.size() > 4:
+		last_valid_exit_positions.remove_at(0)
+
+func _update_driverless_coast(delta: float) -> void:
+	var friction := _player_vehicle_friction()
+	longitudinal_speed = move_toward(longitudinal_speed, 0.0, _driverless_stop_rate(friction) * delta)
+	current_speed = absf(longitudinal_speed)
+	velocity = Vector2.RIGHT.rotated(rotation) * longitudinal_speed
+	if current_speed <= 0.5:
+		longitudinal_speed = 0.0
+		current_speed = 0.0
+		velocity = Vector2.ZERO
+
+func _player_vehicle_friction() -> float:
+	var friction := 220.0
+	var player_vehicle := get_tree().get_first_node_in_group("player_vehicle")
+	if player_vehicle != null and player_vehicle.has_method("get"):
+		var player_tuning = player_vehicle.get("tuning")
+		if player_tuning != null:
+			friction = player_tuning.friction
+	return friction
+
+func _driverless_stop_rate(base_friction: float) -> float:
+	var reference_mass := 2000.0
+	var mass_scale := clampf(reference_mass / maxf(mass_kg, 1.0), 0.35, 2.0)
+	return base_friction * mass_scale
 
 func _neighbor_tile(tile: Node2D, direction: String) -> Node2D:
 	var tile_size_value = tile.get("tile_world_size")

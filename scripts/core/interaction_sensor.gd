@@ -8,13 +8,13 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
-func get_closest_candidate(from_position: Vector2) -> Node2D:
+func get_closest_candidate(from_position: Vector2, include_blocked: bool = false) -> Node2D:
 	var closest: Node2D = null
 	var closest_distance := INF
 	for candidate in candidates:
 		if candidate == null or not is_instance_valid(candidate):
 			continue
-		if candidate.has_method("can_enter") and not candidate.can_enter():
+		if not include_blocked and candidate.has_method("can_enter") and not candidate.can_enter():
 			continue
 		var distance := from_position.distance_to(candidate.global_position)
 		if distance < closest_distance:

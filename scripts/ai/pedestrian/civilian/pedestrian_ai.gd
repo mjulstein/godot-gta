@@ -26,6 +26,7 @@ signal harmed(source: Node2D)
 @export_range(8.0, 32.0, 1.0) var group_trail_spacing := 12.0
 @export_range(0.1, 20.0, 0.1) var steering_turn_speed := 7.5
 
+var current_state := "idle"
 var anchor_position := Vector2.ZERO
 var direction := 1.0
 var pause_remaining := 0.0
@@ -60,6 +61,14 @@ var ambient_group_size := 1
 var ambient_group_is_leader := true
 var ambient_forward_direction := Vector2.RIGHT
 var ambient_wait_remaining := 0.0
+var terrain_probe := {}
+var danger_memory: Array[Vector2] = []
+var target_crosswalk_id := StringName()
+var group_anchor_id := StringName()
+var paired_partner_id := StringName()
+var preferred_sidewalk_side := ""
+var spawn_source := "ambient"
+var is_on_valid_walk_surface := true
 
 const RECLAIM_SPEED := 74.0
 const RECLAIM_REACHED_DISTANCE := 10.0
@@ -69,6 +78,10 @@ const INCIDENT_TARGET_STOP_SPEED := 18.0
 const AMBIENT_REACHED_DISTANCE := 8.0
 const AMBIENT_MIN_SPEED := 12.0
 const DEFAULT_TILE_WORLD_SIZE := Vector2(1280, 1280)
+const ROAD_HALF_WIDTH := 96.0
+const SIDEWALK_EDGE := 140.0
+const SIDEWALK_INNER := 96.0
+const PARKING_HALF_SPAN := 224.0
 
 @onready var body_polygon: Polygon2D = $Body
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -79,6 +92,7 @@ func _ready() -> void:
 	default_collision_mask = collision_mask
 	movement_axis = movement_axis.normalized() if movement_axis != Vector2.ZERO else Vector2.RIGHT
 	ambient_forward_direction = movement_axis
+	preferred_sidewalk_side = _infer_preferred_sidewalk_side()
 	rng.randomize()
 	add_to_group("civilian")
 	add_to_group("civilian_witness")
@@ -99,8 +113,10 @@ func _physics_process(delta: float) -> void:
 	_tick_impact_cooldowns(delta)
 	body_polygon.color = _get_body_color()
 	_update_impact_collision_state()
+	_update_terrain_probe()
 
 	if impact_recovery_remaining > 0.0 and impact_velocity.length() > 1.0:
+		current_state = "displaced"
 		velocity = impact_velocity
 		impact_velocity = impact_velocity.move_toward(Vector2.ZERO, impact_drag * delta)
 		if velocity != Vector2.ZERO:
@@ -129,6 +145,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if pause_remaining > 0.0 or ambient_wait_remaining > 0.0:
+		current_state = "curb_wait" if target_crosswalk_id != StringName() else "idle"
 		pause_remaining = maxf(0.0, pause_remaining - delta)
 		velocity = Vector2.ZERO
 		_try_follow_moving_pedestrian()
@@ -168,6 +185,8 @@ func configure_ambient_walk(network: Array, start_index: int, next_index: int = 
 	ambient_group_slot = group_slot
 	ambient_group_size = maxi(group_size, 1)
 	ambient_group_is_leader = ambient_group_slot == 0
+	group_anchor_id = StringName("ambient_%s" % ambient_group_id) if ambient_group_id >= 0 else StringName()
+	paired_partner_id = StringName("ambient_%s_1" % ambient_group_id) if ambient_group_size == 2 and ambient_group_slot == 0 else paired_partner_id
 	ambient_target_index = next_index
 	if ambient_target_index < 0:
 		ambient_target_index = _pick_next_ambient_target(start_index, -1)
@@ -177,6 +196,7 @@ func configure_ambient_walk(network: Array, start_index: int, next_index: int = 
 			ambient_forward_direction = movement_axis
 	world_path_points = PackedVector2Array()
 	path_target_index = 0
+	spawn_source = "ambient"
 
 func set_path_active(is_active: bool) -> void:
 	visible = is_active
@@ -205,6 +225,8 @@ func place_displaced_occupant(spawn_position: Vector2, facing_direction: Vector2
 		spawn_position + escape_vector * 52.0,
 	]))
 	pause_remaining = 0.2
+	spawn_source = "displaced_occupant"
+	current_state = "displaced"
 
 func place_incident_driver(spawn_position: Vector2, facing_direction: Vector2) -> void:
 	global_position = spawn_position
@@ -214,6 +236,8 @@ func place_incident_driver(spawn_position: Vector2, facing_direction: Vector2) -
 	path_target_index = 0
 	pause_remaining = 0.0
 	velocity = Vector2.ZERO
+	spawn_source = "ambient"
+	current_state = "idle"
 
 func place_parking_lot_driver(spawn_position: Vector2, sidewalk_position: Vector2, facing_direction: Vector2, roam_axis: Vector2) -> void:
 	global_position = spawn_position
@@ -227,6 +251,7 @@ func place_parking_lot_driver(spawn_position: Vector2, sidewalk_position: Vector
 	]))
 	pause_remaining = 0.0
 	velocity = Vector2.ZERO
+	spawn_source = "parked_driver"
 
 func configure_reclaim_attempt(target_vehicle: Node2D, should_attempt: bool) -> void:
 	reclaim_vehicle = target_vehicle
@@ -253,6 +278,12 @@ func get_ambient_forward_direction() -> Vector2:
 
 func is_harm_settled() -> bool:
 	return impact_recovery_remaining <= 0.0 and impact_velocity.length() <= 1.0
+
+func get_state_name() -> String:
+	return current_state
+
+func get_terrain_probe() -> Dictionary:
+	return terrain_probe
 
 func _follow_world_path() -> void:
 	var target_position := world_path_points[path_target_index]
@@ -287,6 +318,7 @@ func _update_local_wander() -> void:
 		pause_remaining = pause_duration * rng.randf_range(0.7, 1.2)
 		velocity = Vector2.ZERO
 		return
+	current_state = "sidewalk_walk"
 	velocity = _compute_steered_velocity(to_target.normalized(), -1.0, get_physics_process_delta_time())
 	ambient_forward_direction = velocity.normalized() if velocity != Vector2.ZERO else ambient_forward_direction
 	_update_rotation_from_velocity()
@@ -299,6 +331,16 @@ func _update_ambient_walk() -> void:
 		return
 	var target_position := _get_ambient_node_position(ambient_target_index)
 	var to_target := target_position - global_position
+	var crossing_next := _is_crosswalk_transition(ambient_node_index, ambient_target_index)
+	if crossing_next:
+		target_crosswalk_id = StringName("%s:%s" % [ambient_node_index, ambient_target_index])
+		if _should_wait_for_crosswalk(target_position):
+			current_state = "curb_wait"
+			ambient_wait_remaining = maxf(ambient_wait_remaining, 0.25)
+			velocity = Vector2.ZERO
+			return
+	else:
+		target_crosswalk_id = StringName()
 	if to_target.length() <= AMBIENT_REACHED_DISTANCE:
 		ambient_previous_index = ambient_node_index
 		ambient_node_index = ambient_target_index
@@ -312,6 +354,7 @@ func _update_ambient_walk() -> void:
 			return
 		target_position = _get_ambient_node_position(ambient_target_index)
 		to_target = target_position - global_position
+	current_state = "crosswalk_cross" if crossing_next else "sidewalk_walk"
 	velocity = _compute_steered_velocity(to_target.normalized() if to_target.length() > 0.0 else Vector2.ZERO, -1.0, get_physics_process_delta_time())
 	ambient_forward_direction = velocity.normalized() if velocity.length() > 1.0 else ambient_forward_direction
 	_update_rotation_from_velocity()
@@ -323,6 +366,7 @@ func _update_group_follow() -> bool:
 	if leader == null:
 		return false
 	if leader.has_method("is_group_leader_waiting_for_crosswalk") and leader.is_group_leader_waiting_for_crosswalk():
+		current_state = "curb_wait"
 		velocity = Vector2.ZERO
 		ambient_forward_direction = leader.get_ambient_forward_direction() if leader.has_method("get_ambient_forward_direction") else ambient_forward_direction
 		return true
@@ -332,10 +376,12 @@ func _update_group_follow() -> bool:
 	var target_position := leader.global_position + _get_group_slot_offset(ambient_group_slot, ambient_group_size, leader_direction)
 	var to_target := target_position - global_position
 	if to_target.length() <= 4.0:
+		current_state = "social_follow"
 		velocity = Vector2.ZERO
 		ambient_forward_direction = leader_direction
 		rotation = leader.rotation
 		return true
+	current_state = "social_follow"
 	velocity = _compute_steered_velocity(to_target.normalized(), -1.0, get_physics_process_delta_time())
 	ambient_forward_direction = velocity.normalized() if velocity.length() > 1.0 else leader_direction
 	_update_rotation_from_velocity()
@@ -619,7 +665,11 @@ func _compute_steered_velocity(desired_direction: Vector2, speed_override: float
 	if desired_direction == Vector2.ZERO:
 		return Vector2.ZERO
 	var speed := move_speed if speed_override < 0.0 else speed_override
-	var steering_direction := desired_direction.normalized()
+	var steering_direction := _recover_walk_direction(desired_direction.normalized())
+	if steering_direction == Vector2.ZERO:
+		if current_state != "displaced":
+			current_state = "curb_wait"
+		return Vector2.ZERO
 	steering_direction += _get_separation_force() * separation_weight
 	if steering_direction == Vector2.ZERO:
 		steering_direction = desired_direction.normalized()
@@ -751,3 +801,146 @@ func _is_within_camera_bounds(camera_node: Camera2D, margin: Vector2) -> bool:
 	) * 0.5
 	var bounds := Rect2(camera_node.global_position - half_visible - margin, half_visible * 2.0 + margin * 2.0)
 	return bounds.has_point(global_position)
+
+func _update_terrain_probe() -> void:
+	var forward := velocity.normalized() if velocity.length() > 1.0 else ambient_forward_direction
+	if forward == Vector2.ZERO:
+		forward = movement_axis
+	if forward == Vector2.ZERO:
+		forward = Vector2.RIGHT
+	terrain_probe = _sample_walk_probe(forward)
+	is_on_valid_walk_surface = bool(terrain_probe.get("current_walkable", true))
+
+func _sample_walk_probe(direction_vector: Vector2) -> Dictionary:
+	var forward := direction_vector.normalized() if direction_vector != Vector2.ZERO else ambient_forward_direction
+	if forward == Vector2.ZERO:
+		forward = Vector2.RIGHT
+	var side := forward.orthogonal()
+	var forward_position := global_position + forward * maxf(obstacle_probe_distance, 12.0)
+	var left_position := global_position + side * 14.0
+	var right_position := global_position - side * 14.0
+	return {
+		"current_surface": _surface_type_at_position(global_position),
+		"forward_surface": _surface_type_at_position(forward_position),
+		"left_surface": _surface_type_at_position(left_position),
+		"right_surface": _surface_type_at_position(right_position),
+		"current_walkable": _is_walkable_surface(_surface_type_at_position(global_position)),
+		"forward_walkable": _is_walkable_surface(_surface_type_at_position(forward_position)),
+		"left_walkable": _is_walkable_surface(_surface_type_at_position(left_position)),
+		"right_walkable": _is_walkable_surface(_surface_type_at_position(right_position)),
+	}
+
+func _recover_walk_direction(desired_direction: Vector2) -> Vector2:
+	var probe := _sample_walk_probe(desired_direction)
+	terrain_probe = probe
+	if bool(probe.get("forward_walkable", true)):
+		return desired_direction
+	var side_step := desired_direction.orthogonal()
+	var preferred_side := side_step if preferred_sidewalk_side in ["north", "west"] else -side_step
+	for candidate_direction in [preferred_side, -preferred_side, desired_direction.rotated(PI * 0.5), desired_direction.rotated(-PI * 0.5)]:
+		var candidate_probe := _sample_walk_probe(candidate_direction)
+		if bool(candidate_probe.get("forward_walkable", true)):
+			danger_memory.append(global_position)
+			while danger_memory.size() > 4:
+				danger_memory.remove_at(0)
+			terrain_probe = candidate_probe
+			return candidate_direction.normalized()
+	if String(probe.get("forward_surface", "")) == "road":
+		ambient_wait_remaining = maxf(ambient_wait_remaining, 0.2)
+	return Vector2.ZERO
+
+func _should_wait_for_crosswalk(target_position: Vector2) -> bool:
+	var crossing_direction := (target_position - global_position).normalized()
+	if crossing_direction == Vector2.ZERO:
+		return false
+	var crossing_center := global_position.lerp(target_position, 0.5)
+	for candidate in get_tree().get_nodes_in_group("traffic_vehicle"):
+		if not (candidate is Node2D):
+			continue
+		var vehicle := candidate as Node2D
+		if not vehicle.visible:
+			continue
+		var offset := crossing_center - vehicle.global_position
+		if offset.length() > 92.0:
+			continue
+		var vehicle_forward := Vector2.RIGHT.rotated(vehicle.rotation)
+		if absf(vehicle_forward.dot(crossing_direction)) < 0.35:
+			continue
+		return true
+	return false
+
+func _is_crosswalk_transition(from_index: int, to_index: int) -> bool:
+	if not _is_valid_ambient_node(from_index) or not _is_valid_ambient_node(to_index):
+		return false
+	var node: Dictionary = ambient_network[from_index]
+	var crosswalk_neighbors: PackedInt32Array = node.get("crosswalk_neighbors", PackedInt32Array())
+	return crosswalk_neighbors.has(to_index)
+
+func _infer_preferred_sidewalk_side() -> String:
+	var tile := _find_district_tile(global_position)
+	if tile == null:
+		return "east"
+	var local_position := global_position - tile.global_position
+	if absf(local_position.x) > absf(local_position.y):
+		return "west" if local_position.x < 0.0 else "east"
+	return "north" if local_position.y < 0.0 else "south"
+
+func _surface_type_at_position(world_position: Vector2) -> String:
+	var tile := _find_district_tile(world_position)
+	if tile == null:
+		return "blocked"
+	var local_position := world_position - tile.global_position
+	var profile: String = tile.get_tile_profile_name() if tile.has_method("get_tile_profile_name") else "default"
+	if _is_crosswalk_surface(local_position, profile):
+		return "crosswalk"
+	if _is_sidewalk_surface(local_position, profile):
+		return "sidewalk"
+	if _is_road_surface(local_position, profile):
+		return "road"
+	return "blocked"
+
+func _is_walkable_surface(surface: String) -> bool:
+	return surface == "sidewalk" or surface == "crosswalk"
+
+func _is_road_surface(local_position: Vector2, profile: String) -> bool:
+	if profile == "straight_horizontal":
+		return absf(local_position.y) <= ROAD_HALF_WIDTH
+	if profile == "straight_vertical":
+		return absf(local_position.x) <= ROAD_HALF_WIDTH
+	if profile.begins_with("dead_end"):
+		if profile == "dead_end_north":
+			return absf(local_position.x) <= 180.0 and local_position.y >= -96.0 and local_position.y <= 220.0
+		if profile == "dead_end_south":
+			return absf(local_position.x) <= 180.0 and local_position.y >= -220.0 and local_position.y <= 96.0
+		if profile == "dead_end_east":
+			return absf(local_position.y) <= 180.0 and local_position.x >= -220.0 and local_position.x <= 96.0
+		if profile == "dead_end_west":
+			return absf(local_position.y) <= 180.0 and local_position.x >= -96.0 and local_position.x <= 220.0
+	return absf(local_position.x) <= ROAD_HALF_WIDTH or absf(local_position.y) <= ROAD_HALF_WIDTH
+
+func _is_sidewalk_surface(local_position: Vector2, profile: String) -> bool:
+	if profile == "straight_horizontal":
+		return absf(local_position.y) >= SIDEWALK_INNER and absf(local_position.y) <= SIDEWALK_EDGE
+	if profile == "straight_vertical":
+		return absf(local_position.x) >= SIDEWALK_INNER and absf(local_position.x) <= SIDEWALK_EDGE
+	if profile == "dead_end_north":
+		return (absf(local_position.x) >= 180.0 and absf(local_position.x) <= PARKING_HALF_SPAN and local_position.y >= -96.0 and local_position.y <= 264.0) or (absf(local_position.x) <= PARKING_HALF_SPAN and local_position.y >= 220.0 and local_position.y <= 264.0) or (absf(local_position.y + 118.0) <= 22.0 and absf(local_position.x) <= PARKING_HALF_SPAN)
+	if profile == "dead_end_south":
+		return (absf(local_position.x) >= 180.0 and absf(local_position.x) <= PARKING_HALF_SPAN and local_position.y >= -264.0 and local_position.y <= 96.0) or (absf(local_position.x) <= PARKING_HALF_SPAN and local_position.y >= -264.0 and local_position.y <= -220.0) or (absf(local_position.y - 118.0) <= 22.0 and absf(local_position.x) <= PARKING_HALF_SPAN)
+	if profile == "dead_end_east":
+		return (absf(local_position.y) >= 180.0 and absf(local_position.y) <= PARKING_HALF_SPAN and local_position.x >= -264.0 and local_position.x <= 96.0) or (absf(local_position.y) <= PARKING_HALF_SPAN and local_position.x >= -264.0 and local_position.x <= -220.0) or (absf(local_position.x + 118.0) <= 22.0 and absf(local_position.y) <= PARKING_HALF_SPAN)
+	if profile == "dead_end_west":
+		return (absf(local_position.y) >= 180.0 and absf(local_position.y) <= PARKING_HALF_SPAN and local_position.x >= -96.0 and local_position.x <= 264.0) or (absf(local_position.y) <= PARKING_HALF_SPAN and local_position.x >= 220.0 and local_position.x <= 264.0) or (absf(local_position.x - 118.0) <= 22.0 and absf(local_position.y) <= PARKING_HALF_SPAN)
+	return (
+		(absf(local_position.y) >= SIDEWALK_INNER and absf(local_position.y) <= SIDEWALK_EDGE and absf(local_position.x) > ROAD_HALF_WIDTH) or
+		(absf(local_position.x) >= SIDEWALK_INNER and absf(local_position.x) <= SIDEWALK_EDGE and absf(local_position.y) > ROAD_HALF_WIDTH)
+	)
+
+func _is_crosswalk_surface(local_position: Vector2, profile: String) -> bool:
+	if profile != "default":
+		return false
+	return (
+		absf(local_position.x) <= ROAD_HALF_WIDTH and absf(absf(local_position.y) - 118.0) <= 22.0
+	) or (
+		absf(local_position.y) <= ROAD_HALF_WIDTH and absf(absf(local_position.x) - 118.0) <= 22.0
+	)

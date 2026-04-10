@@ -39,18 +39,22 @@ Implemented and available in the baseline:
 - civilian pedestrians and traffic spawn through separate ambient overlay systems
 - takeover, displaced-occupant, and momentum-impact behavior exist
 - pause overlay, debug overlay, camera framing, and mobile HUD support all exist
+- pedestrian runtime now exposes explicit `sidewalk_walk`, `curb_wait`, `crosswalk_cross`, and `social_follow` states with local terrain probes
+- interaction and vehicle controllers now surface blocked-entry and blocked-exit reasons instead of silently failing
+- debug overlay now shows tracked vehicle metrics plus pedestrian and traffic state counts for live inspection
 
 Current status:
 
 - `001` is still in progress because sandbox feel is not yet signed off
 - recent browser-slice validation re-exposed baseline pedestrian and traffic issues that belong here
 - `003`-specific pedestrian experiments were rolled back; do not assume there is pending uncommitted AI work
+- headless boot passed again on 2026-04-10 after the pedestrian state and vehicle-usability patch set
 
 Known baseline issues to address here:
 
-- pedestrians can leave sidewalk or crosswalk space and drift onto grass or road
-- pedestrian corner behavior can become unstable or unreadable under density
-- traffic does not reliably yield to pedestrians at crossings
+- traffic yield distance and approach timing still need manual tuning confirmation
+- unusable-vehicle transitions beyond blocked entry and blocked exit still need broader gameplay coverage
+- final sign-off playtests for US1 and US2 are still outstanding
 
 ## Known Coordination Notes
 
@@ -85,10 +89,10 @@ Validation references:
 
 Work in this order unless redirected:
 
-1. stabilize pedestrian sidewalk and crosswalk behavior
-2. stabilize traffic yielding and stopping distance around crossings
-3. tune player and vehicle feel only after the baseline pedestrian or traffic readability is back under control
-4. complete the open `001` polish and sign-off tasks
+1. manually verify and tune traffic yielding and stopping distance around crossings
+2. finish unusable-vehicle transitions for broader edge cases such as critical damage coverage
+3. tune player and vehicle feel only after the baseline pedestrian and traffic readability is confirmed in play
+4. complete the remaining open `001` polish and sign-off tasks
 
 Recommended implementation direction:
 

@@ -6,12 +6,20 @@ signal collision_feedback_requested(speed_loss: float)
 @export var tuning: Resource
 @export var collision_flash_time := 0.12
 @export_range(500.0, 4000.0, 1.0) var mass_kg := 2000.0
+@export_enum("intact", "damaged", "critical") var damage_state := "intact"
+@export var debug_force_blocked_entry := false
+@export var debug_force_blocked_exit := false
+@export var debug_force_flipped := false
+@export var debug_force_submerged := false
+@export var debug_force_destroyed := false
 
 var driver: Node = null
 var collision_flash_remaining := 0.0
 var theft_reported := false
 var impact_cooldowns: Dictionary = {}
 var longitudinal_speed := 0.0
+var usability_state := "usable"
+var last_valid_exit_positions: Array[Vector2] = []
 
 @onready var body_polygon: Polygon2D = $Body
 
@@ -24,6 +32,7 @@ func _physics_process(delta: float) -> void:
 	collision_flash_remaining = maxf(0.0, collision_flash_remaining - delta)
 	_tick_impact_cooldowns(delta)
 	body_polygon.color = Color(1, 0.2, 0.2, 1) if collision_flash_remaining > 0.0 else Color(1, 0.54902, 0.14902, 1)
+	_update_usability_state()
 
 	var acceleration: float = 380.0 if tuning == null else tuning.acceleration
 	var reverse_acceleration: float = 280.0 if tuning == null else tuning.reverse_acceleration
@@ -35,7 +44,7 @@ func _physics_process(delta: float) -> void:
 	var min_steer_speed: float = 18.0 if tuning == null else tuning.min_steer_speed
 
 	if driver == null:
-		longitudinal_speed = move_toward(longitudinal_speed, 0.0, friction * delta)
+		longitudinal_speed = move_toward(longitudinal_speed, 0.0, _driverless_stop_rate(friction) * delta)
 		velocity = Vector2.RIGHT.rotated(rotation) * longitudinal_speed
 		move_and_slide()
 		return
@@ -75,20 +84,58 @@ func _physics_process(delta: float) -> void:
 		_emit_civilian_impacts()
 
 func can_enter() -> bool:
-	return driver == null
+	return driver == null and usability_state != "destroyed" and usability_state != "unusable" and not _is_driver_entry_blocked()
+
+func can_exit() -> bool:
+	return _find_clear_exit_position() != Vector2.INF
+
+func get_entry_block_reason() -> String:
+	if driver != null:
+		return "Vehicle occupied"
+	if usability_state == "destroyed":
+		return "Vehicle destroyed"
+	if usability_state == "unusable":
+		return "Vehicle unusable"
+	if _is_driver_entry_blocked():
+		return "Driver side blocked"
+	return ""
+
+func get_exit_block_reason() -> String:
+	return "Exit blocked" if not can_exit() else ""
 
 func set_driver(value: Node) -> void:
 	driver = value
 
 func clear_driver() -> void:
 	driver = null
+	longitudinal_speed = Vector2.RIGHT.rotated(rotation).dot(velocity)
 
 func get_exit_position() -> Vector2:
+	var exit_position := _find_clear_exit_position()
+	if exit_position != Vector2.INF:
+		_remember_exit_position(exit_position)
+		return exit_position
+	if not last_valid_exit_positions.is_empty():
+		return last_valid_exit_positions[last_valid_exit_positions.size() - 1]
 	return global_position + Vector2.DOWN.rotated(rotation) * 28.0
 
 func get_driver_entry_position() -> Vector2:
 	var driver_side := -Vector2.RIGHT.rotated(rotation).orthogonal()
 	return global_position + driver_side * 22.0
+
+func get_usability_state() -> String:
+	return usability_state
+
+func get_damage_state() -> String:
+	return damage_state
+
+func get_debug_metrics() -> Dictionary:
+	return {
+		"state": usability_state,
+		"damage": damage_state,
+		"speed_kph": snappedf(absf(longitudinal_speed) * 0.18, 0.1),
+		"driver": "player" if driver != null else "none",
+	}
 
 func has_recent_collision() -> bool:
 	return collision_flash_remaining > 0.0
@@ -172,3 +219,61 @@ func _register_pedestrian_impact(collider: Node) -> void:
 	if collider.has_method("register_harm"):
 		collider.register_harm(self)
 	civilian_hit.emit(collider)
+
+func _update_usability_state() -> void:
+	if debug_force_destroyed:
+		usability_state = "destroyed"
+		damage_state = "critical"
+		return
+	if debug_force_flipped or debug_force_submerged or damage_state == "critical":
+		usability_state = "unusable"
+		return
+	if _is_driver_entry_blocked():
+		usability_state = "blocked_entry"
+		return
+	if not can_exit():
+		usability_state = "blocked_exit"
+		return
+	usability_state = "usable"
+
+func _find_clear_exit_position() -> Vector2:
+	if debug_force_blocked_exit:
+		return Vector2.INF
+	var side_offsets := [
+		Vector2.DOWN.rotated(rotation) * 28.0,
+		Vector2.UP.rotated(rotation) * 28.0,
+		-Vector2.RIGHT.rotated(rotation).orthogonal() * 22.0,
+		Vector2.RIGHT.rotated(rotation).orthogonal() * 22.0,
+	]
+	for offset in side_offsets:
+		var candidate: Vector2 = global_position + offset
+		if _point_is_clear(candidate, 18.0):
+			return candidate
+	return Vector2.INF
+
+func _is_driver_entry_blocked() -> bool:
+	return debug_force_blocked_entry
+
+func _point_is_clear(point: Vector2, radius: float) -> bool:
+	for group_name in ["traffic_vehicle", "traffic_obstacle", "traffic_dynamic_obstacle", "pedestrian_actor"]:
+		for candidate in get_tree().get_nodes_in_group(group_name):
+			if candidate == self or candidate == driver or not (candidate is Node2D):
+				continue
+			var node := candidate as Node2D
+			if not node.visible:
+				continue
+			if node.global_position.distance_to(point) <= radius:
+				return false
+	return true
+
+func _remember_exit_position(position: Vector2) -> void:
+	if not last_valid_exit_positions.is_empty() and last_valid_exit_positions[last_valid_exit_positions.size() - 1].distance_to(position) <= 2.0:
+		return
+	last_valid_exit_positions.append(position)
+	while last_valid_exit_positions.size() > 4:
+		last_valid_exit_positions.remove_at(0)
+
+func _driverless_stop_rate(base_friction: float) -> float:
+	var reference_mass := 2000.0
+	var mass_scale := clampf(reference_mass / maxf(mass_kg, 1.0), 0.35, 2.0)
+	return base_friction * mass_scale

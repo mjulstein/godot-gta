@@ -28,6 +28,13 @@ Validate the first playable sandbox loop:
 9. Hit a wall or building and verify the collision state changes in the debug overlay and the vehicle flashes red briefly.
 10. Press `E` to exit the vehicle.
 11. Confirm the player is placed next to the car and can continue moving on foot.
+12. Toggle the debug overlay and confirm pedestrian state counts include `sidewalk_walk`, `curb_wait`, `crosswalk_cross`, or `social_follow` while the district is active.
+13. Watch a pedestrian approach a crossing with active traffic and confirm they can hold curb-side briefly instead of stepping directly into the lane.
+
+## Current Status
+
+- Headless boot passed on 2026-04-10 with `HOME=/tmp/godot-home godot --headless --path . --quit-after 1`.
+- Manual playtest is still required before US1 can be signed off.
 
 ## Pass Criteria
 
@@ -38,3 +45,4 @@ Validate the first playable sandbox loop:
 - Parked-vehicle entry and traffic-vehicle takeover both work repeatedly.
 - Collision feedback is visible and the vehicle remains controllable.
 - Debug overlay reflects mode, vehicle source, hint, takeover state, speed, and collision state correctly.
+- Debug overlay state counts help confirm pedestrian terrain recovery and crossing behavior without pausing the run.

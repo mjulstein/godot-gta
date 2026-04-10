@@ -22,6 +22,14 @@ Validate the rescoped sandbox interaction loop:
 6. Drive into a pedestrian at low speed, then again at higher speed.
 7. Confirm the pedestrian is displaced in the vehicle travel direction instead of stopping the vehicle in place.
 8. Exit the stolen vehicle and confirm on-foot control resumes cleanly.
+9. Move up to a vehicle whose driver side is blocked or whose usability is no longer `usable` and confirm the interaction hint surfaces a blocked-entry reason instead of starting takeover.
+10. Stop a vehicle in a tight space, press `E`, and confirm blocked exits keep the player in the vehicle until there is clear space.
+11. With the debug overlay open, inspect a civilian traffic car and confirm it reports motion metrics, traffic state, and usability alongside takeover feedback.
+
+## Current Status
+
+- Headless boot passed on 2026-04-10 with `HOME=/tmp/godot-home godot --headless --path . --quit-after 1`.
+- Manual takeover and blocked-exit validation is still pending in-editor or in a desktop run.
 
 ## Pass Criteria
 
@@ -31,3 +39,4 @@ Validate the rescoped sandbox interaction loop:
 - Pedestrian displacement scales with vehicle momentum closely enough to read as a hit reaction.
 - Pedestrians do not push the vehicle backward during impact recovery.
 - Debug overlay reflects takeover state and impact state during the sequence.
+- Blocked entry and blocked exit cases fail cleanly with readable interaction feedback.

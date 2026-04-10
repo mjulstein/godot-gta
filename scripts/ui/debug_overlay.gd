@@ -63,6 +63,12 @@ func _process(_delta: float) -> void:
 		"Impact: %s" % debug_state.impact_state,
 		"Traffic: %d active" % get_tree().get_nodes_in_group("traffic_vehicle").size(),
 	])
+	if not debug_state.tracked_vehicle_metrics.is_empty():
+		lines.append("Metrics: %s" % _format_metric_dictionary(debug_state.tracked_vehicle_metrics))
+	if not debug_state.pedestrian_state_counts.is_empty():
+		lines.append("Peds: %s" % _format_metric_dictionary(debug_state.pedestrian_state_counts))
+	if not debug_state.traffic_state_counts.is_empty():
+		lines.append("Traffic states: %s" % _format_metric_dictionary(debug_state.traffic_state_counts))
 	if debug_state.motion_debug_lines.size() > 0:
 		lines.append("")
 		lines.append_array(debug_state.motion_debug_lines)
@@ -75,3 +81,11 @@ func _process(_delta: float) -> void:
 		"P pause + palette key",
 	]))
 	stats_label.text = "\n".join(lines)
+
+func _format_metric_dictionary(values: Dictionary) -> String:
+	var keys := values.keys()
+	keys.sort()
+	var segments := PackedStringArray()
+	for key in keys:
+		segments.append("%s=%s" % [str(key), str(values[key])])
+	return ", ".join(segments)

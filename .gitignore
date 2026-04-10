@@ -4,6 +4,7 @@
 
 # macOS metadata
 .DS_Store
+Thumbs.db
 
 # Environment and local overrides
 .env
@@ -24,3 +25,7 @@ build/
 .codex/tmp/
 .codex/logs/
 .codex/*.json
+
+# Temporary editor files
+*.tmp
+*.swp
