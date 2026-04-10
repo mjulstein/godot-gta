@@ -82,7 +82,8 @@
 - `vehicle_id: StringName`
 - `state: "cruise" | "approach_crossing" | "yield" | "stopped" | "recover" | "park" | "u_turn" | "despawn_pending"`
 - `lane_id: StringName`
-- `route_tiles: Array[Vector2i]`
+- `next_crossing_id: StringName`
+- `local_obstacle_snapshot: Dictionary`
 - `desired_speed: float`
 - `stopping_buffer: float`
 - `recovery_mode: "none" | "lane_change" | "turn" | "u_turn"`
@@ -91,6 +92,7 @@
 **Validation rules**
 
 - Traffic stays on valid lanes and western flow directions.
+- After spawn, traffic relies on local lane-following and obstacle sensing rather than long-lived route ownership from district activity tiles.
 - Yielding must leave readable stopping distance before pedestrians and forward obstacles.
 - Recovery despawn is only legal when `offscreen_ready` is true.
 

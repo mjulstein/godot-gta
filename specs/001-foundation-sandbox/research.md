@@ -11,7 +11,7 @@ Resolve implementation choices for the current `001` baseline so pedestrian, tra
 ### 1. Lock the slice to Godot 4.6-stable and keep validation manual-first
 
 - **Decision**: Use Godot 4.6-stable with the existing headless boot command and manual validation documents as the baseline acceptance flow.
-- **Rationale**: The repo already targets Godot 4.6+, and current completion criteria are built around boot validation plus repeated playable checks rather than a heavy automated test suite.
+- **Rationale**: The repo already targets Godot 4.6+, current completion criteria are built around boot validation plus repeated playable checks, and current Godot 4.6 docs still align with `CharacterBody2D` plus `_physics_process` movement loops and command-line headless validation for this kind of 2D project.
 - **Alternatives considered**: Downgrade to an older Godot baseline, or block planning on broader automated coverage. Both would slow the active slice without solving the immediate readability issues.
 
 ### 2. Keep world overlays tile-local and data-oriented
@@ -29,7 +29,7 @@ Resolve implementation choices for the current `001` baseline so pedestrian, tra
 ### 4. Keep feel-sensitive rules in tuning resources
 
 - **Decision**: Continue storing player, shared vehicle, and civilian traffic feel values in `data/tuning/` resources, with district-specific spawn or lane bias data kept outside core scripts.
-- **Rationale**: The constitution prefers data-driven tuning where gameplay feel changes often, and the remaining open tasks are mostly tuning and readability work.
+- **Rationale**: The constitution prefers data-driven tuning where gameplay feel changes often, the remaining open tasks are mostly tuning and readability work, and Godot's `Resource` workflow remains the cleanest built-in way to expose gameplay values without pushing balance decisions into scene scripts.
 - **Alternatives considered**: Hardcode final values into controllers for speed, stopping distance, or crossing timing. This would slow iteration and hide balancing assumptions.
 
 ### 5. Define contracts around runtime surfaces, not network APIs
@@ -40,5 +40,5 @@ Resolve implementation choices for the current `001` baseline so pedestrian, tra
 
 ## Notes
 
-- Context7 was used against the Godot 4.6 documentation set to confirm the current engine baseline, command-line workflow, and Godot’s recommended project organization at a high level.
+- Context7 was used against the Godot 4.6 documentation set to confirm the current engine baseline, command-line workflow, `CharacterBody2D` movement loop, input-action handling, and `Resource`-based tuning approach at a high level.
 - No unresolved technical clarifications remain for this planning pass.

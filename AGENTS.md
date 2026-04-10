@@ -79,6 +79,8 @@ The next implementation target is `001-foundation-sandbox`, focusing on sandbox 
 ## Active Technologies
 - GDScript on Godot 4.6-stable with layered ASCII-tiled world composition, shared player and civilian vehicle motion rules, pedestrian and traffic AI, pause flow, debug overlay, and mobile HUD support (001-foundation-sandbox)
 - Scene files, scripts, `.tres` tuning resources, markdown manual validation docs, and lightweight export configuration; no persistent gameplay storage (001-foundation-sandbox)
+- GDScript on Godot 4.6-stable + Godot 4.6 built-in scene system, `CharacterBody2D`/physics processing patterns, input actions, `Resource`-based tuning data, `.tscn` scenes, `.tres` resources (001-foundation-sandbox)
+- No persistent gameplay storage; repository assets are scene files, scripts, tuning resources, and markdown validation docs (001-foundation-sandbox)
 
 ## Recent Changes
 - 003-web-browser-play merged into `001-foundation-sandbox`: browser export support, paused fullscreen flow, spec cleanup, and updated handoff docs are now part of the baseline branch.

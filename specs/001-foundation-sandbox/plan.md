@@ -1,37 +1,43 @@
-[root](../../README.md) / [specs](../README.md) / [001-foundation-sandbox](./README.md) / plan.md
-
 # Implementation Plan: Foundation Sandbox
 
-**Branch**: `001-foundation-sandbox` | **Date**: 2026-04-10 | **Spec**: [spec.md](./spec.md)  
+**Branch**: `001-foundation-sandbox` | **Date**: 2026-04-10 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `specs/001-foundation-sandbox/spec.md`
 
 ## Summary
 
-Stabilize the current Godot 4.6 foundation sandbox into a readable, replayable baseline by tightening on-foot feel, explicit pedestrian sidewalk and crosswalk behavior, traffic yielding and recovery, and the existing takeover and collision loop. The implementation stays scene-light and script-heavy, keeps ambient district ownership tile-local in world overlays for spawn behavior only, relies on local actor heuristics after spawn, and pushes feel-sensitive values into tuning resources and manual validation docs.
+Stabilize the foundation sandbox as one readable playable slice: direct on-foot control, shared vehicle motion, sidewalk and crosswalk-bound pedestrians, and civilian traffic that yields and recovers locally without route ownership from ambient tiles after spawn. The implementation stays Godot-native and data-driven by keeping feel-sensitive values in `.tres` tuning resources, preserving tile-local district activity overlays for spawn and cadence only, and validating the slice through headless boot plus repeatable manual playtest flows.
 
 ## Technical Context
 
 **Language/Version**: GDScript on Godot 4.6-stable  
-**Primary Dependencies**: Godot 4.6 runtime/editor, built-in scene system, `.tres` resource tuning, existing debug and mobile HUD scenes  
-**Storage**: Scene files, GDScript, `.tres` tuning resources, markdown manual validation docs; no persistent gameplay storage  
-**Testing**: Headless boot check with `HOME=/tmp/godot-home godot --headless --path . --quit-after 1` plus reproducible manual playtests in `tests/manual/`  
-**Target Platform**: Desktop baseline with browser-export-compatible pause/fullscreen behavior already merged into the slice  
+**Primary Dependencies**: Godot 4.6 built-in scene system, `CharacterBody2D`/physics processing patterns, input actions, `Resource`-based tuning data, `.tscn` scenes, `.tres` resources  
+**Storage**: No persistent gameplay storage; repository assets are scene files, scripts, tuning resources, and markdown validation docs  
+**Testing**: `HOME=/tmp/godot-home godot --headless --path . --quit-after 1` plus manual validation in `tests/manual/us1_playable_core.md` and `tests/manual/us2_takeover_impacts.md`  
+**Target Platform**: Desktop-first Godot runtime with browser-export-compatible baseline behavior already merged into the slice  
 **Project Type**: Single Godot game project  
-**Performance Goals**: Maintain readable real-time play in one compact district on a mid-range desktop while simulating ambient pedestrians and civilian traffic  
-**Constraints**: Preserve top-down readability, keep scene logic thin, keep overlay ownership tile-local for spawn behavior only, use original placeholder content only, avoid fallback teleports for blocked vehicle entry/exit or displaced occupants, and only despawn recovery traffic off-screen  
-**Scale/Scope**: One compact district slice, one player actor, one civilian vehicle class, ambient civilian pedestrian and traffic population, takeover loop, collision response, debug overlay, and mobile HUD baseline
+**Performance Goals**: Smooth 60 FPS on a mid-range desktop while simulating the active district slice; clean headless boot with no scene or script load failures  
+**Constraints**: Top-down readability first; no copied GTA assets or naming; pedestrians stay on valid walk space by default; traffic only despawns off-screen; tune behavior through resources where practical; keep scripts domain-scoped and short  
+**Scale/Scope**: One compact district, one player controller, shared civilian vehicle controller, ambient pedestrian and traffic population, debug overlay, pause/mobile HUD support, and manual sign-off for baseline sandbox feel
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **Feel-First Top-Down Gameplay**: Pass. The plan targets movement readability, crossing behavior, and traffic response before any new feature expansion.
-- **Original World, Not Asset-Level Imitation**: Pass. The slice uses original placeholder content and does not introduce copied GTA assets, names, or UI.
-- **Small Vertical Slices Over Broad Scope**: Pass. Scope remains one compact district and the existing US1 or US2 sandbox loop rather than expanding into police, missions, or wider progression.
-- **Data-Driven Systems Where It Matters**: Pass. Movement, traffic, and pedestrian feel remain tunable through `data/tuning/` and district overlay data instead of hardcoded scene behavior.
-- **Playtestable, Debuggable, Maintainable**: Pass. The slice keeps the debug overlay, manual validation docs, and domain-scoped scripts as explicit quality gates.
+### Pre-Research Gate
 
-Post-design re-check: Pass. Research, data model, quickstart, and the runtime contract all preserve the same constraints and introduce no constitution violations.
+- **Feel-first top-down gameplay**: Pass. The slice is explicitly scoped to readable on-foot movement, crossing behavior, lane flow, takeover, and impact readability.
+- **Original world, not asset-level imitation**: Pass. The spec and repo rules require original placeholder or final content only.
+- **Small vertical slices over broad scope**: Pass. Work remains constrained to the baseline district and existing US1 or US2 sandbox loop rather than expanding into police, missions, or progression.
+- **Data-driven systems where it matters**: Pass. Player, vehicle, and traffic feel values remain in `data/tuning/`, with district activity data limited to spawn or cadence concerns.
+- **Playtestable, debuggable, maintainable**: Pass. Manual validation docs, headless boot, and debug overlay requirements are already part of the slice contract.
+
+### Post-Design Gate
+
+- **Feel-first top-down gameplay**: Pass. The design keeps local pedestrian and traffic state readable instead of hiding behavior inside opaque global routing.
+- **Original world, not asset-level imitation**: Pass. No design artifact introduces protected source material.
+- **Small vertical slices over broad scope**: Pass. Contracts and quickstart preserve the current baseline loop without adding new systems.
+- **Data-driven systems where it matters**: Pass. The data model and research keep tuning in resources and treat runtime state as inspectable data.
+- **Playtestable, debuggable, maintainable**: Pass. Runtime contracts require stable input actions, debug-visible state, and reproducible validation surfaces.
 
 ## Project Structure
 
@@ -45,65 +51,50 @@ specs/001-foundation-sandbox/
 ├── quickstart.md
 ├── contracts/
 │   └── runtime_contract.md
-└── tasks.md
+├── tasks.md
+└── handoff.md
 ```
 
 ### Source Code (repository root)
 
 ```text
-data/
-├── districts/
-├── missions/
-└── tuning/
-    ├── civilian_vehicle_tuning.tres
-    ├── player_tuning.tres
-    ├── vehicle_tuning.tres
-    └── wanted_tuning.tres
-
 scenes/
-├── actors/
-│   ├── civilians/
-│   ├── player/
-│   └── police/
 ├── main/
-├── ui/
+├── world/
+│   ├── overlays/
+│   └── props/
+├── actors/
+│   ├── player/
+│   ├── civilians/
+│   └── police/
 ├── vehicles/
 │   ├── civilian/
 │   └── police/
-└── world/
-    ├── overlays/
-    └── props/
+└── ui/
 
 scripts/
-├── actors/player/
-├── ai/
-│   ├── pedestrian/
-│   └── vehicular/
 ├── core/
-├── systems/
-├── ui/
+├── actors/
+│   └── player/
 ├── vehicles/
-└── world/
+├── systems/
+├── world/
+├── ui/
+└── ai/
+    ├── pedestrian/
+    │   └── civilian/
+    └── vehicular/
+        └── civilian/
+
+data/
+└── tuning/
 
 tests/
-├── logic/
 └── manual/
 ```
 
-**Structure Decision**: Keep the single Godot project structure already established in the repo. Scene files remain composition-oriented under `scenes/`, behavior stays domain-scoped under `scripts/`, tunable gameplay values live in `data/tuning/`, and validation remains manual-first under `tests/manual/` with optional pure-logic coverage in `tests/logic/`.
-
-## Phase 0: Research Summary
-
-- Confirm Godot 4.6-stable as the engine baseline and preserve the existing headless boot command as the minimum validation gate.
-- Resolve pedestrian and traffic behavior through explicit state machines and local terrain heuristics, with tile activity data limited to spawn placement and cadence rather than runtime route ownership.
-- Treat the project’s exposed interfaces as runtime contracts around the main scene, input actions, debug visibility, and reproducible validation flow rather than external network APIs.
-
-## Phase 1: Design Summary
-
-- Model sandbox actors around player control, vehicle usability, pedestrian crossing state, local terrain sensing, traffic recovery state, district spawn activity cells, and debug snapshots.
-- Keep contracts limited to the runtime surface the slice already exposes: entry scene, required input actions, debug observability, and validation expectations.
-- Keep quickstart focused on local validation and the current `001` checkpoint rather than reintroducing deferred police or mission scope.
+**Structure Decision**: Use the existing single-project Godot layout already present in the repository. Scene composition stays under `scenes/`, gameplay code stays split by domain under `scripts/`, frequently tuned gameplay values stay in `data/tuning/`, and validation remains manual-first under `tests/manual/`.
 
 ## Complexity Tracking
 
-No constitution violations or justified complexity exceptions were required for this plan.
+No constitution violations or justified complexity exceptions were identified in this planning pass.
