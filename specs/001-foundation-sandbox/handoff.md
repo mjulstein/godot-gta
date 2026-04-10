@@ -55,7 +55,7 @@ Known baseline issues to address here:
 ## Known Coordination Notes
 
 - keep `district_activity_overlay.gd` tile-local and data-oriented
-- AI should consume tile activity data rather than moving cross-tile ownership into the overlay layer
+- use tile activity data for spawn placement and cadence, not as the live owner of pedestrian routes after spawn
 - keep browser or fullscreen behavior changes isolated to `003` or later slices unless they are true shared-core fixes
 - use `specs/001-foundation-sandbox/next-steps.md` for the richer backlog and tuning notes
 
@@ -93,7 +93,7 @@ Work in this order unless redirected:
 Recommended implementation direction:
 
 - prefer stricter pedestrian states such as `sidewalk_walk`, `curb_wait`, `crosswalk_cross`, and `social_follow`
-- keep pair or group behavior layered on top of route-following instead of free steering
+- keep pair or group behavior layered on top of a lead pedestrian's local terrain reading and forward intent
 - fix traffic yielding as part of readable crossing behavior, not as isolated distance tuning alone
 
 ## Constraints

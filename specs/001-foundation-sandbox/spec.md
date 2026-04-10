@@ -24,6 +24,11 @@
 
 - Q: What happens when the player tries to enter a vehicle that is destroyed or blocked by level geometry? → A: Reject the entry attempt if the vehicle is destroyed or no valid entry side is reachable.
 - Q: What happens if an unusable vehicle has no valid exit space? → A: The player remains in the unusable vehicle until a valid exit space becomes available.
+- Q: How should pedestrian and traffic activity data guide movement after spawn? → A: Tile activity data is only for initial behavior such as spawn points and semi-random spawn cadence; once spawned, actors rely on local intuition to assess nearby terrain and move or turn away from danger.
+- Q: How should civilian traffic decide where to go after spawn? → A: Use local lane-following and obstacle sensing after spawn, while picking road crossings as the next structural decisions.
+- Q: How should pedestrians choose and keep a sidewalk side after spawn? → A: Each pedestrian chooses a side at spawn and keeps it unless forced to switch.
+- Q: When should pedestrians initiate a road crossing? → A: Only at valid crossing points when their local forward intent would continue across the road and traffic is yielding clearly enough.
+- Q: What should pedestrians do when forward space is blocked after spawn? → A: Try a short local turn or sidestep search, then wait briefly if no safe option exists.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -93,7 +98,13 @@ As a player, I can walk to a civilian car, enter it, leave a pedestrian behind i
 - **FR-006b**: Pedestrian and traffic spawn density MUST be independently tunable by district so one area can skew toward foot traffic while another skews toward vehicle flow.
 - **FR-006c**: Civilian pedestrian spawn points MUST stay on curb-adjacent sidewalk space rather than grass or open road space.
 - **FR-006a**: Civilian traffic and pedestrians MUST follow readable western traffic rules, including lane usage, direction of travel, and crossing behavior appropriate to the tile-based district layout.
+- **FR-006aa**: District activity data MUST only govern initial ambient behavior such as spawn placement and semi-random spawn timing, and MUST NOT be the runtime source of route ownership for spawned pedestrians.
+- **FR-006ab**: After spawn, civilian traffic MUST use local lane-following and obstacle sensing rather than route ownership from district activity data, while choosing road crossings or equivalent road-graph decisions as its next structural navigation targets.
 - **FR-006e**: Civilian pedestrians MUST prefer sidewalk travel over grass or open road space, and SHOULD only enter the road through valid crossing behavior.
+- **FR-006ea**: After spawn, civilian pedestrians MUST navigate by local terrain assessment, with a lead pedestrian preferring forward progress, checking upcoming space for no-go conditions, and turning away when forward movement would enter danger or invalid walk space.
+- **FR-006eb**: Each civilian pedestrian MUST choose a sidewalk-side preference at spawn and keep it unless local terrain, crowding, or crossing behavior forces a side switch.
+- **FR-006ec**: Civilian pedestrians MUST only initiate road crossings at valid crossing points, and only when their local forward intent would continue across the road and approaching traffic is yielding clearly enough.
+- **FR-006ed**: When forward pedestrian movement is blocked after spawn, the pedestrian MUST try a short local turn or sidestep search first, and only wait briefly when no safe nearby option exists.
 - **FR-006f**: Civilian pedestrians MAY form social walking pairs or join nearby pedestrian flow when routes align, but SHOULD avoid stable formations wider than two abreast.
 - **FR-006g**: Civilian pedestrians MUST wait at crosswalk or curb edges when approaching vehicles are not yielding clearly enough for a safe crossing.
 - **FR-006h**: Civilian traffic MUST yield to pedestrians at crossings with enough stopping distance to keep the crossing behavior readable.

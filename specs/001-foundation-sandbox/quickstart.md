@@ -4,46 +4,46 @@
 
 ## Goal
 
-Boot a Godot project that can demonstrate the first crime-sandbox slice described in the spec.
+Boot the current baseline sandbox, verify the active `001` slice, and work against the remaining pedestrian, traffic, and feel tasks without reintroducing deferred scope.
 
-## Initial Setup
+## Prerequisites
 
-1. Create a new Godot 4.x project in this repository root.
-2. Set the main scene to `scenes/main/game.tscn`.
-3. Create the baseline folders described in the implementation plan.
-4. Define input actions for movement, interact, enter-exit vehicle, brake, accelerate, steer left, steer right, pause, and debug overlay toggle.
-5. Set viewport stretch so fullscreen scales the same gameplay framing instead of revealing more world area.
+1. Install Godot 4.6 or newer.
+2. Open the repository root as the Godot project.
+3. Keep work scoped to the existing main scene and domain folders under `scenes/`, `scripts/`, `data/`, and `tests/`.
 
-## First Playable Checkpoint
+## Fast Validation
 
-1. Create `district_slice.tscn` with roads, sidewalks, collision, and parameterized road exits.
-2. Create `base_level.tscn` to assemble district tiles from layered ASCII maps for roads, building density, and activity density.
-3. Add a player scene with top-down movement.
-4. Add one drivable parked vehicle.
-5. Add a camera that follows the current controlled actor and preserves the same framing across window sizes.
-6. Verify the player can walk, enter the vehicle, drive, exit, and keep moving in one session.
+1. From the repo root, run `HOME=/tmp/godot-home godot --headless --path . --quit-after 1`.
+2. Confirm the project boots without script or scene load errors.
+3. Launch `scenes/main/game.tscn` in the editor or run the project normally.
 
-## Second Playable Checkpoint
+## Manual Baseline Loop
 
-1. Add civilians or simple traffic.
-2. Emit crime events from vehicle theft and harmful civilian collisions.
-3. Add wanted-level UI or debug display.
-4. Spawn police on wanted escalation.
-5. Add pause-time palette/debug support for actor role readability.
-6. Verify the player can trigger pursuit and later clear it.
+1. Start on foot in the district.
+2. Verify on-foot movement reads as direct pedestrian control rather than vehicle handling.
+3. Observe pedestrians staying on sidewalks or crosswalks and waiting at crossings when traffic is not yielding.
+4. Observe civilian traffic holding lane flow, slowing near crossings, and recovering locally when blocked.
+5. Approach a valid civilian vehicle and take it over only when it is stopped or moving at walking pace.
+6. Confirm a displaced occupant remains in the world when takeover succeeds.
+7. Drive through the district, trigger a pedestrian impact, and verify momentum displaces the pedestrian without pushing the vehicle back.
+8. Exit the vehicle and confirm the loop continues without scene reload or state corruption.
 
-## Debug Expectations
+## Working Files
 
-- Toggle a development overlay showing player mode, wanted level, and police state count.
-- Allow the same overlay to inspect any tracked vehicle's speed, throttle, brake, steering, and motion state when debugging traffic behavior.
-- Support a pause overlay that shows the current role palette.
-- Keep tuning data editable without rewriting scene logic.
+- `scenes/main/game.tscn`: playable root scene
+- `scenes/world/district_slice.tscn`: compact district slice
+- `scripts/actors/player/player_controller.gd`: on-foot control
+- `scripts/vehicles/vehicle_controller.gd`: shared player or civilian vehicle motion
+- `scripts/ai/pedestrian/civilian/`: pedestrian sidewalk and crossing behavior
+- `scripts/ai/vehicular/civilian/`: civilian traffic lane, yield, and recovery behavior
+- `scripts/world/district_activity_overlay.gd`: tile-local ambient ownership and activity data
+- `tests/manual/us1_playable_core.md`
+- `tests/manual/us2_takeover_impacts.md`
 
-## Current Branch Extensions
+## Current Target
 
-The current repository branch layers additional controls and deployment helpers on top of the foundation sandbox slice:
-
-- always-on mobile touch HUD for joystick, action, pause, and driving inputs
-- pause-overlay controls for debug toggle, HUD opacity, gameplay input scale, impact vibration, and restart
-- debug traffic camera cycling and temporary driver possession for inspecting civilian traffic
-- local iOS Xcode project generation and build or deploy helpers under `ios/`
+1. Stabilize pedestrian sidewalk and crosswalk behavior.
+2. Stabilize traffic yielding and stopping distance at crossings.
+3. Tune player and vehicle feel only after baseline pedestrian and traffic readability are back under control.
+4. Finish remaining sign-off tasks in `tasks.md` and update `handoff.md` with the current checkpoint.
