@@ -42,6 +42,7 @@ Implemented and available in the baseline:
 - pedestrian runtime now exposes explicit `sidewalk_walk`, `curb_wait`, `crosswalk_cross`, and `social_follow` states with local terrain probes
 - interaction and vehicle controllers now surface blocked-entry and blocked-exit reasons instead of silently failing
 - debug overlay now shows tracked vehicle metrics plus pedestrian and traffic state counts for live inspection
+- civilian traffic now keeps explicit next-crossing context and yields from crossing-aware local sensing instead of generic-only pedestrian checks
 
 Current status:
 
@@ -49,12 +50,14 @@ Current status:
 - recent browser-slice validation re-exposed baseline pedestrian and traffic issues that belong here
 - `003`-specific pedestrian experiments were rolled back; do not assume there is pending uncommitted AI work
 - headless boot passed again on 2026-04-10 after the pedestrian state and vehicle-usability patch set
+- headless boot still passes after the crossing-aware traffic patch set on 2026-04-10
 
 Known baseline issues to address here:
 
 - traffic yield distance and approach timing still need manual tuning confirmation
 - unusable-vehicle transitions beyond blocked entry and blocked exit still need broader gameplay coverage
 - final sign-off playtests for US1 and US2 are still outstanding
+- dead-end parking/U-turn behavior and district readability polish remain open implementation tasks
 
 ## Known Coordination Notes
 
@@ -90,9 +93,9 @@ Validation references:
 Work in this order unless redirected:
 
 1. manually verify and tune traffic yielding and stopping distance around crossings
-2. finish unusable-vehicle transitions for broader edge cases such as critical damage coverage
-3. tune player and vehicle feel only after the baseline pedestrian and traffic readability is confirmed in play
-4. complete the remaining open `001` polish and sign-off tasks
+2. finish dead-end parking/U-turn coverage and district readability polish
+3. finish unusable-vehicle transitions for broader edge cases such as critical damage coverage
+4. tune player and vehicle feel only after the baseline pedestrian and traffic readability is confirmed in play
 
 Recommended implementation direction:
 

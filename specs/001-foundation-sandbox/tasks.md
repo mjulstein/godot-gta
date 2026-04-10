@@ -63,8 +63,8 @@
 - [x] T020 [US1] Refactor civilian pedestrian states to enforce `sidewalk_walk`, `curb_wait`, `crosswalk_cross`, and `social_follow` behavior in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
 - [x] T021 [US1] Add local terrain assessment, sidewalk-side preference, and short sidestep or wait recovery for pedestrians in `scripts/ai/pedestrian/civilian/pedestrian_ai.gd`
 - [x] T022 [US1] Tighten civilian pedestrian spawn placement to curb-adjacent sidewalk space using tile-local activity data in `scripts/world/district_activity_overlay.gd` and `scenes/world/district_slice.tscn`
-- [ ] T023 [US1] Rework civilian traffic lane following to use local sensing plus next-crossing decisions instead of route ownership in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
-- [ ] T024 [US1] Improve crossing approach and pedestrian yield timing so traffic stops with readable distance in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `data/tuning/civilian_vehicle_tuning.tres`
+- [x] T023 [US1] Rework civilian traffic lane following to use local sensing plus next-crossing decisions instead of route ownership in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`
+- [x] T024 [US1] Improve crossing approach and pedestrian yield timing so traffic stops with readable distance in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd` and `data/tuning/civilian_vehicle_tuning.tres`
 - [ ] T025 [US1] Add dead-end parking lot resolution so civilian drivers either park and convert to pedestrians or perform a U-turn in `scripts/ai/vehicular/civilian/civilian_vehicle_ai.gd`, `scripts/world/district_activity_overlay.gd`, and `scenes/world/district_slice.tscn`
 - [ ] T026 [US1] Improve district readability with placeholder signage, landmarks, and collision cleanup in `scenes/world/district_slice.tscn`
 - [x] T027 [US1] Update the readable city movement and crossing validation checklist in `tests/manual/us1_playable_core.md`

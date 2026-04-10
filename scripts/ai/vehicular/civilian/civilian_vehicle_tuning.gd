@@ -15,6 +15,9 @@ extends Resource
 @export_range(16.0, 240.0, 1.0) var u_turn_slowdown_distance := 108.0
 @export_range(0.0, 4.0, 0.05) var follow_distance_scale := 1.15
 @export_range(0.0, 4.0, 0.05) var pedestrian_stop_distance_scale := 1.1
+@export_range(8.0, 48.0, 1.0) var crossing_entry_buffer := 24.0
+@export_range(8.0, 48.0, 1.0) var crossing_curb_buffer := 32.0
+@export_range(40.0, 140.0, 1.0) var crossing_lateral_clearance := 90.0
 @export_range(24.0, 120.0, 1.0) var vehicle_look_ahead := 54.0
 @export_range(24.0, 160.0, 1.0) var police_look_ahead := 120.0
 @export_range(24.0, 96.0, 1.0) var pedestrian_look_ahead := 44.0

@@ -65,6 +65,7 @@ var driver: Node = null
 var possessed_by_player := false
 var longitudinal_speed := 0.0
 var last_player_ahead_distance := -1.0
+var last_crossing_pedestrian_distance := -1.0
 var collision_flash_remaining := 0.0
 var abandoned_after_theft := false
 var parked_after_arrival := false
@@ -77,6 +78,7 @@ var incident_victim_still_elapsed := 0.0
 var stopped_duration := 0.0
 var usability_state := "usable"
 var last_valid_exit_positions: Array[Vector2] = []
+var next_crossing_id := ""
 
 const ROAD_HALF_WIDTH := 96.0
 const INNER_LANE_OFFSET := 28.0
@@ -350,6 +352,8 @@ func get_motion_debug_lines() -> PackedStringArray:
 	var blocker := "clear"
 	if last_barrier_ahead_distance >= 0.0:
 		blocker = "barrier %.0f" % last_barrier_ahead_distance
+	elif last_crossing_pedestrian_distance >= 0.0:
+		blocker = "crosswalk %.0f" % last_crossing_pedestrian_distance
 	elif last_dynamic_obstacle_ahead_distance >= 0.0:
 		blocker = "dynamic %.0f" % last_dynamic_obstacle_ahead_distance
 	elif last_player_ahead_distance >= 0.0:
@@ -363,6 +367,7 @@ func get_motion_debug_lines() -> PackedStringArray:
 		"Blocker: %s" % blocker,
 		"Driver: %s" % ("player" if driver != null else "ai"),
 		"Usability: %s / %s" % [usability_state, damage_state],
+		"Crossing: %s" % (next_crossing_id if not next_crossing_id.is_empty() else "none"),
 	])
 
 func get_usability_state() -> String:
@@ -398,6 +403,7 @@ func get_debug_metrics() -> Dictionary:
 		"speed_kph": snappedf(current_speed * 0.18, 0.1),
 		"heading": heading,
 		"lane": lane,
+		"crossing": next_crossing_id,
 	}
 
 func set_camera_tracked(is_tracked: bool) -> void:
@@ -658,6 +664,8 @@ func has_persistent_blockage() -> bool:
 	return blockage_time >= _blockage_threshold()
 
 func _should_stop_for_obstacle(direction_vector: Vector2) -> bool:
+	var tile := _find_district_tile(global_position)
+	next_crossing_id = _crossing_id_for_tile(tile)
 	var pedestrian_stop_distance := _pedestrian_stop_distance()
 	var pedestrian_scan_distance := maxf(_pedestrian_look_ahead(), pedestrian_stop_distance + TRAFFIC_CAR_LENGTH)
 	last_barrier_ahead_distance = _nearest_forward_distance("traffic_barrier", direction_vector, _obstacle_look_ahead(), 28.0)
@@ -666,6 +674,13 @@ func _should_stop_for_obstacle(direction_vector: Vector2) -> bool:
 	last_dynamic_obstacle_ahead_distance = _nearest_forward_distance("traffic_dynamic_obstacle", direction_vector, _obstacle_look_ahead(), 24.0)
 	if last_dynamic_obstacle_ahead_distance >= 0.0 and last_dynamic_obstacle_ahead_distance <= _dynamic_obstacle_stop_buffer():
 		return true
+	last_crossing_pedestrian_distance = _nearest_crossing_pedestrian_distance(tile, direction_vector)
+	if last_crossing_pedestrian_distance >= 0.0:
+		if tile != null and _is_before_intersection_hold_point(tile):
+			# Let the dedicated hold logic bring the car to the crossing line first.
+			pass
+		else:
+			return true
 	last_player_ahead_distance = _nearest_forward_distance("pedestrian_actor", direction_vector, pedestrian_scan_distance, 26.0)
 	if last_player_ahead_distance >= 0.0 and last_player_ahead_distance <= _pedestrian_hold_distance():
 		return true
@@ -722,6 +737,8 @@ func _should_hold_for_intersection_obstacle(direction_vector: Vector2) -> bool:
 	var tile := _find_district_tile(global_position)
 	if tile == null:
 		return false
+	if last_crossing_pedestrian_distance >= 0.0 and _is_before_intersection_hold_point(tile):
+		return true
 	var hold_point := _world_point(tile, heading, lane, CROSSWALK_CLEAR_OFFSET, false)
 	var to_hold := hold_point - global_position
 	var hold_forward_distance := direction_vector.dot(to_hold)
@@ -735,6 +752,7 @@ func _nearest_non_traffic_blocking_distance() -> float:
 		last_barrier_ahead_distance,
 		last_police_ahead_distance,
 		last_dynamic_obstacle_ahead_distance,
+		last_crossing_pedestrian_distance,
 		last_player_ahead_distance,
 	]:
 		if distance < 0.0:
@@ -1218,6 +1236,15 @@ func _follow_distance_scale() -> float:
 func _pedestrian_stop_distance_scale() -> float:
 	return tuning.pedestrian_stop_distance_scale if tuning != null else 1.1
 
+func _crossing_entry_buffer() -> float:
+	return tuning.crossing_entry_buffer if tuning != null else 24.0
+
+func _crossing_curb_buffer() -> float:
+	return tuning.crossing_curb_buffer if tuning != null else 32.0
+
+func _crossing_lateral_clearance() -> float:
+	return tuning.crossing_lateral_clearance if tuning != null else 90.0
+
 func _vehicle_look_ahead() -> float:
 	return tuning.vehicle_look_ahead if tuning != null else vehicle_look_ahead
 
@@ -1553,6 +1580,48 @@ func _driverless_stop_rate(base_friction: float) -> float:
 	var reference_mass := 2000.0
 	var mass_scale := clampf(reference_mass / maxf(mass_kg, 1.0), 0.35, 2.0)
 	return base_friction * mass_scale
+
+func _crossing_id_for_tile(tile: Node2D) -> String:
+	if tile == null:
+		return ""
+	if not _tile_has_crossing(tile):
+		return ""
+	return "%s:%s:%s" % [str(tile.get_instance_id()), heading, lane]
+
+func _tile_has_crossing(tile: Node2D) -> bool:
+	if tile == null:
+		return false
+	return _tile_open(tile, _get_exit_side_for_heading(heading))
+
+func _nearest_crossing_pedestrian_distance(tile: Node2D, direction_vector: Vector2) -> float:
+	if tile == null or not _tile_has_crossing(tile):
+		return -1.0
+	var crossing_center := _crossing_center(tile)
+	var forward := _forward_vector_for_heading(heading)
+	var lateral := forward.orthogonal()
+	var nearest_distance := -1.0
+	for candidate in get_tree().get_nodes_in_group("pedestrian_actor"):
+		if candidate == self or not (candidate is Node2D):
+			continue
+		var pedestrian := candidate as Node2D
+		if not pedestrian.visible:
+			continue
+		var state_name: String = pedestrian.get_state_name() if pedestrian.has_method("get_state_name") else ""
+		var crossing_offset := pedestrian.global_position - crossing_center
+		var crossing_forward_distance := absf(forward.dot(crossing_offset))
+		var crossing_lateral_distance := absf(lateral.dot(crossing_offset))
+		var occupies_crosswalk: bool = crossing_forward_distance <= _crossing_entry_buffer() and crossing_lateral_distance <= _crossing_lateral_clearance()
+		var waiting_at_curb: bool = state_name == "curb_wait" and crossing_forward_distance <= _crossing_curb_buffer() and crossing_lateral_distance <= _crossing_lateral_clearance()
+		if not occupies_crosswalk and not waiting_at_curb:
+			continue
+		var offset := pedestrian.global_position - global_position
+		var forward_distance := maxf(direction_vector.dot(offset), 0.0)
+		if nearest_distance < 0.0 or forward_distance < nearest_distance:
+			nearest_distance = forward_distance
+	return nearest_distance
+
+func _crossing_center(tile: Node2D) -> Vector2:
+	return _world_point(tile, heading, lane, ROAD_HALF_WIDTH + (_crossing_entry_buffer() * 0.5), false)
 
 func _neighbor_tile(tile: Node2D, direction: String) -> Node2D:
 	var tile_size_value = tile.get("tile_world_size")

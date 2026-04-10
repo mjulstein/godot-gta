@@ -59,6 +59,16 @@ const PROFILE_DEAD_END_NORTH := "dead_end_north"
 const PROFILE_DEAD_END_SOUTH := "dead_end_south"
 const PROFILE_DEAD_END_EAST := "dead_end_east"
 const PROFILE_DEAD_END_WEST := "dead_end_west"
+const SURFACE_BLOCKED := "blocked"
+const SURFACE_ROAD := "road"
+const SURFACE_SIDEWALK := "sidewalk"
+const SURFACE_CROSSWALK := "crosswalk"
+
+var _surface_polygon_cache := {
+	SURFACE_ROAD: [],
+	SURFACE_SIDEWALK: [],
+	SURFACE_CROSSWALK: [],
+}
 
 func _ready() -> void:
 	add_to_group("district_tile")
@@ -73,6 +83,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 func refresh_tile_profile() -> void:
 	_update_exit_visibility()
 	_update_ground_profile()
+	_rebuild_surface_polygon_cache()
 
 func _update_exit_visibility() -> void:
 	if not is_node_ready():
@@ -197,6 +208,22 @@ func _set_node_visible(node_path: String, is_visible: bool) -> void:
 func get_tile_profile_name() -> String:
 	return _get_tile_profile()
 
+func get_surface_type_at_world_position(world_position: Vector2) -> String:
+	if _point_in_cached_polygons(world_position, SURFACE_CROSSWALK):
+		return SURFACE_CROSSWALK
+	if _point_in_cached_polygons(world_position, SURFACE_SIDEWALK):
+		return SURFACE_SIDEWALK
+	if _point_in_cached_polygons(world_position, SURFACE_ROAD):
+		return SURFACE_ROAD
+	return SURFACE_BLOCKED
+
+func is_walkable_world_position(world_position: Vector2) -> bool:
+	var surface_type := get_surface_type_at_world_position(world_position)
+	return surface_type == SURFACE_SIDEWALK or surface_type == SURFACE_CROSSWALK
+
+func is_sidewalk_world_position(world_position: Vector2) -> bool:
+	return get_surface_type_at_world_position(world_position) == SURFACE_SIDEWALK
+
 func get_dead_end_parking_data(entry_heading: String) -> Dictionary:
 	var profile := _get_tile_profile()
 	match profile:
@@ -246,3 +273,46 @@ func _get_tile_profile() -> String:
 	if open_east and open_west and not open_north and not open_south:
 		return PROFILE_STRAIGHT_HORIZONTAL
 	return PROFILE_DEFAULT
+
+func _rebuild_surface_polygon_cache() -> void:
+	_surface_polygon_cache = {
+		SURFACE_ROAD: [],
+		SURFACE_SIDEWALK: [],
+		SURFACE_CROSSWALK: [],
+	}
+	var ground := get_node_or_null("Ground")
+	if ground == null:
+		return
+	_collect_surface_polygons(ground)
+
+func _collect_surface_polygons(node: Node) -> void:
+	for child in node.get_children():
+		if child is Polygon2D:
+			var polygon := child as Polygon2D
+			if polygon.visible:
+				var surface_type := _surface_type_for_polygon_name(polygon.name)
+				if not surface_type.is_empty():
+					_surface_polygon_cache[surface_type].append({
+						"inverse_transform": polygon.global_transform.affine_inverse(),
+						"polygon": polygon.polygon,
+					})
+		_collect_surface_polygons(child)
+
+func _point_in_cached_polygons(world_position: Vector2, surface_type: String) -> bool:
+	var polygons: Array = _surface_polygon_cache.get(surface_type, [])
+	for polygon_data in polygons:
+		var inverse_transform: Transform2D = polygon_data["inverse_transform"]
+		var local_point := inverse_transform * world_position
+		var polygon: PackedVector2Array = polygon_data["polygon"]
+		if Geometry2D.is_point_in_polygon(local_point, polygon):
+			return true
+	return false
+
+func _surface_type_for_polygon_name(node_name: String) -> String:
+	if node_name.contains("Crosswalk"):
+		return SURFACE_CROSSWALK
+	if node_name.contains("Sidewalk"):
+		return SURFACE_SIDEWALK
+	if node_name.begins_with("Road") or node_name.begins_with("ParkingLot"):
+		return SURFACE_ROAD
+	return ""

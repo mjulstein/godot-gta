@@ -15,6 +15,7 @@ signal harmed(source: Node2D)
 @export_range(0.0, 120.0, 1.0) var social_look_radius := 42.0
 @export_range(0.1, 10.0, 0.1) var social_turn_speed := 3.0
 @export_range(0.0, 1.0, 0.05) var follow_moving_pedestrian_chance := 0.3
+@export_range(0.0, 1.0, 0.01) var ambient_idle_pause_chance := 0.04
 @export_range(0.0, 160.0, 1.0) var follow_moving_pedestrian_radius := 36.0
 @export_range(16.0, 160.0, 1.0) var follow_moving_pedestrian_distance := 56.0
 @export_range(0.0, 1.0, 0.05) var crossing_chance := 0.22
@@ -24,6 +25,8 @@ signal harmed(source: Node2D)
 @export_range(0.0, 2.0, 0.05) var separation_weight := 0.75
 @export_range(8.0, 32.0, 1.0) var group_side_spacing := 10.0
 @export_range(8.0, 32.0, 1.0) var group_trail_spacing := 12.0
+@export_range(0.0, 32.0, 1.0) var group_backoff_distance := 14.0
+@export_range(0.0, 80.0, 1.0) var group_backoff_speed := 24.0
 @export_range(0.1, 20.0, 0.1) var steering_turn_speed := 7.5
 
 var current_state := "idle"
@@ -66,6 +69,7 @@ var danger_memory: Array[Vector2] = []
 var target_crosswalk_id := StringName()
 var group_anchor_id := StringName()
 var paired_partner_id := StringName()
+var group_backoff_remaining := 0.0
 var preferred_sidewalk_side := ""
 var spawn_source := "ambient"
 var is_on_valid_walk_surface := true
@@ -75,7 +79,7 @@ const RECLAIM_REACHED_DISTANCE := 10.0
 const RECLAIM_VEHICLE_STOP_SPEED := 28.0
 const INCIDENT_APPROACH_DISTANCE := 18.0
 const INCIDENT_TARGET_STOP_SPEED := 18.0
-const AMBIENT_REACHED_DISTANCE := 8.0
+const AMBIENT_REACHED_DISTANCE := 4.0
 const AMBIENT_MIN_SPEED := 12.0
 const DEFAULT_TILE_WORLD_SIZE := Vector2(1280, 1280)
 const ROAD_HALF_WIDTH := 96.0
@@ -110,6 +114,7 @@ func _physics_process(delta: float) -> void:
 	reclaim_delay_remaining = maxf(0.0, reclaim_delay_remaining - delta)
 	follow_retarget_cooldown = maxf(0.0, follow_retarget_cooldown - delta)
 	ambient_wait_remaining = maxf(0.0, ambient_wait_remaining - delta)
+	group_backoff_remaining = maxf(0.0, group_backoff_remaining - delta)
 	_tick_impact_cooldowns(delta)
 	body_polygon.color = _get_body_color()
 	_update_impact_collision_state()
@@ -345,8 +350,8 @@ func _update_ambient_walk() -> void:
 		ambient_previous_index = ambient_node_index
 		ambient_node_index = ambient_target_index
 		ambient_target_index = _pick_next_ambient_target(ambient_node_index, ambient_previous_index)
-		if ambient_group_is_leader and rng.randf() < 0.16:
-			ambient_wait_remaining = pause_duration * rng.randf_range(0.6, 1.5)
+		if ambient_group_is_leader and rng.randf() < ambient_idle_pause_chance:
+			ambient_wait_remaining = pause_duration * rng.randf_range(0.15, 0.45)
 			velocity = Vector2.ZERO
 			return
 		if not _is_valid_ambient_node(ambient_target_index):
@@ -373,6 +378,14 @@ func _update_group_follow() -> bool:
 	var leader_direction: Vector2 = leader.get_ambient_forward_direction() if leader.has_method("get_ambient_forward_direction") else leader.velocity.normalized()
 	if leader_direction == Vector2.ZERO:
 		leader_direction = ambient_forward_direction
+	if _should_back_off_from_group_leader(leader, leader_direction):
+		group_backoff_remaining = 0.18
+	if group_backoff_remaining > 0.0:
+		current_state = "social_backoff"
+		velocity = _compute_group_backoff_velocity(leader_direction, get_physics_process_delta_time())
+		ambient_forward_direction = leader_direction
+		rotation = leader_direction.angle()
+		return true
 	var target_position := leader.global_position + _get_group_slot_offset(ambient_group_slot, ambient_group_size, leader_direction)
 	var to_target := target_position - global_position
 	if to_target.length() <= 4.0:
@@ -661,6 +674,35 @@ func _get_group_slot_offset(slot: int, group_size: int, forward_direction: Vecto
 		return side * group_side_spacing
 	return -forward * group_trail_spacing
 
+func _should_back_off_from_group_leader(leader: CharacterBody2D, leader_direction: Vector2) -> bool:
+	var offset_from_leader := global_position - leader.global_position
+	var leader_distance := offset_from_leader.length()
+	if leader_distance <= 0.0 or leader_distance > group_backoff_distance:
+		return false
+	var heading_to_follower := offset_from_leader.normalized()
+	if leader_direction.dot(heading_to_follower) < 0.45:
+		return false
+	var closing_speed := 0.0
+	if leader.velocity is Vector2:
+		closing_speed = leader.velocity.dot(heading_to_follower)
+	return closing_speed > 6.0 or leader_distance < group_backoff_distance * 0.7
+
+func _compute_group_backoff_velocity(leader_direction: Vector2, delta: float) -> Vector2:
+	var backoff_direction := -leader_direction.normalized()
+	if backoff_direction == Vector2.ZERO:
+		return Vector2.ZERO
+	var backoff_probe := _sample_walk_probe(backoff_direction)
+	terrain_probe = backoff_probe
+	if not bool(backoff_probe.get("forward_walkable", true)):
+		return Vector2.ZERO
+	var steering_direction := backoff_direction + _get_separation_force() * separation_weight
+	if steering_direction == Vector2.ZERO:
+		steering_direction = backoff_direction
+	var smoothed_direction := _smooth_steering_direction(steering_direction.normalized(), delta)
+	if smoothed_direction == Vector2.ZERO:
+		return Vector2.ZERO
+	return smoothed_direction * group_backoff_speed
+
 func _compute_steered_velocity(desired_direction: Vector2, speed_override: float = -1.0, delta: float = 0.016) -> Vector2:
 	if desired_direction == Vector2.ZERO:
 		return Vector2.ZERO
@@ -685,7 +727,8 @@ func _compute_steered_velocity(desired_direction: Vector2, speed_override: float
 	var smoothed_direction := _smooth_steering_direction(steering_direction, delta)
 	if smoothed_direction == Vector2.ZERO:
 		return Vector2.ZERO
-	return smoothed_direction * speed
+	var current_speed := velocity.length() if velocity.length() > 1.0 else speed
+	return smoothed_direction * maxf(speed, current_speed * 0.92)
 
 func _smooth_steering_direction(target_direction: Vector2, delta: float) -> Vector2:
 	if target_direction == Vector2.ZERO:
@@ -889,58 +932,9 @@ func _surface_type_at_position(world_position: Vector2) -> String:
 	var tile := _find_district_tile(world_position)
 	if tile == null:
 		return "blocked"
-	var local_position := world_position - tile.global_position
-	var profile: String = tile.get_tile_profile_name() if tile.has_method("get_tile_profile_name") else "default"
-	if _is_crosswalk_surface(local_position, profile):
-		return "crosswalk"
-	if _is_sidewalk_surface(local_position, profile):
-		return "sidewalk"
-	if _is_road_surface(local_position, profile):
-		return "road"
+	if tile.has_method("get_surface_type_at_world_position"):
+		return tile.get_surface_type_at_world_position(world_position)
 	return "blocked"
 
 func _is_walkable_surface(surface: String) -> bool:
 	return surface == "sidewalk" or surface == "crosswalk"
-
-func _is_road_surface(local_position: Vector2, profile: String) -> bool:
-	if profile == "straight_horizontal":
-		return absf(local_position.y) <= ROAD_HALF_WIDTH
-	if profile == "straight_vertical":
-		return absf(local_position.x) <= ROAD_HALF_WIDTH
-	if profile.begins_with("dead_end"):
-		if profile == "dead_end_north":
-			return absf(local_position.x) <= 180.0 and local_position.y >= -96.0 and local_position.y <= 220.0
-		if profile == "dead_end_south":
-			return absf(local_position.x) <= 180.0 and local_position.y >= -220.0 and local_position.y <= 96.0
-		if profile == "dead_end_east":
-			return absf(local_position.y) <= 180.0 and local_position.x >= -220.0 and local_position.x <= 96.0
-		if profile == "dead_end_west":
-			return absf(local_position.y) <= 180.0 and local_position.x >= -96.0 and local_position.x <= 220.0
-	return absf(local_position.x) <= ROAD_HALF_WIDTH or absf(local_position.y) <= ROAD_HALF_WIDTH
-
-func _is_sidewalk_surface(local_position: Vector2, profile: String) -> bool:
-	if profile == "straight_horizontal":
-		return absf(local_position.y) >= SIDEWALK_INNER and absf(local_position.y) <= SIDEWALK_EDGE
-	if profile == "straight_vertical":
-		return absf(local_position.x) >= SIDEWALK_INNER and absf(local_position.x) <= SIDEWALK_EDGE
-	if profile == "dead_end_north":
-		return (absf(local_position.x) >= 180.0 and absf(local_position.x) <= PARKING_HALF_SPAN and local_position.y >= -96.0 and local_position.y <= 264.0) or (absf(local_position.x) <= PARKING_HALF_SPAN and local_position.y >= 220.0 and local_position.y <= 264.0) or (absf(local_position.y + 118.0) <= 22.0 and absf(local_position.x) <= PARKING_HALF_SPAN)
-	if profile == "dead_end_south":
-		return (absf(local_position.x) >= 180.0 and absf(local_position.x) <= PARKING_HALF_SPAN and local_position.y >= -264.0 and local_position.y <= 96.0) or (absf(local_position.x) <= PARKING_HALF_SPAN and local_position.y >= -264.0 and local_position.y <= -220.0) or (absf(local_position.y - 118.0) <= 22.0 and absf(local_position.x) <= PARKING_HALF_SPAN)
-	if profile == "dead_end_east":
-		return (absf(local_position.y) >= 180.0 and absf(local_position.y) <= PARKING_HALF_SPAN and local_position.x >= -264.0 and local_position.x <= 96.0) or (absf(local_position.y) <= PARKING_HALF_SPAN and local_position.x >= -264.0 and local_position.x <= -220.0) or (absf(local_position.x + 118.0) <= 22.0 and absf(local_position.y) <= PARKING_HALF_SPAN)
-	if profile == "dead_end_west":
-		return (absf(local_position.y) >= 180.0 and absf(local_position.y) <= PARKING_HALF_SPAN and local_position.x >= -96.0 and local_position.x <= 264.0) or (absf(local_position.y) <= PARKING_HALF_SPAN and local_position.x >= 220.0 and local_position.x <= 264.0) or (absf(local_position.x - 118.0) <= 22.0 and absf(local_position.y) <= PARKING_HALF_SPAN)
-	return (
-		(absf(local_position.y) >= SIDEWALK_INNER and absf(local_position.y) <= SIDEWALK_EDGE and absf(local_position.x) > ROAD_HALF_WIDTH) or
-		(absf(local_position.x) >= SIDEWALK_INNER and absf(local_position.x) <= SIDEWALK_EDGE and absf(local_position.y) > ROAD_HALF_WIDTH)
-	)
-
-func _is_crosswalk_surface(local_position: Vector2, profile: String) -> bool:
-	if profile != "default":
-		return false
-	return (
-		absf(local_position.x) <= ROAD_HALF_WIDTH and absf(absf(local_position.y) - 118.0) <= 22.0
-	) or (
-		absf(local_position.y) <= ROAD_HALF_WIDTH and absf(absf(local_position.x) - 118.0) <= 22.0
-	)

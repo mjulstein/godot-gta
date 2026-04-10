@@ -44,6 +44,26 @@ const TrafficScene = preload("res://scenes/vehicles/civilian/civilian_vehicle_ac
 		tile_world_size = value
 		_rebuild_if_ready()
 
+@export_range(0, 32, 1) var north_span_tiles := 0:
+	set(value):
+		north_span_tiles = value
+		_rebuild_if_ready()
+
+@export_range(0, 32, 1) var south_span_tiles := 0:
+	set(value):
+		south_span_tiles = value
+		_rebuild_if_ready()
+
+@export_range(0, 32, 1) var east_span_tiles := 0:
+	set(value):
+		east_span_tiles = value
+		_rebuild_if_ready()
+
+@export_range(0, 32, 1) var west_span_tiles := 0:
+	set(value):
+		west_span_tiles = value
+		_rebuild_if_ready()
+
 const SIDEWALK_OFFSET := 118.0
 const CROSSWALK_OFFSET := 140.0
 const CURB_RUN_OFFSET := 244.0
@@ -146,8 +166,12 @@ func _build_pedestrian_spawns(spawn_count: int) -> Array[Dictionary]:
 			forward = Vector2.RIGHT
 		var group_id: int = seed * 10 + group_index
 		for slot in range(size):
+			var spawn_position := _fit_spawn_to_sidewalk(
+				_network_position(network, start_index) + _pedestrian_group_offset(slot, size, forward),
+				_network_position(network, start_index)
+			)
 			spawns.append({
-				"position": _network_position(network, start_index) + _pedestrian_group_offset(slot, size, forward),
+				"position": spawn_position,
 				"network": network,
 				"start_index": start_index,
 				"next_index": next_index,
@@ -177,7 +201,7 @@ func _build_pedestrian_network() -> Array:
 		_:
 			network = _build_intersection_pedestrian_network(half_width, half_height, inset)
 
-	return network
+	return _filter_pedestrian_network_to_visible_walkways(network)
 
 func _build_traffic_routes() -> Array[Dictionary]:
 	var routes: Array[Dictionary] = []
@@ -371,13 +395,15 @@ func _to_world_path(local_points: Array[Vector2]) -> PackedVector2Array:
 	return path
 
 func _build_horizontal_sidewalk_network(half_width: float, inset: float) -> Array:
+	var west_run := west_span_tiles * tile_world_size.x + minf(CURB_RUN_OFFSET, half_width - inset)
+	var east_run := east_span_tiles * tile_world_size.x + minf(CURB_RUN_OFFSET, half_width - inset)
 	var network := [
-		_node(Vector2(-minf(CURB_RUN_OFFSET, half_width - inset), -SIDEWALK_OFFSET)),
+		_node(Vector2(-west_run, -SIDEWALK_OFFSET)),
 		_node(Vector2(0, -SIDEWALK_OFFSET)),
-		_node(Vector2(minf(CURB_RUN_OFFSET, half_width - inset), -SIDEWALK_OFFSET)),
-		_node(Vector2(minf(CURB_RUN_OFFSET, half_width - inset), SIDEWALK_OFFSET)),
+		_node(Vector2(east_run, -SIDEWALK_OFFSET)),
+		_node(Vector2(east_run, SIDEWALK_OFFSET)),
 		_node(Vector2(0, SIDEWALK_OFFSET)),
-		_node(Vector2(-minf(CURB_RUN_OFFSET, half_width - inset), SIDEWALK_OFFSET)),
+		_node(Vector2(-west_run, SIDEWALK_OFFSET)),
 	]
 	_connect_nodes(network, 0, 1)
 	_connect_nodes(network, 1, 2)
@@ -386,13 +412,15 @@ func _build_horizontal_sidewalk_network(half_width: float, inset: float) -> Arra
 	return _world_network(network)
 
 func _build_vertical_sidewalk_network(half_height: float, inset: float) -> Array:
+	var north_run := north_span_tiles * tile_world_size.y + minf(CURB_RUN_OFFSET, half_height - inset)
+	var south_run := south_span_tiles * tile_world_size.y + minf(CURB_RUN_OFFSET, half_height - inset)
 	var network := [
-		_node(Vector2(-SIDEWALK_OFFSET, -minf(CURB_RUN_OFFSET, half_height - inset))),
+		_node(Vector2(-SIDEWALK_OFFSET, -north_run)),
 		_node(Vector2(-SIDEWALK_OFFSET, 0)),
-		_node(Vector2(-SIDEWALK_OFFSET, minf(CURB_RUN_OFFSET, half_height - inset))),
-		_node(Vector2(SIDEWALK_OFFSET, minf(CURB_RUN_OFFSET, half_height - inset))),
+		_node(Vector2(-SIDEWALK_OFFSET, south_run)),
+		_node(Vector2(SIDEWALK_OFFSET, south_run)),
 		_node(Vector2(SIDEWALK_OFFSET, 0)),
-		_node(Vector2(SIDEWALK_OFFSET, -minf(CURB_RUN_OFFSET, half_height - inset))),
+		_node(Vector2(SIDEWALK_OFFSET, -north_run)),
 	]
 	_connect_nodes(network, 0, 1)
 	_connect_nodes(network, 1, 2)
@@ -401,21 +429,23 @@ func _build_vertical_sidewalk_network(half_height: float, inset: float) -> Array
 	return _world_network(network)
 
 func _build_intersection_pedestrian_network(half_width: float, half_height: float, inset: float) -> Array:
-	var curb_x := minf(CURB_RUN_OFFSET, half_width - inset)
-	var curb_y := minf(CURB_RUN_OFFSET, half_height - inset)
+	var curb_west := west_span_tiles * tile_world_size.x + minf(CURB_RUN_OFFSET, half_width - inset)
+	var curb_east := east_span_tiles * tile_world_size.x + minf(CURB_RUN_OFFSET, half_width - inset)
+	var curb_north := north_span_tiles * tile_world_size.y + minf(CURB_RUN_OFFSET, half_height - inset)
+	var curb_south := south_span_tiles * tile_world_size.y + minf(CURB_RUN_OFFSET, half_height - inset)
 	var network := [
-		_node(Vector2(-curb_x, -SIDEWALK_OFFSET)),
+		_node(Vector2(-curb_west, -SIDEWALK_OFFSET)),
 		_node(Vector2(-SIDEWALK_OFFSET, -SIDEWALK_OFFSET)),
 		_node(Vector2(SIDEWALK_OFFSET, -SIDEWALK_OFFSET)),
-		_node(Vector2(curb_x, -SIDEWALK_OFFSET)),
-		_node(Vector2(curb_x, SIDEWALK_OFFSET)),
+		_node(Vector2(curb_east, -SIDEWALK_OFFSET)),
+		_node(Vector2(curb_east, SIDEWALK_OFFSET)),
 		_node(Vector2(SIDEWALK_OFFSET, SIDEWALK_OFFSET)),
 		_node(Vector2(-SIDEWALK_OFFSET, SIDEWALK_OFFSET)),
-		_node(Vector2(-curb_x, SIDEWALK_OFFSET)),
-		_node(Vector2(-SIDEWALK_OFFSET, -curb_y)),
-		_node(Vector2(SIDEWALK_OFFSET, -curb_y)),
-		_node(Vector2(SIDEWALK_OFFSET, curb_y)),
-		_node(Vector2(-SIDEWALK_OFFSET, curb_y)),
+		_node(Vector2(-curb_west, SIDEWALK_OFFSET)),
+		_node(Vector2(-SIDEWALK_OFFSET, -curb_north)),
+		_node(Vector2(SIDEWALK_OFFSET, -curb_north)),
+		_node(Vector2(SIDEWALK_OFFSET, curb_south)),
+		_node(Vector2(-SIDEWALK_OFFSET, curb_south)),
 	]
 	_connect_nodes(network, 0, 1)
 	_connect_nodes(network, 1, 2, true)
@@ -513,6 +543,61 @@ func _network_position(network: Array, index: int) -> Vector2:
 	if index < 0 or index >= network.size():
 		return global_position
 	return network[index].get("position", global_position)
+
+func _filter_pedestrian_network_to_visible_walkways(network: Array) -> Array:
+	var tile := _get_district_tile()
+	if tile == null or not tile.has_method("is_walkable_world_position"):
+		return network
+	var kept_indices := {}
+	var filtered: Array = []
+	for index in range(network.size()):
+		var position: Vector2 = network[index].get("position", global_position)
+		if not tile.is_walkable_world_position(position):
+			continue
+		kept_indices[index] = filtered.size()
+		var new_node: Dictionary = network[index].duplicate(true)
+		new_node["neighbors"] = PackedInt32Array()
+		new_node["crosswalk_neighbors"] = PackedInt32Array()
+		filtered.append(new_node)
+	for old_index in kept_indices.keys():
+		var new_index: int = kept_indices[old_index]
+		var source_node: Dictionary = network[old_index]
+		for neighbor in source_node.get("neighbors", PackedInt32Array()):
+			if kept_indices.has(neighbor):
+				filtered[new_index]["neighbors"].append(kept_indices[neighbor])
+		for crosswalk_neighbor in source_node.get("crosswalk_neighbors", PackedInt32Array()):
+			if kept_indices.has(crosswalk_neighbor):
+				filtered[new_index]["crosswalk_neighbors"].append(kept_indices[crosswalk_neighbor])
+	return filtered
+
+func _fit_spawn_to_sidewalk(candidate_position: Vector2, fallback_position: Vector2) -> Vector2:
+	var tile := _find_district_tile(candidate_position)
+	if tile == null or not tile.has_method("is_sidewalk_world_position"):
+		return candidate_position
+	if tile.is_sidewalk_world_position(candidate_position):
+		return candidate_position
+	var fallback_tile := _find_district_tile(fallback_position)
+	if fallback_tile != null and fallback_tile.has_method("is_sidewalk_world_position") and fallback_tile.is_sidewalk_world_position(fallback_position):
+		return fallback_position
+	if tile.is_sidewalk_world_position(fallback_position):
+		return fallback_position
+	return candidate_position
+
+func _get_district_tile() -> Node2D:
+	return _find_district_tile(global_position)
+
+func _find_district_tile(world_position: Vector2) -> Node2D:
+	for candidate in get_tree().get_nodes_in_group("district_tile"):
+		if not (candidate is Node2D):
+			continue
+		var tile := candidate as Node2D
+		var tile_size = tile.get("tile_world_size")
+		if not (tile_size is Vector2):
+			continue
+		var tile_rect := Rect2(tile.global_position - tile_size * 0.5, tile_size)
+		if tile_rect.has_point(world_position):
+			return tile
+	return null
 
 func _get_tile_profile() -> String:
 	var open_count := int(open_north) + int(open_south) + int(open_east) + int(open_west)
